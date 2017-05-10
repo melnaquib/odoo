@@ -21,7 +21,8 @@ pydot==1.2.3
 pyparsing==2.1.10
 pyPdf==1.13
 pyserial==3.1.1
-Python-Chart==1.39
+# Python-Chart==1.39
+git+https://github.com/alpham/pychart
 python-dateutil==2.5.3
 python3-ldap==0.9.8.4
 python-openid==2.2.5
