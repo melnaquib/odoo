@@ -100,7 +100,7 @@ class AccountAccount(models.Model):
         help="Forces all moves for this account to have this account currency.")
     code = fields.Char(size=64, required=True, index=True)
     deprecated = fields.Boolean(index=True, default=False)
-    user_type_id = fields.Many2one('account.account.type', string='Type', required=True, oldname="user_type", 
+    user_type_id = fields.Many2one('account.account.type', string='Type', required=True, oldname="user_type",
         help="Account Type is used for information purpose, to generate country-specific legal reports, and set the rules to close a fiscal year and generate opening entries.")
     internal_type = fields.Selection(related='user_type_id.type', string="Internal Type", store=True, readonly=True)
     #has_unreconciled_entries = fields.Boolean(compute='_compute_has_unreconciled_entries',
@@ -176,7 +176,7 @@ class AccountAccount(models.Model):
         if vals.get('company_id', False):
             move_lines = self.env['account.move.line'].search([('account_id', 'in', self.ids)], limit=1)
             for account in self:
-                if (account.company_id.id <> vals['company_id']) and move_lines:
+                if (account.company_id.id != vals['company_id']) and move_lines:
                     raise UserError(_('You cannot change the owner company of an account that already contains journal items.'))
         # If user change the reconcile flag, all aml should be recomputed for that account and this is very costly.
         # So to prevent some bugs we add a constraint saying that you cannot change the reconcile field if there is any aml existing
