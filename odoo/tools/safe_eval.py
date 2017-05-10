@@ -20,6 +20,7 @@ from psycopg2 import OperationalError
 from types import CodeType
 import logging
 import werkzeug
+from functools import reduce as func_reduce
 
 from .misc import ustr
 
@@ -236,7 +237,7 @@ _BUILTINS = {
     'min': min,
     'max': max,
     'sum': sum,
-    'reduce': reduce,
+    'reduce': func_reduce,
     'filter': filter,
     'round': round,
     'len': len,
@@ -246,11 +247,11 @@ _BUILTINS = {
     'any': any,
     'ord': ord,
     'chr': chr,
-    'cmp': cmp,
+    'cmp': lambda a, b: (a > b) - (a < b),
     'divmod': divmod,
     'isinstance': isinstance,
     'range': range,
-    'xrange': xrange,
+    'xrange': range,
     'zip': zip,
     'Exception': Exception,
 }
