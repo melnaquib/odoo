@@ -36,6 +36,7 @@ hooked = False
 # Modules already loaded
 loaded = []
 
+
 class AddonsHook(object):
     """ Makes modules accessible through openerp.addons.* and odoo.addons.* """
 
@@ -48,8 +49,10 @@ class AddonsHook(object):
         assert name not in sys.modules
 
         # get canonical names
-        odoo_name = re.sub(r'^openerp.addons.(\w+)$', r'odoo.addons.\g<1>', name)
-        openerp_name = re.sub(r'^odoo.addons.(\w+)$', r'openerp.addons.\g<1>', odoo_name)
+        odoo_name = re.sub(r'^openerp.addons.(\w+)$',
+                           r'odoo.addons.\g<1>', name)
+        openerp_name = re.sub(r'^odoo.addons.(\w+)$',
+                              r'openerp.addons.\g<1>', odoo_name)
 
         assert odoo_name not in sys.modules
         assert openerp_name not in sys.modules
@@ -57,8 +60,10 @@ class AddonsHook(object):
         # get module name in addons paths
         _1, _2, addon_name = name.split('.')
         # load module
-        f, path, (_suffix, _mode, type_) = imp.find_module(addon_name, ad_paths)
-        if f: f.close()
+        f, path, (_suffix, _mode, type_) = imp.find_module(
+            addon_name, ad_paths)
+        if f:
+            f.close()
 
         # TODO: fetch existing module from sys.modules if reloads permitted
         # create empty odoo.addons.* module, set name
@@ -80,13 +85,17 @@ class AddonsHook(object):
         # sys.modules, so recursive import works
         exec(compile(open(modfile).read(), modfile, 'exec'), new_mod.__dict__)
 
-        # people import openerp.addons and expect openerp.addons.<module> to work
+        # people import openerp.addons and expect openerp.addons.<module> to
+        # work
         setattr(odoo.addons, addon_name, new_mod)
 
         return sys.modules[name]
+
+
 # need to register loader with setuptools as Jinja relies on it when using
 # PackageLoader
 pkg_resources.register_loader_type(AddonsHook, pkg_resources.DefaultProvider)
+
 
 class OdooHook(object):
     """ Makes odoo package also available as openerp """
@@ -105,7 +114,8 @@ class OdooHook(object):
         if canonical in sys.modules:
             mod = sys.modules[canonical]
         else:
-            # probable failure: canonical execution calling old naming -> corecursion
+            # probable failure: canonical execution calling old naming ->
+            # corecursion
             mod = importlib.import_module(canonical)
 
         # just set the original module at the new location. Don't proxy,
@@ -114,6 +124,7 @@ class OdooHook(object):
         sys.modules[name] = mod
 
         return sys.modules[name]
+
 
 def initialize_sys_path():
     """
@@ -137,7 +148,8 @@ def initialize_sys_path():
             ad_paths.append(ad)
 
     # add base module path
-    base_path = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'addons'))
+    base_path = os.path.abspath(os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), 'addons'))
     if base_path not in ad_paths:
         ad_paths.append(base_path)
 
@@ -151,6 +163,7 @@ def initialize_sys_path():
         sys.meta_path.append(AddonsHook())
         sys.meta_path.append(OdooHook())
         hooked = True
+
 
 def get_module_path(module, downloaded=False, display_warning=True):
     """Return the path of the given module.
@@ -173,6 +186,7 @@ def get_module_path(module, downloaded=False, display_warning=True):
         _logger.warning('module %s: module not found', module)
     return False
 
+
 def get_module_filetree(module, dir='.'):
     path = get_module_path(module)
     if not path:
@@ -192,7 +206,7 @@ def get_module_filetree(module, dir='.'):
             continue
 
         if dir:
-            f = f[len(dir)+int(not dir.endswith('/')):]
+            f = f[len(dir) + int(not dir.endswith('/')):]
         lst = f.split(os.sep)
         current = tree
         while len(lst) != 1:
@@ -200,6 +214,7 @@ def get_module_filetree(module, dir='.'):
         current[lst.pop(0)] = None
 
     return tree
+
 
 def get_resource_path(module, *args):
     """Return the full path of a resource of the given module.
@@ -213,7 +228,8 @@ def get_resource_path(module, *args):
     TODO make it available inside on osv object (self.get_resource_path)
     """
     mod_path = get_module_path(module)
-    if not mod_path: return False
+    if not mod_path:
+        return False
     resource_path = opj(mod_path, *args)
     if os.path.isdir(mod_path):
         # the module is a directory - ignore zip behavior
@@ -221,8 +237,10 @@ def get_resource_path(module, *args):
             return resource_path
     return False
 
+
 # backwards compatibility
 get_module_resource = get_resource_path
+
 
 def get_resource_from_path(path):
     """Tries to extract the module name and the resource's relative path
@@ -255,11 +273,13 @@ def get_resource_from_path(path):
         return (module, '/'.join(relative), os.path.sep.join(relative))
     return None
 
+
 def get_module_icon(module):
     iconpath = ['static', 'description', 'icon.png']
     if get_module_resource(module, *iconpath):
         return ('/' + module + '/') + '/'.join(iconpath)
-    return '/base/'  + '/'.join(iconpath)
+    return '/base/' + '/'.join(iconpath)
+
 
 def module_manifest(path):
     """Returns path to module manifest if one can be found under `path`, else `None`."""
@@ -268,6 +288,7 @@ def module_manifest(path):
     for manifest_name in MANIFEST_NAMES:
         if os.path.isfile(opj(path, manifest_name)):
             return opj(path, manifest_name)
+
 
 def get_module_root(path):
     """
@@ -295,6 +316,7 @@ def get_module_root(path):
             return None
         path = new_path
     return path
+
 
 def load_information_from_description_file(module, mod_path=None):
     """
@@ -347,8 +369,10 @@ def load_information_from_description_file(module, mod_path=None):
         info['version'] = adapt_version(info['version'])
         return info
 
-    _logger.debug('module %s: no manifest file found %s', module, MANIFEST_NAMES)
+    _logger.debug('module %s: no manifest file found %s',
+                  module, MANIFEST_NAMES)
     return {}
+
 
 def load_openerp_module(module_name):
     """ Load an OpenERP module, if not already loaded.
@@ -371,7 +395,8 @@ def load_openerp_module(module_name):
         # server-wide (instead of registry-specific) functionalities.
         info = load_information_from_description_file(module_name)
         if info['post_load']:
-            getattr(sys.modules['odoo.addons.' + module_name], info['post_load'])()
+            getattr(sys.modules['odoo.addons.' +
+                                module_name], info['post_load'])()
 
     except Exception as e:
         msg = "Couldn't load module %s" % (module_name)
@@ -380,6 +405,7 @@ def load_openerp_module(module_name):
         raise
     else:
         loaded.append(module_name)
+
 
 def get_modules():
     """Returns the list of module names
@@ -403,6 +429,7 @@ def get_modules():
         plist.extend(listdir(ad))
     return list(set(plist))
 
+
 def get_modules_with_version():
     modules = get_modules()
     res = dict.fromkeys(modules, adapt_version('1.0'))
@@ -414,11 +441,13 @@ def get_modules_with_version():
             continue
     return res
 
+
 def adapt_version(version):
     serie = release.major_version
     if version == serie or not version.startswith(serie + '.'):
         version = '%s.%s' % (serie, version)
     return version
+
 
 def get_test_modules(module):
     """ Return a list of module for the addons potentially containing tests to
@@ -444,24 +473,31 @@ def get_test_modules(module):
     return result
 
 # Use a custom stream object to log the test executions.
+
+
 class TestStream(object):
     def __init__(self, logger_name='odoo.tests'):
         self.logger = logging.getLogger(logger_name)
         self.r = re.compile(r'^-*$|^ *... *$|^ok$')
+
     def flush(self):
         pass
+
     def write(self, s):
         if self.r.match(s):
             return
         first = True
-        level = logging.ERROR if s.startswith(('ERROR', 'FAIL', 'Traceback')) else logging.INFO
+        level = logging.ERROR if s.startswith(
+            ('ERROR', 'FAIL', 'Traceback')) else logging.INFO
         for c in s.splitlines():
             if not first:
                 c = '` ' + c
             first = False
             self.logger.log(level, c)
 
+
 current_test = None
+
 
 def runs_at(test, hook, default):
     # by default, tests do not run post install
@@ -476,8 +512,11 @@ def runs_at(test, hook, default):
     method = getattr(test, test._testMethodName)
     return getattr(method, hook, test_runs)
 
+
 runs_at_install = functools.partial(runs_at, hook='at_install', default=True)
-runs_post_install = functools.partial(runs_at, hook='post_install', default=False)
+runs_post_install = functools.partial(
+    runs_at, hook='post_install', default=False)
+
 
 def run_unit_tests(module_name, dbname, position=runs_at_install):
     """
@@ -498,16 +537,20 @@ def run_unit_tests(module_name, dbname, position=runs_at_install):
             t0 = time.time()
             t0_sql = odoo.sql_db.sql_counter
             _logger.info('%s running tests.', m.__name__)
-            result = unittest.TextTestRunner(verbosity=2, stream=TestStream(m.__name__)).run(suite)
+            result = unittest.TextTestRunner(
+                verbosity=2, stream=TestStream(m.__name__)).run(suite)
             if time.time() - t0 > 5:
-                _logger.log(25, "%s tested in %.2fs, %s queries", m.__name__, time.time() - t0, odoo.sql_db.sql_counter - t0_sql)
+                _logger.log(25, "%s tested in %.2fs, %s queries", m.__name__,
+                            time.time() - t0, odoo.sql_db.sql_counter - t0_sql)
             if not result.wasSuccessful():
                 r = False
-                _logger.error("Module %s: %d failures, %d errors", module_name, len(result.failures), len(result.errors))
+                _logger.error("Module %s: %d failures, %d errors", module_name, len(
+                    result.failures), len(result.errors))
 
     current_test = None
     threading.currentThread().testing = False
     return r
+
 
 def unwrap_suite(test):
     """

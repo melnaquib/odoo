@@ -74,40 +74,41 @@ class document(object):
             return value
 
     def eval(self, record, expr):
-#TODO: support remote variables (eg address.title) in expr
-# how to do that: parse the string, find dots, replace those dotted variables by temporary
-# "simple ones", fetch the value of those variables and add them (temporarily) to the _data
-# dictionary passed to eval
+        # TODO: support remote variables (eg address.title) in expr
+        # how to do that: parse the string, find dots, replace those dotted variables by temporary
+        # "simple ones", fetch the value of those variables and add them (temporarily) to the _data
+        # dictionary passed to eval
 
-#FIXME: it wont work if the data hasn't been fetched yet... this could
-# happen if the eval node is the first one using this Record
-# the next line is a workaround for the problem: it causes the resource to be loaded
-#Pinky: Why not this ? eval(expr, browser) ?
-#       name = browser.name
-#       data_dict = browser._data[self.get_value(browser, 'id')]
+        # FIXME: it wont work if the data hasn't been fetched yet... this could
+        # happen if the eval node is the first one using this Record
+        # the next line is a workaround for the problem: it causes the resource to be loaded
+        # Pinky: Why not this ? eval(expr, browser) ?
+        #       name = browser.name
+        #       data_dict = browser._data[self.get_value(browser, 'id')]
         return safe_eval(expr, {}, {'obj': record})
 
     def parse_node(self, node, parent, browser, datas=None):
         env = odoo.api.Environment(self.cr, self.uid, {})
         attrs = self.node_attrs_get(node)
         if 'type' in attrs:
-            if attrs['type']=='field':
+            if attrs['type'] == 'field':
                 value = self.get_value(browser, attrs['name'])
-                #TODO: test this
+                # TODO: test this
                 if value == '' and 'default' in attrs:
                     value = attrs['default']
                 el = etree.SubElement(parent, node.tag)
                 el.text = tounicode(value)
-                #TODO: test this
+                # TODO: test this
                 for key, value in attrs.items():
                     if key not in ('type', 'name', 'default'):
                         el.set(key, value)
 
-            elif attrs['type']=='attachment':
+            elif attrs['type'] == 'attachment':
                 model = browser._name
                 value = self.get_value(browser, attrs['name'])
 
-                atts = env['ir.attachment'].search([('res_model','=',model),('res_id','=',int(value))])
+                atts = env['ir.attachment'].search(
+                    [('res_model', '=', model), ('res_id', '=', int(value))])
                 datas = atts.read()
 
                 if len(datas):
@@ -115,7 +116,7 @@ class document(object):
                     datas = datas[0]
                     fname = str(datas['datas_fname'])
                     ext = fname.split('.')[-1].lower()
-                    if ext in ('jpg','jpeg', 'png'):
+                    if ext in ('jpg', 'jpeg', 'png'):
                         import base64
                         from io import StringIO
                         dt = base64.decodestring(datas['datas'])
@@ -126,13 +127,13 @@ class document(object):
                         el = etree.SubElement(parent, node.tag)
                         el.text = i
 
-            elif attrs['type']=='data':
-                #TODO: test this
+            elif attrs['type'] == 'data':
+                # TODO: test this
                 txt = self.datas.get('form', {}).get(attrs['name'], '')
                 el = etree.SubElement(parent, node.tag)
                 el.text = txt
 
-            elif attrs['type']=='function':
+            elif attrs['type'] == 'function':
                 if attrs['name'] in self.func:
                     txt = self.func[attrs['name']](node)
                 else:
@@ -140,23 +141,23 @@ class document(object):
                 el = etree.SubElement(parent, node.tag)
                 el.text = txt
 
-            elif attrs['type']=='eval':
+            elif attrs['type'] == 'eval':
                 value = self.eval(browser, attrs['expr'])
                 el = etree.SubElement(parent, node.tag)
                 el.text = str(value)
 
-            elif attrs['type']=='fields':
+            elif attrs['type'] == 'fields':
                 fields = attrs['name'].split(',')
                 vals = {}
                 for b in browser:
                     value = tuple([self.get_value2(b, f) for f in fields])
                     if not value in vals:
-                        vals[value]=[]
+                        vals[value] = []
                     vals[value].append(b)
                 keys = list(vals.keys())
                 keys.sort()
 
-                if 'order' in attrs and attrs['order']=='desc':
+                if 'order' in attrs and attrs['order'] == 'desc':
                     keys.reverse()
 
                 v_list = [vals[k] for k in keys]
@@ -165,18 +166,21 @@ class document(object):
                     for el_cld in node:
                         self.parse_node(el_cld, el, v)
 
-            elif attrs['type']=='call':
+            elif attrs['type'] == 'call':
                 if len(attrs['args']):
-                    #TODO: test this
-                    # fetches the values of the variables which names where passed in the args attribute
-                    args = [self.eval(browser, arg) for arg in attrs['args'].split(',')]
+                    # TODO: test this
+                    # fetches the values of the variables which names where
+                    # passed in the args attribute
+                    args = [self.eval(browser, arg)
+                            for arg in attrs['args'].split(',')]
                 else:
                     args = []
                 # get the object
                 if 'model' in attrs:
                     obj = env[attrs['model']]
                 else:
-                    obj = browser       # the record(set) is an instance of the model
+                    # the record(set) is an instance of the model
+                    obj = browser
 
                 # get the ids
                 if 'ids' in attrs:
@@ -205,7 +209,7 @@ class document(object):
                 for newdata in newdatas:
                     parse_result_tree(node, parent, newdata)
 
-            elif attrs['type']=='zoom':
+            elif attrs['type'] == 'zoom':
                 value = self.get_value(browser, attrs['name'])
                 if value:
                     if not isinstance(value, (BaseModel, list)):
@@ -217,17 +221,18 @@ class document(object):
                         for el_cld in node:
                             self.parse_node(el_cld, el, v)
         else:
-            # if there is no "type" attribute in the node, copy it to the xml data and parse its children
+            # if there is no "type" attribute in the node, copy it to the xml
+            # data and parse its children
             if not node.tag == etree.Comment:
                 if node.tag == parent.tag:
                     el = parent
                 else:
                     el = etree.SubElement(parent, node.tag)
                 for el_cld in node:
-                    self.parse_node(el_cld,el, browser)
+                    self.parse_node(el_cld, el, browser)
 
     def xml_get(self):
-        return etree.tostring(self.doc,encoding="utf-8",xml_declaration=True,pretty_print=True)
+        return etree.tostring(self.doc, encoding="utf-8", xml_declaration=True, pretty_print=True)
 
     def parse_tree(self, ids, model, context=None):
         env = odoo.api.Environment(self.cr, self.uid, context or {})

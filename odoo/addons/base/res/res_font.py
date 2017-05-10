@@ -25,15 +25,18 @@ BUILTIN_ALTERNATIVES = [
     ('Helvetica', "normal", ["DejaVuSans", "LiberationSans"]),
     ('Helvetica', "bold", ["DejaVuSans-Bold", "LiberationSans-Bold"]),
     ('Helvetica', 'italic', ["DejaVuSans-Oblique", "LiberationSans-Italic"]),
-    ('Helvetica', 'bolditalic', ["DejaVuSans-BoldOblique", "LiberationSans-BoldItalic"]),
+    ('Helvetica', 'bolditalic', [
+     "DejaVuSans-BoldOblique", "LiberationSans-BoldItalic"]),
     ('Times', 'normal', ["LiberationSerif", "DejaVuSerif"]),
     ('Times', 'bold', ["LiberationSerif-Bold", "DejaVuSerif-Bold"]),
     ('Times', 'italic', ["LiberationSerif-Italic", "DejaVuSerif-Italic"]),
-    ('Times', 'bolditalic', ["LiberationSerif-BoldItalic", "DejaVuSerif-BoldItalic"]),
+    ('Times', 'bolditalic', [
+     "LiberationSerif-BoldItalic", "DejaVuSerif-BoldItalic"]),
     ('Courier', 'normal', ["FreeMono", "DejaVuSansMono"]),
     ('Courier', 'bold', ["FreeMonoBold", "DejaVuSansMono-Bold"]),
     ('Courier', 'italic', ["FreeMonoOblique", "DejaVuSansMono-Oblique"]),
-    ('Courier', 'bolditalic', ["FreeMonoBoldOblique", "DejaVuSansMono-BoldOblique"]),
+    ('Courier', 'bolditalic', [
+     "FreeMonoBoldOblique", "DejaVuSansMono-BoldOblique"]),
 ]
 
 
@@ -49,7 +52,8 @@ class ResFont(models.Model):
     mode = fields.Char(required=True)
 
     _sql_constraints = [
-        ('name_font_uniq', 'unique(family, name)', 'You can not register two fonts with the same name'),
+        ('name_font_uniq', 'unique(family, name)',
+         'You can not register two fonts with the same name'),
     ]
 
     @api.model
@@ -62,7 +66,8 @@ class ResFont(models.Model):
             # lazy loading, scan only if no fonts in db
             fonts = self.search([('path', '!=', '/dev/null')])
             if not fonts:
-                # no scan yet or no font found on the system, scan the filesystem
+                # no scan yet or no font found on the system, scan the
+                # filesystem
                 self._scan_disk()
             elif len(customfonts.CustomTTFonts) == 0:
                 # CustomTTFonts list is empty
@@ -78,18 +83,23 @@ class ResFont(models.Model):
             try:
                 font = ttfonts.TTFontFile(font_path)
                 _logger.debug("Found font %s at %s", font.name, font_path)
-                found_fonts.append((font.familyName, font.name, font_path, font.styleName))
+                found_fonts.append(
+                    (font.familyName, font.name, font_path, font.styleName))
             except Exception as ex:
-                _logger.warning("Could not register Font %s: %s", font_path, ex)
+                _logger.warning(
+                    "Could not register Font %s: %s", font_path, ex)
 
         for family, name, path, mode in found_fonts:
             if not self.search([('family', '=', family), ('name', '=', name)]):
-                self.create({'family': family, 'name': name, 'path': path, 'mode': mode})
+                self.create({'family': family, 'name': name,
+                             'path': path, 'mode': mode})
 
         # remove fonts not present on the disk anymore
-        existing_font_names = [name for (family, name, path, mode) in found_fonts]
+        existing_font_names = [
+            name for (family, name, path, mode) in found_fonts]
         # Remove inexistent fonts
-        self.search([('name', 'not in', existing_font_names), ('path', '!=', '/dev/null')]).unlink()
+        self.search([('name', 'not in', existing_font_names),
+                     ('path', '!=', '/dev/null')]).unlink()
 
         self.pool.signal_caches_change()
         return self._sync()
@@ -102,7 +112,8 @@ class ResFont(models.Model):
         for font in self.search([('path', '!=', '/dev/null')]):
             local_family_modes.add((font.family, font.mode))
             local_font_paths[font.name] = font.path
-            customfonts.CustomTTFonts.append((font.family, font.name, font.path, font.mode))
+            customfonts.CustomTTFonts.append(
+                (font.family, font.name, font.path, font.mode))
 
         # Attempt to remap the builtin fonts (Helvetica, Times, Courier) to better alternatives
         # if available, because they only support a very small subset of unicode
@@ -118,7 +129,7 @@ class ResFont(models.Model):
                         _logger.debug("Builtin remapping %r", altern_def)
                         break
                 else:
-                    _logger.warning("No local alternative found for builtin font `%s` (%s mode)." 
+                    _logger.warning("No local alternative found for builtin font `%s` (%s mode)."
                                     "Consider installing the DejaVu fonts if you have problems "
                                     "with unicode characters in RML reports",
                                     builtin_font_family, mode)

@@ -15,9 +15,12 @@ class IrRule(models.Model):
     _MODES = ['read', 'write', 'create', 'unlink']
 
     name = fields.Char(index=True)
-    active = fields.Boolean(default=True, help="If you uncheck the active field, it will disable the record rule without deleting it (if you delete a native record rule, it may be re-created when you reload the module).")
-    model_id = fields.Many2one('ir.model', string='Object', index=True, required=True, ondelete="cascade")
-    groups = fields.Many2many('res.groups', 'rule_group_rel', 'rule_group_id', 'group_id')
+    active = fields.Boolean(
+        default=True, help="If you uncheck the active field, it will disable the record rule without deleting it (if you delete a native record rule, it may be re-created when you reload the module).")
+    model_id = fields.Many2one(
+        'ir.model', string='Object', index=True, required=True, ondelete="cascade")
+    groups = fields.Many2many(
+        'res.groups', 'rule_group_rel', 'rule_group_id', 'group_id')
     domain_force = fields.Text(string='Domain')
     domain = fields.Binary(compute='_force_domain', string='Domain')
     perm_read = fields.Boolean(string='Apply for Read', default=True)
@@ -50,7 +53,8 @@ class IrRule(models.Model):
         eval_context = self._eval_context()
         for rule in self:
             if rule.domain_force:
-                rule.domain = expression.normalize_domain(safe_eval(rule.domain_force, eval_context))
+                rule.domain = expression.normalize_domain(
+                    safe_eval(rule.domain_force, eval_context))
             else:
                 rule.domain = []
 
@@ -62,13 +66,15 @@ class IrRule(models.Model):
     @api.constrains('model_id')
     def _check_model_transience(self):
         if any(self.env[rule.model_id.model].is_transient() for rule in self):
-            raise ValidationError(_('Rules can not be applied on Transient models.'))
+            raise ValidationError(
+                _('Rules can not be applied on Transient models.'))
 
     @api.constrains('model_id')
     def _check_model_name(self):
         # Don't allow rules on rules records (this model).
         if any(rule.model_id.model == self._name for rule in self):
-            raise ValidationError(_('Rules can not be applied on the Record Rules model.'))
+            raise ValidationError(
+                _('Rules can not be applied on the Record Rules model.'))
 
     @api.model
     @tools.ormcache('self._uid', 'model_name', 'mode')
@@ -91,9 +97,11 @@ class IrRule(models.Model):
         if not rule_ids:
             return []
 
-        # read 'domain' as self._uid to have the correct eval context for the rules.
+        # read 'domain' as self._uid to have the correct eval context for the
+        # rules.
         rules = self.browse(rule_ids)
-        rule_domain = {vals['id']: vals['domain'] for vals in rules.read(['domain'])}
+        rule_domain = {vals['id']: vals['domain']
+                       for vals in rules.read(['domain'])}
 
         # browse user and rules as SUPERUSER_ID to avoid access errors!
         user = self.env.user
@@ -108,7 +116,8 @@ class IrRule(models.Model):
 
         # combine global domains and group domains
         if group_domains:
-            group_domain = expression.OR(list(map(expression.OR, list(group_domains.values()))))
+            group_domain = expression.OR(
+                list(map(expression.OR, list(group_domains.values()))))
         else:
             group_domain = []
         domain = expression.AND(global_domains + [group_domain])
@@ -127,7 +136,8 @@ class IrRule(models.Model):
             # involve objects on which the real uid has no acces rights.
             # This means also there is no implicit restriction (e.g. an object
             # references another object the user can't see).
-            query = self.env[model_name].sudo()._where_calc(dom, active_test=False)
+            query = self.env[model_name].sudo()._where_calc(
+                dom, active_test=False)
             return query.where_clause, query.where_clause_params, query.tables
         return [], [], ['"%s"' % self.env[model_name]._table]
 
@@ -148,6 +158,7 @@ class IrRule(models.Model):
         res = super(IrRule, self).write(vals)
         self.clear_caches()
         return res
+
 
 #
 # Hack for field 'global': this field cannot be defined like others, because

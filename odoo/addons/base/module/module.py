@@ -7,7 +7,9 @@ import logging
 import os
 import shutil
 import tempfile
-import urllib.request, urllib.error, urllib.parse
+import urllib.request
+import urllib.error
+import urllib.parse
 import urllib.parse
 import zipfile
 
@@ -36,6 +38,7 @@ ACTION_DICT = {
     'target': 'new',
     'type': 'ir.actions.act_window',
 }
+
 
 def backup(path, raise_exception=True):
     path = os.path.normpath(path)
@@ -70,14 +73,21 @@ class ModuleCategory(models.Model):
                    )
         result = dict(cr.fetchall())
         for cat in self.filtered('id'):
-            cr.execute('SELECT id FROM ir_module_category WHERE parent_id=%s', (cat.id,))
-            cat.module_nr = sum([result.get(c, 0) for (c,) in cr.fetchall()], result.get(cat.id, 0))
+            cr.execute(
+                'SELECT id FROM ir_module_category WHERE parent_id=%s', (cat.id,))
+            cat.module_nr = sum([result.get(c, 0)
+                                 for (c,) in cr.fetchall()], result.get(cat.id, 0))
 
-    name = fields.Char(string='Name', required=True, translate=True, index=True)
-    parent_id = fields.Many2one('ir.module.category', string='Parent Application', index=True)
-    child_ids = fields.One2many('ir.module.category', 'parent_id', string='Child Applications')
-    module_nr = fields.Integer(string='Number of Apps', compute='_compute_module_nr')
-    module_ids = fields.One2many('ir.module.module', 'category_id', string='Modules')
+    name = fields.Char(string='Name', required=True,
+                       translate=True, index=True)
+    parent_id = fields.Many2one(
+        'ir.module.category', string='Parent Application', index=True)
+    child_ids = fields.One2many(
+        'ir.module.category', 'parent_id', string='Child Applications')
+    module_nr = fields.Integer(
+        string='Number of Apps', compute='_compute_module_nr')
+    module_ids = fields.One2many(
+        'ir.module.module', 'category_id', string='Modules')
     description = fields.Text(string='Description', translate=True)
     sequence = fields.Integer(string='Sequence')
     visible = fields.Boolean(string='Visible', default=True)
@@ -87,7 +97,8 @@ class ModuleCategory(models.Model):
         xml_ids = defaultdict(list)
         domain = [('model', '=', self._name), ('res_id', 'in', self.ids)]
         for data in self.env['ir.model.data'].search_read(domain, ['module', 'name', 'res_id']):
-            xml_ids[data['res_id']].append("%s.%s" % (data['module'], data['name']))
+            xml_ids[data['res_id']].append(
+                "%s.%s" % (data['module'], data['name']))
         for cat in self:
             cat.xml_id = xml_ids.get(cat.id, [''])[0]
 
@@ -114,6 +125,7 @@ class MyWriter(Writer):
     Custom docutils html4ccs1 writer that doesn't add the warnings to the
     output document.
     """
+
     def get_transforms(self):
         return [MyFilterMessages, writer_aux.Admonitions]
 
@@ -127,6 +139,7 @@ STATES = [
     ('to install', 'To be installed'),
 ]
 
+
 class Module(models.Model):
     _name = "ir.module.module"
     _rec_name = "shortdesc"
@@ -135,10 +148,13 @@ class Module(models.Model):
 
     @api.model
     def fields_view_get(self, view_id=None, view_type='form', toolbar=False, submenu=False):
-        res = super(Module, self).fields_view_get(view_id, view_type, toolbar=toolbar, submenu=False)
-        if view_type == 'form' and res.get('toolbar',False):
-            install_id = self.env.ref('base.action_server_module_immediate_install').id
-            action = [rec for rec in res['toolbar']['action'] if rec.get('id', False) != install_id]
+        res = super(Module, self).fields_view_get(
+            view_id, view_type, toolbar=toolbar, submenu=False)
+        if view_type == 'form' and res.get('toolbar', False):
+            install_id = self.env.ref(
+                'base.action_server_module_immediate_install').id
+            action = [rec for rec in res['toolbar']['action']
+                      if rec.get('id', False) != install_id]
             res['toolbar'] = {'action': action}
         return res
 
@@ -147,21 +163,25 @@ class Module(models.Model):
         try:
             return modules.load_information_from_description_file(name)
         except Exception:
-            _logger.debug('Error when trying to fetch information for module %s', name, exc_info=True)
+            _logger.debug(
+                'Error when trying to fetch information for module %s', name, exc_info=True)
             return {}
 
     @api.depends('name', 'description')
     def _get_desc(self):
         for module in self:
-            path = modules.get_module_resource(module.name, 'static/description/index.html')
+            path = modules.get_module_resource(
+                module.name, 'static/description/index.html')
             if path:
                 with tools.file_open(path, 'rb') as desc_file:
                     doc = desc_file.read()
                     html = lxml.html.document_fromstring(doc)
                     for element, attribute, link, pos in html.iterlinks():
                         if element.get('src') and not '//' in element.get('src') and not 'static/' in element.get('src'):
-                            element.set('src', "/%s/static/description/%s" % (module.name, element.get('src')))
-                    module.description_html = tools.html_sanitize(lxml.html.tostring(html))
+                            element.set('src', "/%s/static/description/%s" %
+                                        (module.name, element.get('src')))
+                    module.description_html = tools.html_sanitize(
+                        lxml.html.tostring(html))
             else:
                 overrides = {
                     'embed_stylesheet': False,
@@ -169,14 +189,16 @@ class Module(models.Model):
                     'output_encoding': 'unicode',
                     'xml_declaration': False,
                 }
-                output = publish_string(source=module.description or '', settings_overrides=overrides, writer=MyWriter())
+                output = publish_string(
+                    source=module.description or '', settings_overrides=overrides, writer=MyWriter())
                 module.description_html = tools.html_sanitize(output)
 
     @api.depends('name')
     def _get_latest_version(self):
         default_version = modules.adapt_version('1.0')
         for module in self:
-            module.installed_version = self.get_module_info(module.name).get('version', default_version)
+            module.installed_version = self.get_module_info(
+                module.name).get('version', default_version)
 
     @api.depends('name', 'state')
     def _get_views(self):
@@ -193,7 +215,8 @@ class Module(models.Model):
 
             # then, search and group ir.model.data records
             imd_models = defaultdict(list)
-            imd_domain = [('module', '=', module.name), ('model', 'in', tuple(dmodels))]
+            imd_domain = [('module', '=', module.name),
+                          ('model', 'in', tuple(dmodels))]
             for data in IrModelData.search(imd_domain):
                 imd_models[data.model].append(data.res_id)
 
@@ -206,9 +229,12 @@ class Module(models.Model):
             def format_view(v):
                 return '%s%s (%s)' % (v.inherit_id and '* INHERIT ' or '', v.name, v.type)
 
-            module.views_by_module = "\n".join(sorted(map(format_view, browse('ir.ui.view'))))
-            module.reports_by_module = "\n".join(sorted(map(attrgetter('name'), browse('ir.actions.report.xml'))))
-            module.menus_by_module = "\n".join(sorted(map(attrgetter('complete_name'), browse('ir.ui.menu'))))
+            module.views_by_module = "\n".join(
+                sorted(map(format_view, browse('ir.ui.view'))))
+            module.reports_by_module = "\n".join(
+                sorted(map(attrgetter('name'), browse('ir.actions.report.xml'))))
+            module.menus_by_module = "\n".join(
+                sorted(map(attrgetter('complete_name'), browse('ir.ui.menu'))))
 
     @api.depends('icon')
     def _get_icon_image(self):
@@ -216,15 +242,18 @@ class Module(models.Model):
             module.icon_image = ''
             if module.icon:
                 path_parts = module.icon.split('/')
-                path = modules.get_module_resource(path_parts[1], *path_parts[2:])
+                path = modules.get_module_resource(
+                    path_parts[1], *path_parts[2:])
             else:
                 path = modules.module.get_module_icon(module.name)
             if path:
                 with tools.file_open(path, 'rb') as image_file:
                     module.icon_image = image_file.read().encode('base64')
 
-    name = fields.Char('Technical Name', readonly=True, required=True, index=True)
-    category_id = fields.Many2one('ir.module.category', string='Category', readonly=True, index=True)
+    name = fields.Char('Technical Name', readonly=True,
+                       required=True, index=True)
+    category_id = fields.Many2one(
+        'ir.module.category', string='Category', readonly=True, index=True)
     shortdesc = fields.Char('Module Name', readonly=True, translate=True)
     summary = fields.Char('Summary', readonly=True, translate=True)
     description = fields.Text('Description', readonly=True, translate=True)
@@ -238,19 +267,21 @@ class Module(models.Model):
     #   installed_version refers the latest version (the one on disk)
     #   latest_version refers the installed version (the one in database)
     #   published_version refers the version available on the repository
-    installed_version = fields.Char('Latest Version', compute='_get_latest_version')
+    installed_version = fields.Char(
+        'Latest Version', compute='_get_latest_version')
     latest_version = fields.Char('Installed Version', readonly=True)
     published_version = fields.Char('Published Version', readonly=True)
 
     url = fields.Char('URL', readonly=True)
     sequence = fields.Integer('Sequence', default=100)
     dependencies_id = fields.One2many('ir.module.module.dependency', 'module_id',
-                                       string='Dependencies', readonly=True)
+                                      string='Dependencies', readonly=True)
     auto_install = fields.Boolean('Automatic Installation',
-                                   help='An auto-installable module is automatically installed by the '
-                                        'system when all its dependencies are satisfied. '
-                                        'If the module has no dependency, it is always installed.')
-    state = fields.Selection(STATES, string='Status', default='uninstalled', readonly=True, index=True)
+                                  help='An auto-installable module is automatically installed by the '
+                                  'system when all its dependencies are satisfied. '
+                                  'If the module has no dependency, it is always installed.')
+    state = fields.Selection(STATES, string='Status',
+                             default='uninstalled', readonly=True, index=True)
     demo = fields.Boolean('Demo Data', default=False, readonly=True)
     license = fields.Selection([
         ('GPL-2', 'GPL Version 2'),
@@ -264,9 +295,12 @@ class Module(models.Model):
         ('OPL-1', 'Odoo Proprietary License v1.0'),
         ('Other proprietary', 'Other Proprietary')
     ], string='License', default='LGPL-3', readonly=True)
-    menus_by_module = fields.Text(string='Menus', compute='_get_views', store=True)
-    reports_by_module = fields.Text(string='Reports', compute='_get_views', store=True)
-    views_by_module = fields.Text(string='Views', compute='_get_views', store=True)
+    menus_by_module = fields.Text(
+        string='Menus', compute='_get_views', store=True)
+    reports_by_module = fields.Text(
+        string='Reports', compute='_get_views', store=True)
+    views_by_module = fields.Text(
+        string='Views', compute='_get_views', store=True)
     application = fields.Boolean('Application', readonly=True)
     icon = fields.Char('Icon URL')
     icon_image = fields.Binary(string='Icon', compute='_get_icon_image')
@@ -281,7 +315,8 @@ class Module(models.Model):
             return True
         for module in self:
             if module.state in ('installed', 'to upgrade', 'to remove', 'to install'):
-                raise UserError(_('You try to remove a module that is installed or will be installed'))
+                raise UserError(
+                    _('You try to remove a module that is installed or will be installed'))
         self.clear_caches()
         return super(Module, self).unlink()
 
@@ -309,11 +344,14 @@ class Module(models.Model):
             cls._check_external_dependencies(terp)
         except Exception as e:
             if newstate == 'to install':
-                msg = _('Unable to install module "%s" because an external dependency is not met: %s')
+                msg = _(
+                    'Unable to install module "%s" because an external dependency is not met: %s')
             elif newstate == 'to upgrade':
-                msg = _('Unable to upgrade module "%s" because an external dependency is not met: %s')
+                msg = _(
+                    'Unable to upgrade module "%s" because an external dependency is not met: %s')
             else:
-                msg = _('Unable to process module "%s" because an external dependency is not met: %s')
+                msg = _(
+                    'Unable to process module "%s" because an external dependency is not met: %s')
             raise UserError(msg % (module_name, e.args[0]))
 
     @api.multi
@@ -329,15 +367,19 @@ class Module(models.Model):
             update_mods, ready_mods = self.browse(), self.browse()
             for dep in module.dependencies_id:
                 if dep.state == 'unknown':
-                    raise UserError(_("You try to install module '%s' that depends on module '%s'.\nBut the latter module is not available in your system.") % (module.name, dep.name,))
+                    raise UserError(_("You try to install module '%s' that depends on module '%s'.\nBut the latter module is not available in your system.") % (
+                        module.name, dep.name,))
                 if dep.depend_id.state == newstate:
                     ready_mods += dep.depend_id
                 else:
                     update_mods += dep.depend_id
 
-            # update dependency modules that require it, and determine demo for module
-            update_demo = update_mods.state_update(newstate, states_to_update, level=level-1)
-            module_demo = module.demo or update_demo or any(mod.demo for mod in ready_mods)
+            # update dependency modules that require it, and determine demo for
+            # module
+            update_demo = update_mods.state_update(
+                newstate, states_to_update, level=level - 1)
+            module_demo = module.demo or update_demo or any(
+                mod.demo for mod in ready_mods)
             demo = demo or module_demo
 
             # check dependencies and update module itself
@@ -350,12 +392,14 @@ class Module(models.Model):
     @api.multi
     def button_install(self):
         # domain to select auto-installable (but not yet installed) modules
-        auto_domain = [('state', '=', 'uninstalled'), ('auto_install', '=', True)]
+        auto_domain = [('state', '=', 'uninstalled'),
+                       ('auto_install', '=', True)]
 
         # determine whether an auto-install module must be installed:
         #  - all its dependencies are installed or to be installed,
         #  - at least one dependency is 'to install'
         install_states = frozenset(('installed', 'to install', 'to upgrade'))
+
         def must_install(module):
             states = set(dep.state for dep in module.dependencies_id)
             return states <= install_states and 'to install' in states
@@ -387,13 +431,15 @@ class Module(models.Model):
             # check: the installation is valid if all installed theme modules
             # correspond to one theme module and all its theme dependencies
             if not any(theme_deps(module) == theme_modules for module in theme_modules):
-                state_labels = dict(self.fields_get(['state'])['state']['selection'])
+                state_labels = dict(self.fields_get(
+                    ['state'])['state']['selection'])
                 themes_list = [
-                    "- %s (%s)" % (module.shortdesc, state_labels[module.state])
+                    "- %s (%s)" % (module.shortdesc,
+                                   state_labels[module.state])
                     for module in theme_modules
                 ]
                 raise UserError(_(
-                    "You are trying to install incompatible themes:\n%s\n\n" \
+                    "You are trying to install incompatible themes:\n%s\n\n"
                     "Please uninstall your current theme before installing another one.\n"
                     "Warning: switching themes may significantly alter the look of your current website pages!"
                 ) % ("\n".join(themes_list)))
@@ -442,12 +488,14 @@ class Module(models.Model):
                         d.name IN (SELECT name from ir_module_module where id in %s) AND
                         m.state NOT IN %s AND
                         m.id NOT IN %s """
-        self._cr.execute(query, (tuple(self.ids), tuple(exclude_states), tuple(known_deps.ids or self.ids)))
+        self._cr.execute(query, (tuple(self.ids), tuple(
+            exclude_states), tuple(known_deps.ids or self.ids)))
         new_deps = self.browse([row[0] for row in self._cr.fetchall()])
         missing_mods = new_deps - known_deps
         known_deps |= new_deps
         if missing_mods:
-            known_deps |= missing_mods.downstream_dependencies(known_deps, exclude_states)
+            known_deps |= missing_mods.downstream_dependencies(
+                known_deps, exclude_states)
         return known_deps
 
     @api.multi
@@ -467,12 +515,14 @@ class Module(models.Model):
                         m.name IN (SELECT name from ir_module_module_dependency where module_id in %s) AND
                         m.state NOT IN %s AND
                         m.id NOT IN %s """
-        self._cr.execute(query, (tuple(self.ids), tuple(exclude_states), tuple(known_deps.ids or self.ids)))
+        self._cr.execute(query, (tuple(self.ids), tuple(
+            exclude_states), tuple(known_deps.ids or self.ids)))
         new_deps = self.browse([row[0] for row in self._cr.fetchall()])
         missing_mods = new_deps - known_deps
         known_deps |= new_deps
         if missing_mods:
-            known_deps |= missing_mods.upstream_dependencies(known_deps, exclude_states)
+            known_deps |= missing_mods.upstream_dependencies(
+                known_deps, exclude_states)
         return known_deps
 
     @api.multi
@@ -537,19 +587,22 @@ class Module(models.Model):
             module = todo[i]
             i += 1
             if module.state not in ('installed', 'to upgrade'):
-                raise UserError(_("Can not upgrade module '%s'. It is not installed.") % (module.name,))
+                raise UserError(
+                    _("Can not upgrade module '%s'. It is not installed.") % (module.name,))
             self.check_external_dependencies(module.name, 'to upgrade')
             for dep in Dependency.search([('name', '=', module.name)]):
                 if dep.module_id.state == 'installed' and dep.module_id not in todo:
                     todo.append(dep.module_id)
 
-        self.browse(module.id for module in todo).write({'state': 'to upgrade'})
+        self.browse(module.id for module in todo).write(
+            {'state': 'to upgrade'})
 
         to_install = []
         for module in todo:
             for dep in module.dependencies_id:
                 if dep.state == 'unknown':
-                    raise UserError(_('You try to upgrade the module %s that depends on the module: %s.\nBut this module is not available in your system.') % (module.name, dep.name,))
+                    raise UserError(_('You try to upgrade the module %s that depends on the module: %s.\nBut this module is not available in your system.') % (
+                        module.name, dep.name,))
                 if dep.state == 'uninstalled':
                     to_install += self.search([('name', '=', dep.name)]).ids
 
@@ -611,7 +664,8 @@ class Module(models.Model):
                 updated_values = {}
                 for key in values:
                     old = getattr(mod, key)
-                    updated = tools.ustr(values[key]) if isinstance(values[key], str) else values[key]
+                    updated = tools.ustr(values[key]) if isinstance(
+                        values[key], str) else values[key]
                     if (old or updated) and updated != old:
                         updated_values[key] = values[key]
                 if terp.get('installable', True) and mod.state == 'uninstallable':
@@ -626,7 +680,8 @@ class Module(models.Model):
                     continue
                 if not terp or not terp.get('installable', True):
                     continue
-                mod = self.create(dict(name=mod_name, state='uninstalled', **values))
+                mod = self.create(
+                    dict(name=mod_name, state='uninstalled', **values))
                 res[1] += 1
 
             mod._update_dependencies(terp.get('depends', []))
@@ -668,11 +723,13 @@ class Module(models.Model):
                     raise AccessDenied()
 
                 try:
-                    _logger.info('Downloading module `%s` from OpenERP Apps', module_name)
+                    _logger.info(
+                        'Downloading module `%s` from OpenERP Apps', module_name)
                     content = urllib.request.urlopen(url).read()
                 except Exception:
                     _logger.exception('Failed to fetch module %s', module_name)
-                    raise UserError(_('The `%s` module appears to be unavailable at the moment, please try again later.') % module_name)
+                    raise UserError(
+                        _('The `%s` module appears to be unavailable at the moment, please try again later.') % module_name)
                 else:
                     zipfile.ZipFile(StringIO(content)).extractall(tmp)
                     assert os.path.isdir(os.path.join(tmp, module_name))
@@ -681,9 +738,11 @@ class Module(models.Model):
             for module_name, url in urls.items():
                 if module_name == OPENERP or not url:
                     continue    # OPENERP is special case, handled below, and no URL means local module
-                module_path = modules.get_module_path(module_name, downloaded=True, display_warning=False)
+                module_path = modules.get_module_path(
+                    module_name, downloaded=True, display_warning=False)
                 bck = backup(module_path, False)
-                _logger.info('Copy downloaded module `%s` to `%s`', module_name, module_path)
+                _logger.info('Copy downloaded module `%s` to `%s`',
+                             module_name, module_path)
                 shutil.move(os.path.join(tmp, module_name), module_path)
                 if bck:
                     shutil.rmtree(bck)
@@ -694,27 +753,33 @@ class Module(models.Model):
                 # extract path is not the same
                 base_path = os.path.dirname(modules.get_module_path('base'))
 
-                # copy all modules in the SERVER/odoo/addons directory to the new "odoo" module (except base itself)
+                # copy all modules in the SERVER/odoo/addons directory to the
+                # new "odoo" module (except base itself)
                 for d in os.listdir(base_path):
                     if d != 'base' and os.path.isdir(os.path.join(base_path, d)):
-                        destdir = os.path.join(tmp, OPENERP, 'addons', d)    # XXX 'odoo' subdirectory ?
+                        # XXX 'odoo' subdirectory ?
+                        destdir = os.path.join(tmp, OPENERP, 'addons', d)
                         shutil.copytree(os.path.join(base_path, d), destdir)
 
                 # then replace the server by the new "base" module
                 server_dir = tools.config['root_path']      # XXX or dirname()
                 bck = backup(server_dir)
-                _logger.info('Copy downloaded module `odoo` to `%s`', server_dir)
+                _logger.info(
+                    'Copy downloaded module `odoo` to `%s`', server_dir)
                 shutil.move(os.path.join(tmp, OPENERP), server_dir)
-                #if bck:
+                # if bck:
                 #    shutil.rmtree(bck)
 
             self.update_list()
 
-            with_urls = [module_name for module_name, url in urls.items() if url]
+            with_urls = [module_name for module_name,
+                         url in urls.items() if url]
             downloaded = self.search([('name', 'in', with_urls)])
-            installed = self.search([('id', 'in', downloaded.ids), ('state', '=', 'installed')])
+            installed = self.search(
+                [('id', 'in', downloaded.ids), ('state', '=', 'installed')])
 
-            to_install = self.search([('name', 'in', list(urls.keys())), ('state', '=', 'uninstalled')])
+            to_install = self.search(
+                [('name', 'in', list(urls.keys())), ('state', '=', 'uninstalled')])
             post_install_action = to_install.button_immediate_install()
 
             if installed or to_install:
@@ -739,9 +804,11 @@ class Module(models.Model):
         existing = set(dep.name for dep in self.dependencies_id)
         needed = set(depends or [])
         for dep in (needed - existing):
-            self._cr.execute('INSERT INTO ir_module_module_dependency (module_id, name) values (%s, %s)', (self.id, dep))
+            self._cr.execute(
+                'INSERT INTO ir_module_module_dependency (module_id, name) values (%s, %s)', (self.id, dep))
         for dep in (existing - needed):
-            self._cr.execute('DELETE FROM ir_module_module_dependency WHERE module_id = %s and name = %s', (self.id, dep))
+            self._cr.execute(
+                'DELETE FROM ir_module_module_dependency WHERE module_id = %s and name = %s', (self.id, dep))
         self.invalidate_cache(['dependencies_id'], self.ids)
 
     def _update_category(self, category='Uncategorized'):
@@ -763,14 +830,16 @@ class Module(models.Model):
             filter_lang = [lang.code for lang in langs]
         elif not isinstance(filter_lang, (list, tuple)):
             filter_lang = [filter_lang]
-        mod_names = [mod.name for mod in self if mod.state in ('installed', 'to install', 'to upgrade')]
+        mod_names = [mod.name for mod in self if mod.state in (
+            'installed', 'to install', 'to upgrade')]
         self.env['ir.translation'].load_module_terms(mod_names, filter_lang)
 
     @api.multi
     def check(self):
         for module in self:
             if not module.description:
-                _logger.warning('module %s: description is empty !', module.name)
+                _logger.warning(
+                    'module %s: description is empty !', module.name)
 
     @api.model
     @tools.ormcache()
@@ -784,6 +853,7 @@ class Module(models.Model):
 
 DEP_STATES = STATES + [('unknown', 'Unknown')]
 
+
 class ModuleDependency(models.Model):
     _name = "ir.module.module.dependency"
     _description = "Module dependency"
@@ -792,11 +862,14 @@ class ModuleDependency(models.Model):
     name = fields.Char(index=True)
 
     # the module that depends on it
-    module_id = fields.Many2one('ir.module.module', 'Module', ondelete='cascade')
+    module_id = fields.Many2one(
+        'ir.module.module', 'Module', ondelete='cascade')
 
     # the module corresponding to the dependency, and its status
-    depend_id = fields.Many2one('ir.module.module', 'Dependency', compute='_compute_depend')
-    state = fields.Selection(DEP_STATES, string='Status', compute='_compute_state')
+    depend_id = fields.Many2one(
+        'ir.module.module', 'Dependency', compute='_compute_depend')
+    state = fields.Selection(
+        DEP_STATES, string='Status', compute='_compute_state')
 
     @api.multi
     @api.depends('name')

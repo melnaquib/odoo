@@ -33,7 +33,7 @@ else:
 try:
     from setproctitle import setproctitle
 except ImportError:
-    setproctitle = lambda x: None
+    def setproctitle(x): return None
 
 import odoo
 from odoo.modules.registry import Registry
@@ -52,6 +52,7 @@ except ImportError:
 
 SLEEP_INTERVAL = 60     # 1 min
 
+
 def memory_info(process):
     """ psutil < 2.0 does not have memory_info, >= 3.0 does not have
     get_memory_info """
@@ -61,25 +62,32 @@ def memory_info(process):
 #----------------------------------------------------------
 # Werkzeug WSGI servers patched
 #----------------------------------------------------------
+
+
 class LoggingBaseWSGIServerMixIn(object):
     def handle_error(self, request, client_address):
         t, e, _ = sys.exc_info()
         if t == socket.error and e.errno == errno.EPIPE:
             # broken pipe, ignore error
             return
-        _logger.exception('Exception happened during processing of request from %s', client_address)
+        _logger.exception(
+            'Exception happened during processing of request from %s', client_address)
+
 
 class BaseWSGIServerNoBind(LoggingBaseWSGIServerMixIn, werkzeug.serving.BaseWSGIServer):
     """ werkzeug Base WSGI Server patched to skip socket binding. PreforkServer
     use this class, sets the socket and calls the process_request() manually
     """
+
     def __init__(self, app):
         werkzeug.serving.BaseWSGIServer.__init__(self, "1", "1", app)
+
     def server_bind(self):
         # we dont bind beause we use the listen socket of PreforkServer#socket
         # instead we close the socket
         if self.socket:
             self.socket.close()
+
     def server_activate(self):
         # dont listen as we use PreforkServer#socket
         pass
@@ -96,11 +104,13 @@ class RequestHandler(werkzeug.serving.WSGIRequestHandler):
 # should also work with systemd socket activation. This is currently untested
 # and not yet used.
 
+
 class ThreadedWSGIServerReloadable(LoggingBaseWSGIServerMixIn, werkzeug.serving.ThreadedWSGIServer):
     """ werkzeug Threaded WSGI Server patched to allow reusing a listen socket
     given by the environement, this is used by autoreload to keep the listen
     socket open when a reload happens.
     """
+
     def __init__(self, host, port, app):
         super(ThreadedWSGIServerReloadable, self).__init__(host, port, app,
                                                            handler=RequestHandler)
@@ -109,7 +119,8 @@ class ThreadedWSGIServerReloadable(LoggingBaseWSGIServerMixIn, werkzeug.serving.
         envfd = os.environ.get('LISTEN_FDS')
         if envfd and os.environ.get('LISTEN_PID') == str(os.getpid()):
             self.reload_socket = True
-            self.socket = socket.fromfd(int(envfd), socket.AF_INET, socket.SOCK_STREAM)
+            self.socket = socket.fromfd(
+                int(envfd), socket.AF_INET, socket.SOCK_STREAM)
             # should we os.close(int(envfd)) ? it seem python duplicate the fd.
         else:
             self.reload_socket = False
@@ -122,6 +133,8 @@ class ThreadedWSGIServerReloadable(LoggingBaseWSGIServerMixIn, werkzeug.serving.
 #----------------------------------------------------------
 # FileSystem Watcher for autoreload and cache invalidation
 #----------------------------------------------------------
+
+
 class FSWatcher(object):
     def __init__(self):
         self.observer = Observer()
@@ -138,9 +151,11 @@ class FSWatcher(object):
                         source = open(path, 'rb').read() + '\n'
                         compile(source, path, 'exec')
                     except SyntaxError:
-                        _logger.error('autoreload: python code change detected, SyntaxError in %s', path)
+                        _logger.error(
+                            'autoreload: python code change detected, SyntaxError in %s', path)
                     else:
-                        _logger.info('autoreload: python code updated, autoreload activated')
+                        _logger.info(
+                            'autoreload: python code updated, autoreload activated')
                         restart()
 
     def start(self):
@@ -154,6 +169,7 @@ class FSWatcher(object):
 #----------------------------------------------------------
 # Servers: Threaded, Gevented and Prefork
 #----------------------------------------------------------
+
 
 class CommonServer(object):
     def __init__(self, app):
@@ -185,6 +201,7 @@ class CommonServer(object):
             if e.errno != errno.ENOTCONN or platform.system() not in ['Darwin', 'Windows']:
                 raise
         sock.close()
+
 
 class ThreadedServer(CommonServer):
     def __init__(self, app):
@@ -218,11 +235,13 @@ class ThreadedServer(CommonServer):
             for db_name, registry in registries.items():
                 while registry.ready:
                     try:
-                        acquired = odoo.addons.base.ir.ir_cron.ir_cron._acquire_job(db_name)
+                        acquired = odoo.addons.base.ir.ir_cron.ir_cron._acquire_job(
+                            db_name)
                         if not acquired:
                             break
                     except Exception:
-                        _logger.warning('cron%d encountered an Exception:', number, exc_info=True)
+                        _logger.warning(
+                            'cron%d encountered an Exception:', number, exc_info=True)
                         break
 
     def cron_spawn(self):
@@ -240,7 +259,8 @@ class ThreadedServer(CommonServer):
         for i in range(odoo.tools.config['max_cron_threads']):
             def target():
                 self.cron_thread(i)
-            t = threading.Thread(target=target, name="odoo.service.cron.cron%d" % i)
+            t = threading.Thread(
+                target=target, name="odoo.service.cron.cron%d" % i)
             t.setDaemon(True)
             t.start()
             _logger.debug("cron%d started!" % i)
@@ -248,14 +268,17 @@ class ThreadedServer(CommonServer):
     def http_thread(self):
         def app(e, s):
             return self.app(e, s)
-        self.httpd = ThreadedWSGIServerReloadable(self.interface, self.port, app)
+        self.httpd = ThreadedWSGIServerReloadable(
+            self.interface, self.port, app)
         self.httpd.serve_forever()
 
     def http_spawn(self):
-        t = threading.Thread(target=self.http_thread, name="odoo.service.httpd")
+        t = threading.Thread(target=self.http_thread,
+                             name="odoo.service.httpd")
         t.setDaemon(True)
         t.start()
-        _logger.info('HTTP service (werkzeug) running on %s:%s', self.interface, self.port)
+        _logger.info('HTTP service (werkzeug) running on %s:%s',
+                     self.interface, self.port)
 
     def start(self, stop=False):
         _logger.debug("Setting signal handlers")
@@ -268,7 +291,8 @@ class ThreadedServer(CommonServer):
             signal.signal(signal.SIGUSR1, log_ormcache_stats)
         elif os.name == 'nt':
             import win32api
-            win32api.SetConsoleCtrlHandler(lambda sig: self.signal_handler(sig, None), 1)
+            win32api.SetConsoleCtrlHandler(
+                lambda sig: self.signal_handler(sig, None), 1)
 
         test_mode = config['test_enable'] or config['test_file']
         if test_mode or (config['xmlrpc'] and not stop):
@@ -283,7 +307,8 @@ class ThreadedServer(CommonServer):
         """ Shutdown the WSGI server. Wait for non deamon threads.
         """
         _logger.info("Initiating shutdown")
-        _logger.info("Hit CTRL-C again or send a second signal to force the shutdown.")
+        _logger.info(
+            "Hit CTRL-C again or send a second signal to force the shutdown.")
 
         if self.httpd:
             self.httpd.shutdown()
@@ -291,7 +316,8 @@ class ThreadedServer(CommonServer):
 
         # Manually join() all threads before calling sys.exit() to allow a second signal
         # to trigger _force_quit() in case some non-daemon threads won't exit cleanly.
-        # threading.Thread.join() should not mask signals (at least in python 2.5).
+        # threading.Thread.join() should not mask signals (at least in python
+        # 2.5).
         me = threading.currentThread()
         _logger.debug('current thread: %r', me)
         for thread in threading.enumerate():
@@ -335,6 +361,7 @@ class ThreadedServer(CommonServer):
     def reload(self):
         os.kill(self.pid, signal.SIGHUP)
 
+
 class GeventServer(CommonServer):
     def __init__(self, app):
         super(GeventServer, self).__init__(app)
@@ -348,7 +375,8 @@ class GeventServer(CommonServer):
             restart = True
         rss, vms = memory_info(psutil.Process(self.pid))
         if vms > config['limit_memory_soft']:
-            _logger.warning('LongPolling virtual memory limit reached: %s', vms)
+            _logger.warning(
+                'LongPolling virtual memory limit reached: %s', vms)
             restart = True
         if restart:
             # suicide !!
@@ -367,7 +395,8 @@ class GeventServer(CommonServer):
 
         # Set process memory limit as an extra safeguard
         _, hard = resource.getrlimit(resource.RLIMIT_AS)
-        resource.setrlimit(resource.RLIMIT_AS, (config['limit_memory_hard'], hard))
+        resource.setrlimit(resource.RLIMIT_AS,
+                           (config['limit_memory_hard'], hard))
 
         if os.name == 'posix':
             signal.signal(signal.SIGQUIT, dumpstacks)
@@ -375,11 +404,13 @@ class GeventServer(CommonServer):
 
         gevent.spawn(self.watchdog)
         self.httpd = WSGIServer((self.interface, self.port), self.app)
-        _logger.info('Evented Service (longpolling) running on %s:%s', self.interface, self.port)
+        _logger.info('Evented Service (longpolling) running on %s:%s',
+                     self.interface, self.port)
         try:
             self.httpd.serve_forever()
         except:
-            _logger.exception("Evented Service (longpolling): uncaught error during main loop")
+            _logger.exception(
+                "Evented Service (longpolling): uncaught error during main loop")
             raise
 
     def stop(self):
@@ -391,12 +422,14 @@ class GeventServer(CommonServer):
         self.start()
         self.stop()
 
+
 class PreforkServer(CommonServer):
     """ Multiprocessing inspired by (g)unicorn.
     PreforkServer (aka Multicorn) currently uses accept(2) as dispatching
     method between workers but we plan to replace it by a more intelligent
     dispatcher to will parse the first HTTP request line.
     """
+
     def __init__(self, app):
         # config
         self.address = config['xmlrpc'] and \
@@ -545,7 +578,8 @@ class PreforkServer(CommonServer):
     def sleep(self):
         try:
             # map of fd -> worker
-            fds = dict([(w.watchdog_pipe[0], w) for k, w in list(self.workers.items())])
+            fds = dict([(w.watchdog_pipe[0], w)
+                        for k, w in list(self.workers.items())])
             fd_in = list(fds.keys()) + [self.pipe[0]]
             # check for ping or internal wakeups
             ready = select.select(fd_in, [], [], self.beat)
@@ -621,7 +655,8 @@ class PreforkServer(CommonServer):
             self.stop()
             return rc
 
-        # Empty the cursor pool, we dont want them to be shared among forked workers.
+        # Empty the cursor pool, we dont want them to be shared among forked
+        # workers.
         odoo.sql_db.close_all()
 
         _logger.debug("Multiprocess starting")
@@ -642,8 +677,10 @@ class PreforkServer(CommonServer):
                 self.stop(False)
                 return -1
 
+
 class Worker(object):
     """ Workers """
+
     def __init__(self, multi):
         self.multi = multi
         self.watchdog_time = time.time()
@@ -658,7 +695,8 @@ class Worker(object):
         self.request_count = 0
 
     def setproctitle(self, title=""):
-        setproctitle('odoo: %s %s %s' % (self.__class__.__name__, self.pid, title))
+        setproctitle('odoo: %s %s %s' %
+                     (self.__class__.__name__, self.pid, title))
 
     def close(self):
         os.close(self.watchdog_pipe[0])
@@ -681,28 +719,36 @@ class Worker(object):
             self.alive = False
         # check for lifetime
         if self.request_count >= self.request_max:
-            _logger.info("Worker (%d) max request (%s) reached.", self.pid, self.request_count)
+            _logger.info("Worker (%d) max request (%s) reached.",
+                         self.pid, self.request_count)
             self.alive = False
-        # Reset the worker if it consumes too much memory (e.g. caused by a memory leak).
+        # Reset the worker if it consumes too much memory (e.g. caused by a
+        # memory leak).
         rss, vms = memory_info(psutil.Process(os.getpid()))
         if vms > config['limit_memory_soft']:
-            _logger.info('Worker (%d) virtual memory limit (%s) reached.', self.pid, vms)
+            _logger.info(
+                'Worker (%d) virtual memory limit (%s) reached.', self.pid, vms)
             self.alive = False      # Commit suicide after the request.
 
-        # VMS and RLIMIT_AS are the same thing: virtual memory, a.k.a. address space
+        # VMS and RLIMIT_AS are the same thing: virtual memory, a.k.a. address
+        # space
         soft, hard = resource.getrlimit(resource.RLIMIT_AS)
-        resource.setrlimit(resource.RLIMIT_AS, (config['limit_memory_hard'], hard))
+        resource.setrlimit(resource.RLIMIT_AS,
+                           (config['limit_memory_hard'], hard))
 
         # SIGXCPU (exceeded CPU time) signal handler will raise an exception.
         r = resource.getrusage(resource.RUSAGE_SELF)
         cpu_time = r.ru_utime + r.ru_stime
+
         def time_expired(n, stack):
-            _logger.info('Worker (%d) CPU time limit (%s) reached.', self.pid, config['limit_time_cpu'])
+            _logger.info('Worker (%d) CPU time limit (%s) reached.',
+                         self.pid, config['limit_time_cpu'])
             # We dont suicide in such case
             raise Exception('CPU time limit exceeded.')
         signal.signal(signal.SIGXCPU, time_expired)
         soft, hard = resource.getrlimit(resource.RLIMIT_CPU)
-        resource.setrlimit(resource.RLIMIT_CPU, (cpu_time + config['limit_time_cpu'], hard))
+        resource.setrlimit(resource.RLIMIT_CPU,
+                           (cpu_time + config['limit_time_cpu'], hard))
 
     def process_work(self):
         pass
@@ -715,7 +761,8 @@ class Worker(object):
         random.seed()
         if self.multi.socket:
             # Prevent fd inheritance: close_on_exec
-            flags = fcntl.fcntl(self.multi.socket, fcntl.F_GETFD) | fcntl.FD_CLOEXEC
+            flags = fcntl.fcntl(self.multi.socket,
+                                fcntl.F_GETFD) | fcntl.FD_CLOEXEC
             fcntl.fcntl(self.multi.socket, fcntl.F_SETFD, flags)
             # reset blocking status
             self.multi.socket.setblocking(0)
@@ -740,12 +787,15 @@ class Worker(object):
                          len(odoo.modules.registry.Registry.registries))
             self.stop()
         except Exception:
-            _logger.exception("Worker (%s) Exception occured, exiting..." % self.pid)
+            _logger.exception(
+                "Worker (%s) Exception occured, exiting..." % self.pid)
             # should we use 3 to abort everything ?
             sys.exit(1)
 
+
 class WorkerHTTP(Worker):
     """ HTTP Request workers """
+
     def process_request(self, client, addr):
         client.setblocking(1)
         client.settimeout(0.5)
@@ -776,6 +826,7 @@ class WorkerHTTP(Worker):
         Worker.start(self)
         self.server = BaseWSGIServerNoBind(self.multi.app)
 
+
 class WorkerCron(Worker):
     """ Cron workers """
 
@@ -785,7 +836,8 @@ class WorkerCron(Worker):
         # The variable db_index is keeping track of the next database to
         # process.
         self.db_index = 0
-        self.watchdog_timeout = multi.cron_timeout  # Use a distinct value for CRON Worker
+        # Use a distinct value for CRON Worker
+        self.watchdog_timeout = multi.cron_timeout
 
     def sleep(self):
         # Really sleep once all the databases have been processed.
@@ -846,7 +898,9 @@ class WorkerCron(Worker):
 # start/stop public api
 #----------------------------------------------------------
 
+
 server = None
+
 
 def load_server_wide_modules():
     for m in odoo.conf.server_wide_modules:
@@ -858,12 +912,15 @@ def load_server_wide_modules():
                 msg = """
 The `web` module is provided by the addons found in the `openerp-web` project.
 Maybe you forgot to add those addons in your addons_path configuration."""
-            _logger.exception('Failed to load server-wide module `%s`.%s', m, msg)
+            _logger.exception(
+                'Failed to load server-wide module `%s`.%s', m, msg)
+
 
 def _reexec(updated_modules=None):
     """reexecute openerp-server process with (nearly) the same arguments"""
     if odoo.tools.osutil.is_running_as_nt_service():
-        subprocess.call('net stop {0} && net start {0}'.format(nt_service_name), shell=True)
+        subprocess.call('net stop {0} && net start {0}'.format(
+            nt_service_name), shell=True)
     exe = os.path.basename(sys.executable)
     args = stripped_sys_argv()
     if updated_modules:
@@ -872,15 +929,18 @@ def _reexec(updated_modules=None):
         args.insert(0, exe)
     os.execv(sys.executable, args)
 
+
 def load_test_file_yml(registry, test_file):
     with registry.cursor() as cr:
-        odoo.tools.convert_yaml_import(cr, 'base', file(test_file), 'test', {}, 'init')
+        odoo.tools.convert_yaml_import(
+            cr, 'base', file(test_file), 'test', {}, 'init')
         if config['test_commit']:
             _logger.info('test %s has been commited', test_file)
             cr.commit()
         else:
             _logger.info('test %s has been rollbacked', test_file)
             cr.rollback()
+
 
 def load_test_file_py(registry, test_file):
     # Locate python module based on its filename and run the tests
@@ -892,14 +952,18 @@ def load_test_file_py(registry, test_file):
                 suite = unittest.TestSuite()
                 for t in unittest.TestLoader().loadTestsFromModule(mod_mod):
                     suite.addTest(t)
-                _logger.log(logging.INFO, 'running tests %s.', mod_mod.__name__)
+                _logger.log(logging.INFO, 'running tests %s.',
+                            mod_mod.__name__)
                 stream = odoo.modules.module.TestStream()
-                result = unittest.TextTestRunner(verbosity=2, stream=stream).run(suite)
+                result = unittest.TextTestRunner(
+                    verbosity=2, stream=stream).run(suite)
                 success = result.wasSuccessful()
-                if hasattr(registry._assertion_report,'report_result'):
+                if hasattr(registry._assertion_report, 'report_result'):
                     registry._assertion_report.report_result(success)
                 if not success:
-                    _logger.error('%s: at least one error occurred in a test', test_file)
+                    _logger.error(
+                        '%s: at least one error occurred in a test', test_file)
+
 
 def preload_registries(dbnames):
     """ Preload a registries, possibly run a test file."""
@@ -924,9 +988,11 @@ def preload_registries(dbnames):
             if registry._assertion_report.failures:
                 rc += 1
         except Exception:
-            _logger.critical('Failed to initialize database `%s`.', dbname, exc_info=True)
+            _logger.critical(
+                'Failed to initialize database `%s`.', dbname, exc_info=True)
             return -1
     return rc
+
 
 def start(preload=None, stop=False):
     """ Start the odoo http server and cron processor.
@@ -946,7 +1012,8 @@ def start(preload=None, stop=False):
             watcher = FSWatcher()
             watcher.start()
         else:
-            _logger.warning("'watchdog' module not installed. Code autoreload feature is disabled")
+            _logger.warning(
+                "'watchdog' module not installed. Code autoreload feature is disabled")
     if 'werkzeug' in config['dev_mode']:
         server.app = DebuggedApplication(server.app, evalex=True)
 
@@ -960,11 +1027,13 @@ def start(preload=None, stop=False):
 
     return rc if rc else 0
 
+
 def restart():
     """ Restart the server
     """
     if os.name == 'nt':
-        # run in a thread to let the current thread return response to the caller.
+        # run in a thread to let the current thread return response to the
+        # caller.
         threading.Thread(target=_reexec).start()
     else:
         os.kill(server.pid, signal.SIGHUP)

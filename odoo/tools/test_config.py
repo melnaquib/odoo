@@ -11,7 +11,8 @@ import os
 
 from . import config
 
-config_file_00 = os.path.join(os.path.dirname(__file__),'test-config-values-00.conf')
+config_file_00 = os.path.join(os.path.dirname(
+    __file__), 'test-config-values-00.conf')
 
 # 1. No config file, no command-line arguments (a.k.a. default values)
 
@@ -26,7 +27,8 @@ assert os.path.join(conf['root_path'], 'addons') == conf['addons_path']
 conf = config.configmanager()
 # mess with the optparse.Option definition to allow an invalid path
 conf.casts['addons_path'].action = 'store'
-conf.parse_config(['--addons-path=/xyz/dont-exist', '--osv-memory-age-limit=2.3'])
+conf.parse_config(['--addons-path=/xyz/dont-exist',
+                   '--osv-memory-age-limit=2.3'])
 
 assert conf['osv_memory_age_limit'] == 2.3
 assert conf['addons_path'] == '/xyz/dont-exist'

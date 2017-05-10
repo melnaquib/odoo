@@ -67,8 +67,8 @@ class test_integer_field(CreatorCase):
 
     def test_huge(self):
         self.assertEqual(
-            self.export(2**31-1),
-            [[str(2**31-1)]])
+            self.export(2**31 - 1),
+            [[str(2**31 - 1)]])
 
 
 class test_float_field(CreatorCase):
@@ -234,7 +234,8 @@ class test_datetime(CreatorCase):
         """
         # NOTE: ignores user timezone, always exports to UTC
         self.assertEqual(
-            self.export('2011-11-07 21:05:48', context={'tz': 'Pacific/Norfolk'}),
+            self.export('2011-11-07 21:05:48',
+                        context={'tz': 'Pacific/Norfolk'}),
             [['2011-11-07 21:05:48']])
 
 
@@ -400,15 +401,17 @@ class test_o2m(CreatorCase):
 
     def test_multiple_records_with_name_before(self):
         self.assertEqual(
-            self.export(self.commands, fields=['const', 'value', 'value/value']),
-            [[ # exports sub-fields of very first o2m
+            self.export(self.commands, fields=[
+                        'const', 'value', 'value/value']),
+            [[  # exports sub-fields of very first o2m
                 '4', ','.join(self.names), '4'
             ]])
 
     def test_multiple_records_with_name_after(self):
         self.assertEqual(
-            self.export(self.commands, fields=['const', 'value/value', 'value']),
-            [ # completely ignores name_get request
+            self.export(self.commands, fields=[
+                        'const', 'value/value', 'value']),
+            [  # completely ignores name_get request
                 ['4', '4', ''],
                 ['', '42', ''],
                 ['', '36', ''],
@@ -418,7 +421,8 @@ class test_o2m(CreatorCase):
 
     def test_multiple_subfields_neighbour(self):
         self.assertEqual(
-            self.export(self.commands, fields=['const', 'value/str','value/value']),
+            self.export(self.commands, fields=[
+                        'const', 'value/str', 'value/value']),
             [
                 ['4', 'record1', '4'],
                 ['', 'record2', '42'],
@@ -429,7 +433,8 @@ class test_o2m(CreatorCase):
 
     def test_multiple_subfields_separated(self):
         self.assertEqual(
-            self.export(self.commands, fields=['value/str', 'const', 'value/value']),
+            self.export(self.commands, fields=[
+                        'value/str', 'const', 'value/value']),
             [
                 ['record1', '4', '4'],
                 ['record2', '', '42'],
@@ -584,8 +589,8 @@ class test_m2m(CreatorCase):
     def test_multiple_records_name(self):
         self.assertEqual(
             self.export(self.commands, fields=['const', 'value']),
-            [[ # FIXME: hardcoded comma, import uses config.csv_internal_sep
-               # resolution: remove configurable csv_internal_sep
+            [[  # FIXME: hardcoded comma, import uses config.csv_internal_sep
+                # resolution: remove configurable csv_internal_sep
                 '4', ','.join(self.names)
             ]])
 

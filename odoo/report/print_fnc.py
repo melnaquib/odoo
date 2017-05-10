@@ -10,6 +10,8 @@ functions = {
 #
 # TODO: call an object internal function too
 #
+
+
 def print_fnc(fnc, arg):
     if fnc in functions:
         return functions[fnc](arg)

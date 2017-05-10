@@ -79,7 +79,8 @@ class Registry(Mapping):
                 try:
                     registry.setup_signaling()
                     # This should be a method on Registry
-                    odoo.modules.load_modules(registry._db, force_demo, status, update_module)
+                    odoo.modules.load_modules(
+                        registry._db, force_demo, status, update_module)
                 except Exception:
                     _logger.exception('Failed to load registry')
                     del cls.registries[db_name]
@@ -99,7 +100,8 @@ class Registry(Mapping):
         registry.ready = True
 
         if update_module:
-            # only in case of update, otherwise we'll have an infinite reload loop!
+            # only in case of update, otherwise we'll have an infinite reload
+            # loop!
             registry.signal_registry_change()
         return registry
 
@@ -111,7 +113,8 @@ class Registry(Mapping):
         self._assertion_report = assertion_report.assertion_report()
         self._fields_by_model = None
 
-        # modules fully loaded (maintained during init phase by `loading` module)
+        # modules fully loaded (maintained during init phase by `loading`
+        # module)
         self._init_modules = set()
 
         self.db_name = db_name
@@ -120,7 +123,7 @@ class Registry(Mapping):
         # special cursor for test mode; None means "normal" mode
         self.test_cr = None
 
-        # Indicates that the registry is 
+        # Indicates that the registry is
         self.ready = False
 
         # Inter-process signaling (used only when odoo.multi_process is True):
@@ -139,7 +142,8 @@ class Registry(Mapping):
         with closing(self.cursor()) as cr:
             has_unaccent = odoo.modules.db.has_unaccent(cr)
             if odoo.tools.config['unaccent'] and not has_unaccent:
-                _logger.warning("The option --unaccent was given but no unaccent() function was found in database.")
+                _logger.warning(
+                    "The option --unaccent was given but no unaccent() function was found in database.")
             self.has_unaccent = odoo.tools.config['unaccent'] and has_unaccent
 
     @classmethod
@@ -193,7 +197,8 @@ class Registry(Mapping):
             for model in self.values()
             for field in model._fields.values()
         }
-        # sort them topologically, and associate a sequence number to each field
+        # sort them topologically, and associate a sequence number to each
+        # field
         mapping = {
             field: num
             for num, field in enumerate(reversed(topological_sort(dependents)))
@@ -209,7 +214,8 @@ class Registry(Mapping):
         if self._fields_by_model is None:
             # Query manual fields for all models at once
             self._fields_by_model = dic = defaultdict(dict)
-            cr.execute('SELECT * FROM ir_model_fields WHERE state=%s', ('manual',))
+            cr.execute(
+                'SELECT * FROM ir_model_fields WHERE state=%s', ('manual',))
             for field in cr.dictfetchall():
                 dic[field['model']][field['name']] = field
         return self._fields_by_model[model_name]
@@ -303,7 +309,8 @@ class Registry(Mapping):
              - ``update_custom_fields``: whether custom fields should be updated.
         """
         if 'module' in context:
-            _logger.info('module %s: creating or updating database tables', context['module'])
+            _logger.info(
+                'module %s: creating or updating database tables', context['module'])
 
         context = dict(context, todo=[])
         env = odoo.api.Environment(cr, SUPERUSER_ID, context)
@@ -361,11 +368,14 @@ class Registry(Mapping):
             # must be reloaded.
             # The `base_cache_signaling` sequence indicates when all caches must
             # be invalidated (i.e. cleared).
-            cr.execute("SELECT sequence_name FROM information_schema.sequences WHERE sequence_name='base_registry_signaling'")
+            cr.execute(
+                "SELECT sequence_name FROM information_schema.sequences WHERE sequence_name='base_registry_signaling'")
             if not cr.fetchall():
-                cr.execute("CREATE SEQUENCE base_registry_signaling INCREMENT BY 1 START WITH 1")
+                cr.execute(
+                    "CREATE SEQUENCE base_registry_signaling INCREMENT BY 1 START WITH 1")
                 cr.execute("SELECT nextval('base_registry_signaling')")
-                cr.execute("CREATE SEQUENCE base_cache_signaling INCREMENT BY 1 START WITH 1")
+                cr.execute(
+                    "CREATE SEQUENCE base_cache_signaling INCREMENT BY 1 START WITH 1")
                 cr.execute("SELECT nextval('base_cache_signaling')")
 
             cr.execute(""" SELECT base_registry_signaling.last_value,
@@ -391,11 +401,13 @@ class Registry(Mapping):
                           self.registry_sequence, r, self.cache_sequence, c)
             # Check if the model registry must be reloaded
             if self.registry_sequence != r:
-                _logger.info("Reloading the model registry after database signaling.")
+                _logger.info(
+                    "Reloading the model registry after database signaling.")
                 self = Registry.new(self.db_name)
             # Check if the model caches must be invalidated.
             elif self.cache_sequence != c:
-                _logger.info("Invalidating all model caches after database signaling.")
+                _logger.info(
+                    "Invalidating all model caches after database signaling.")
                 self.clear_caches()
                 self.cache_cleared = False
             self.registry_sequence = r
@@ -415,7 +427,8 @@ class Registry(Mapping):
         """ Notifies other processes if caches have been invalidated. """
         if odoo.multi_process and self.cache_cleared:
             # signal it through the database to other processes
-            _logger.info("At least one model cache has been invalidated, signaling through the database.")
+            _logger.info(
+                "At least one model cache has been invalidated, signaling through the database.")
             with closing(self.cursor()) as cr:
                 cr.execute("select nextval('base_cache_signaling')")
                 self.cache_sequence = cr.fetchone()[0]
@@ -460,12 +473,16 @@ class Registry(Mapping):
 
 class DummyRLock(object):
     """ Dummy reentrant lock, to be used while running rpc and js tests """
+
     def acquire(self):
         pass
+
     def release(self):
         pass
+
     def __enter__(self):
         self.acquire()
+
     def __exit__(self, type, value, traceback):
         self.release()
 

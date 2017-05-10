@@ -5,6 +5,7 @@ class assertion_report(object):
     `assert` tags as well as unittest tests outcome (in this case, not
     individual `assert`)).
     """
+
     def __init__(self):
         self.successes = 0
         self.failures = 0
@@ -24,5 +25,6 @@ class assertion_report(object):
             self.record_failure()
 
     def __str__(self):
-        res = 'Assertions report: %s successes, %s failures' % (self.successes, self.failures)
+        res = 'Assertions report: %s successes, %s failures' % (
+            self.successes, self.failures)
         return res

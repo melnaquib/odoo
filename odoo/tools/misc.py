@@ -38,7 +38,7 @@ except ImportError:
 
 from .config import config
 from .cache import *
-from .parse_version import parse_version 
+from .parse_version import parse_version
 
 import odoo
 # get_encodings, ustr and exception_to_unicode were originally from tools.misc.
@@ -48,8 +48,10 @@ from odoo.loglevels import get_encodings, ustr, exception_to_unicode     # noqa
 _logger = logging.getLogger(__name__)
 
 # List of etree._Element subclasses that we choose to ignore when parsing XML.
-# We include the *Base ones just in case, currently they seem to be subclasses of the _* ones.
-SKIPPED_ELEMENT_TYPES = (etree._Comment, etree._ProcessingInstruction, etree.CommentBase, etree.PIBase, etree._Entity)
+# We include the *Base ones just in case, currently they seem to be
+# subclasses of the _* ones.
+SKIPPED_ELEMENT_TYPES = (etree._Comment, etree._ProcessingInstruction,
+                         etree.CommentBase, etree.PIBase, etree._Entity)
 
 # Configure default global parser
 etree.set_default_parser(etree.XMLParser(resolve_entities=False))
@@ -58,19 +60,23 @@ etree.set_default_parser(etree.XMLParser(resolve_entities=False))
 # Subprocesses
 #----------------------------------------------------------
 
+
 def find_in_path(name):
     path = os.environ.get('PATH', os.defpath).split(os.pathsep)
     if config.get('bin_path') and config['bin_path'] != 'None':
         path.append(config['bin_path'])
     return which(name, path=os.pathsep.join(path))
 
+
 def _exec_pipe(prog, args, env=None):
     cmd = (prog,) + args
     # on win32, passing close_fds=True is not compatible
     # with redirecting std[in/err/out]
-    close_fds = os.name=="posix"
-    pop = subprocess.Popen(cmd, bufsize=-1, stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=close_fds, env=env)
+    close_fds = os.name == "posix"
+    pop = subprocess.Popen(cmd, bufsize=-1, stdin=subprocess.PIPE,
+                           stdout=subprocess.PIPE, close_fds=close_fds, env=env)
     return pop.stdin, pop.stdout
+
 
 def exec_command_pipe(name, *args):
     prog = find_in_path(name)
@@ -82,6 +88,7 @@ def exec_command_pipe(name, *args):
 # Postgres subprocesses
 #----------------------------------------------------------
 
+
 def find_pg_tool(name):
     path = None
     if config['pg_path'] and config['pg_path'] != 'None':
@@ -90,6 +97,7 @@ def find_pg_tool(name):
         return which(name, path=path)
     except IOError:
         raise Exception('Command `%s` not found.' % name)
+
 
 def exec_pg_environ():
     """
@@ -114,14 +122,17 @@ def exec_pg_environ():
         env['PGPASSWORD'] = odoo.tools.config['db_password']
     return env
 
+
 def exec_pg_command(name, *args):
     prog = find_pg_tool(name)
     env = exec_pg_environ()
     with open(os.devnull) as dn:
         args2 = (prog,) + args
-        rc = subprocess.call(args2, env=env, stdout=dn, stderr=subprocess.STDOUT)
+        rc = subprocess.call(args2, env=env, stdout=dn,
+                             stderr=subprocess.STDOUT)
         if rc:
             raise Exception('Postgres subprocess %s error %s' % (args2, rc))
+
 
 def exec_pg_command_pipe(name, *args):
     prog = find_pg_tool(name)
@@ -134,11 +145,12 @@ def exec_pg_command_pipe(name, *args):
 #file_path_root = os.getcwd()
 #file_path_addons = os.path.join(file_path_root, 'addons')
 
+
 def file_open(name, mode="r", subdir='addons', pathinfo=False):
     """Open a file from the OpenERP root, using a subdir folder.
 
     Example::
-    
+
     >>> file_open('hr/report/timesheer.xsl')
     >>> file_open('addons/hr/report/timesheet.xsl')
     >>> file_open('../../base/report/rml_template.xsl', subdir='addons/hr/report', pathinfo=True)
@@ -276,9 +288,10 @@ def flatten(list):
             r.append(e)
     return r
 
+
 def reverse_enumerate(l):
     """Like enumerate but in the other sens
-    
+
     Usage::
     >>> a = ['a', 'b', 'c']
     >>> it = reverse_enumerate(a)
@@ -293,7 +306,8 @@ def reverse_enumerate(l):
       File "<stdin>", line 1, in <module>
     StopIteration
     """
-    return zip(range(len(l)-1, -1, -1), reversed(l))
+    return zip(range(len(l) - 1, -1, -1), reversed(l))
+
 
 def partition(pred, elems):
     """ Return a pair equivalent to:
@@ -302,6 +316,7 @@ def partition(pred, elems):
     for elem in elems:
         (yes if pred(elem) else nos).append(elem)
     return yes, nos
+
 
 def topological_sort(elems):
     """ Return a list of elements sorted so that their dependencies are listed
@@ -470,8 +485,10 @@ class UpdateableDict(local):
     def __ne__(self, y):
         return self.dict.__ne__(y)
 
+
 def to_xml(s):
-    return s.replace('&','&amp;').replace('<','&lt;').replace('>','&gt;')
+    return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+
 
 def get_iso_codes(lang):
     if lang.find('_') != -1:
@@ -479,13 +496,15 @@ def get_iso_codes(lang):
             lang = lang.split('_')[0]
     return lang
 
+
 def scan_languages():
     """ Returns all languages supported by OpenERP for translation
 
     :returns: a list of (lang_code, lang_name) pairs
     :rtype: [(str, unicode)]
     """
-    csvpath = odoo.modules.module.get_resource_path('base', 'res', 'res.lang.csv')
+    csvpath = odoo.modules.module.get_resource_path(
+        'base', 'res', 'res.lang.csv')
     try:
         # read (code, name) from languages in base/res/res.lang.csv
         result = []
@@ -502,11 +521,13 @@ def scan_languages():
 
     return sorted(result or [('en_US', 'English')], key=itemgetter(1))
 
+
 def get_user_companies(cr, user):
     def _get_company_children(cr, ids):
         if not ids:
             return []
-        cr.execute('SELECT id FROM res_company WHERE parent_id IN %s', (tuple(ids),))
+        cr.execute(
+            'SELECT id FROM res_company WHERE parent_id IN %s', (tuple(ids),))
         res = [x[0] for x in cr.fetchall()]
         res.extend(_get_company_children(cr, res))
         return res
@@ -516,20 +537,22 @@ def get_user_companies(cr, user):
         return []
     return [user_comp] + _get_company_children(cr, [user_comp])
 
+
 def mod10r(number):
     """
     Input number : account or invoice number
     Output return: the same number completed with the recursive mod10
     key
     """
-    codec=[0,9,4,6,8,2,7,1,3,5]
+    codec = [0, 9, 4, 6, 8, 2, 7, 1, 3, 5]
     report = 0
-    result=""
+    result = ""
     for digit in number:
         result += digit
         if digit.isdigit():
-            report = codec[ (int(digit) + report) % 10 ]
+            report = codec[(int(digit) + report) % 10]
     return result + str((10 - report) % 10)
+
 
 def str2bool(s, default=None):
     s = ustr(s).lower()
@@ -541,6 +564,7 @@ def str2bool(s, default=None):
         return bool(default)
     return s in y
 
+
 def human_size(sz):
     """
     Return the size in a human readable format
@@ -548,13 +572,14 @@ def human_size(sz):
     if not sz:
         return False
     units = ('bytes', 'Kb', 'Mb', 'Gb')
-    if isinstance(sz,str):
-        sz=len(sz)
+    if isinstance(sz, str):
+        sz = len(sz)
     s, i = float(sz), 0
-    while s >= 1024 and i < len(units)-1:
+    while s >= 1024 and i < len(units) - 1:
         s /= 1024
         i += 1
     return "%0.2f %s" % (s, units[i])
+
 
 def logged(f):
     @wraps(f)
@@ -577,6 +602,7 @@ def logged(f):
 
     return wrapper
 
+
 class profile(object):
     def __init__(self, fname=None):
         self.fname = fname
@@ -590,6 +616,7 @@ class profile(object):
             return result
 
         return wrapper
+
 
 def detect_ip_addr():
     """Try a very crude method to figure out a valid external
@@ -608,31 +635,34 @@ def detect_ip_addr():
 
         ip_addr = None
 
-        if not fcntl: # not UNIX:
+        if not fcntl:  # not UNIX:
             host = socket.gethostname()
             ip_addr = socket.gethostbyname(host)
-        else: # UNIX:
+        else:  # UNIX:
             # get all interfaces:
             nbytes = 128 * 32
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             names = array('B', '\0' * nbytes)
-            #print 'names: ', names
-            outbytes = unpack('iL', fcntl.ioctl( s.fileno(), 0x8912, pack('iL', nbytes, names.buffer_info()[0])))[0]
+            # print 'names: ', names
+            outbytes = unpack('iL', fcntl.ioctl(
+                s.fileno(), 0x8912, pack('iL', nbytes, names.buffer_info()[0])))[0]
             namestr = names.tostring()
 
             # try 64 bit kernel:
             for i in range(0, outbytes, 40):
-                name = namestr[i:i+16].split('\0', 1)[0]
+                name = namestr[i:i + 16].split('\0', 1)[0]
                 if name != 'lo':
-                    ip_addr = socket.inet_ntoa(namestr[i+20:i+24])
+                    ip_addr = socket.inet_ntoa(namestr[i + 20:i + 24])
                     break
 
             # try 32 bit kernel:
             if ip_addr is None:
-                ifaces = [_f for _f in [namestr[i:i+32].split('\0', 1)[0] for i in range(0, outbytes, 32)] if _f]
+                ifaces = [_f for _f in [
+                    namestr[i:i + 32].split('\0', 1)[0] for i in range(0, outbytes, 32)] if _f]
 
                 for ifname in [iface for iface in ifaces if iface != 'lo']:
-                    ip_addr = socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, pack('256s', ifname[:15]))[20:24])
+                    ip_addr = socket.inet_ntoa(fcntl.ioctl(
+                        s.fileno(), 0x8915, pack('256s', ifname[:15]))[20:24])
                     break
 
         return ip_addr or 'localhost'
@@ -642,6 +672,7 @@ def detect_ip_addr():
     except Exception:
         ip_addr = 'localhost'
     return ip_addr
+
 
 DEFAULT_SERVER_DATE_FORMAT = "%Y-%m-%d"
 DEFAULT_SERVER_TIME_FORMAT = "%H:%M:%S"
@@ -655,43 +686,43 @@ DEFAULT_SERVER_DATETIME_FORMAT = "%s %s" % (
 # the C standard (1989 version), always available on platforms
 # with a C standard implementation.
 DATETIME_FORMATS_MAP = {
-        '%C': '', # century
-        '%D': '%m/%d/%Y', # modified %y->%Y
-        '%e': '%d',
-        '%E': '', # special modifier
-        '%F': '%Y-%m-%d',
-        '%g': '%Y', # modified %y->%Y
-        '%G': '%Y',
-        '%h': '%b',
-        '%k': '%H',
-        '%l': '%I',
-        '%n': '\n',
-        '%O': '', # special modifier
-        '%P': '%p',
-        '%R': '%H:%M',
-        '%r': '%I:%M:%S %p',
-        '%s': '', #num of seconds since epoch
-        '%T': '%H:%M:%S',
-        '%t': ' ', # tab
-        '%u': ' %w',
-        '%V': '%W',
-        '%y': '%Y', # Even if %y works, it's ambiguous, so we should use %Y
-        '%+': '%Y-%m-%d %H:%M:%S',
+    '%C': '',  # century
+    '%D': '%m/%d/%Y',  # modified %y->%Y
+    '%e': '%d',
+    '%E': '',  # special modifier
+    '%F': '%Y-%m-%d',
+    '%g': '%Y',  # modified %y->%Y
+    '%G': '%Y',
+    '%h': '%b',
+    '%k': '%H',
+    '%l': '%I',
+    '%n': '\n',
+    '%O': '',  # special modifier
+    '%P': '%p',
+    '%R': '%H:%M',
+    '%r': '%I:%M:%S %p',
+    '%s': '',  # num of seconds since epoch
+    '%T': '%H:%M:%S',
+    '%t': ' ',  # tab
+    '%u': ' %w',
+    '%V': '%W',
+    '%y': '%Y',  # Even if %y works, it's ambiguous, so we should use %Y
+    '%+': '%Y-%m-%d %H:%M:%S',
 
-        # %Z is a special case that causes 2 problems at least:
-        #  - the timezone names we use (in res_user.context_tz) come
-        #    from pytz, but not all these names are recognized by
-        #    strptime(), so we cannot convert in both directions
-        #    when such a timezone is selected and %Z is in the format
-        #  - %Z is replaced by an empty string in strftime() when
-        #    there is not tzinfo in a datetime value (e.g when the user
-        #    did not pick a context_tz). The resulting string does not
-        #    parse back if the format requires %Z.
-        # As a consequence, we strip it completely from format strings.
-        # The user can always have a look at the context_tz in
-        # preferences to check the timezone.
-        '%z': '',
-        '%Z': '',
+    # %Z is a special case that causes 2 problems at least:
+    #  - the timezone names we use (in res_user.context_tz) come
+    #    from pytz, but not all these names are recognized by
+    #    strptime(), so we cannot convert in both directions
+    #    when such a timezone is selected and %Z is in the format
+    #  - %Z is replaced by an empty string in strftime() when
+    #    there is not tzinfo in a datetime value (e.g when the user
+    #    did not pick a context_tz). The resulting string does not
+    #    parse back if the format requires %Z.
+    # As a consequence, we strip it completely from format strings.
+    # The user can always have a look at the context_tz in
+    # preferences to check the timezone.
+    '%z': '',
+    '%Z': '',
 }
 
 POSIX_TO_LDML = {
@@ -719,6 +750,7 @@ POSIX_TO_LDML = {
     #'Z': 'z',
 }
 
+
 def posix_to_ldml(fmt, locale):
     """ Converts a posix/strftime pattern into an LDML date format pattern.
 
@@ -742,13 +774,13 @@ def posix_to_ldml(fmt, locale):
             quoted = []
 
         if pc:
-            if c == '%': # escaped percent
+            if c == '%':  # escaped percent
                 buf.append('%')
-            elif c == 'x': # date format, short seems to match
+            elif c == 'x':  # date format, short seems to match
                 buf.append(locale.date_formats['short'].pattern)
-            elif c == 'X': # time format, seems to include seconds. short does not
+            elif c == 'X':  # time format, seems to include seconds. short does not
                 buf.append(locale.time_formats['medium'].pattern)
-            else: # look up format char in static mapping
+            else:  # look up format char in static mapping
                 buf.append(POSIX_TO_LDML[c])
             pc = False
         elif c == '%':
@@ -764,6 +796,7 @@ def posix_to_ldml(fmt, locale):
 
     return ''.join(buf)
 
+
 def split_every(n, iterable, piece_maker=tuple):
     """Splits an iterable into length-n pieces. The last piece will be shorter
        if ``n`` does not evenly divide the iterable length.
@@ -776,28 +809,36 @@ def split_every(n, iterable, piece_maker=tuple):
         yield piece
         piece = piece_maker(islice(iterator, n))
 
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
 
+
 class upload_data_thread(threading.Thread):
     def __init__(self, email, data, type):
-        self.args = [('email',email),('type',type),('data',data)]
-        super(upload_data_thread,self).__init__()
+        self.args = [('email', email), ('type', type), ('data', data)]
+        super(upload_data_thread, self).__init__()
+
     def run(self):
         try:
-            import urllib.request, urllib.parse, urllib.error
+            import urllib.request
+            import urllib.parse
+            import urllib.error
             args = urllib.parse.urlencode(self.args)
-            fp = urllib.request.urlopen('http://www.openerp.com/scripts/survey.php', args)
+            fp = urllib.request.urlopen(
+                'http://www.openerp.com/scripts/survey.php', args)
             fp.read()
             fp.close()
         except Exception:
             pass
 
+
 def upload_data(email, data, type='SURVEY'):
     a = upload_data_thread(email, data, type)
     a.start()
     return True
+
 
 def get_and_group_by_field(cr, uid, obj, ids, field, context=None):
     """ Read the values of ``field´´ for the given ``ids´´ and group ids by value.
@@ -809,27 +850,34 @@ def get_and_group_by_field(cr, uid, obj, ids, field, context=None):
     res = {}
     for record in obj.read(cr, uid, ids, [field], context=context):
         key = record[field]
-        res.setdefault(key[0] if isinstance(key, tuple) else key, []).append(record['id'])
+        res.setdefault(key[0] if isinstance(key, tuple)
+                       else key, []).append(record['id'])
     return res
+
 
 def get_and_group_by_company(cr, uid, obj, ids, context=None):
     return get_and_group_by_field(cr, uid, obj, ids, field='company_id', context=context)
 
 # port of python 2.6's attrgetter with support for dotted notation
+
+
 def resolve_attr(obj, attr):
     for name in attr.split("."):
         obj = getattr(obj, name)
     return obj
 
+
 def attrgetter(*items):
     if len(items) == 1:
         attr = items[0]
+
         def g(obj):
             return resolve_attr(obj, attr)
     else:
         def g(obj):
             return tuple(resolve_attr(obj, attr) for attr in items)
     return g
+
 
 class unquote(str):
     """A subclass of str that implements repr() without enclosing quotation marks
@@ -848,8 +896,10 @@ class unquote(str):
        >>> print d
        {'test': active_id}
     """
+
     def __repr__(self):
         return self
+
 
 class UnquoteEvalContext(defaultdict):
     """Defaultdict-based evaluation context that returns 
@@ -872,6 +922,7 @@ class UnquoteEvalContext(defaultdict):
        {'default_user_id': 1, 'default_section_id': section_id}
 
        """
+
     def __init__(self, *args, **kwargs):
         super(UnquoteEvalContext, self).__init__(None, *args, **kwargs)
 
@@ -891,6 +942,7 @@ class mute_logger(object):
             do_suff()
 
     """
+
     def __init__(self, *loggers):
         self.loggers = loggers
 
@@ -914,7 +966,10 @@ class mute_logger(object):
                 return func(*args, **kwargs)
         return deco
 
+
 _ph = object()
+
+
 class CountingStream(object):
     """ Stream wrapper counting the number of element it has yielded. Similar
     role to ``enumerate``, but for use when the iteration process of the stream
@@ -932,14 +987,18 @@ class CountingStream(object):
         ``int``, index of the last yielded element in the stream. If the stream
         has ended, will give an index 1-past the stream
     """
+
     def __init__(self, stream, start=-1):
         self.stream = iter(stream)
         self.index = start
         self.stopped = False
+
     def __iter__(self):
         return self
+
     def __next__(self):
-        if self.stopped: raise StopIteration()
+        if self.stopped:
+            raise StopIteration()
         self.index += 1
         val = next(self.stream, _ph)
         if val is _ph:
@@ -947,13 +1006,17 @@ class CountingStream(object):
             raise StopIteration()
         return val
 
+
 def stripped_sys_argv(*strip_args):
     """Return sys.argv with some arguments stripped, suitable for reexecution or subprocesses"""
-    strip_args = sorted(set(strip_args) | set(['-s', '--save', '-u', '--update', '-i', '--init', '--i18n-overwrite']))
+    strip_args = sorted(set(strip_args) | set(
+        ['-s', '--save', '-u', '--update', '-i', '--init', '--i18n-overwrite']))
     assert all(config.parser.has_option(s) for s in strip_args)
-    takes_value = dict((s, config.parser.get_option(s).takes_value()) for s in strip_args)
+    takes_value = dict((s, config.parser.get_option(s).takes_value())
+                       for s in strip_args)
 
-    longs, shorts = list(tuple(y) for _, y in groupby(strip_args, lambda x: x.startswith('--')))
+    longs, shorts = list(tuple(y) for _, y in groupby(
+        strip_args, lambda x: x.startswith('--')))
     longs_eq = tuple(l + '=' for l in longs if takes_value[l])
 
     args = sys.argv[:]
@@ -965,6 +1028,7 @@ def stripped_sys_argv(*strip_args):
 
     return [x for i, x in enumerate(args) if not strip(args, i)]
 
+
 class ConstantMapping(Mapping):
     """
     An immutable mapping returning the provided value for every single key.
@@ -972,6 +1036,7 @@ class ConstantMapping(Mapping):
     Useful for default value to methods
     """
     __slots__ = ['_value']
+
     def __init__(self, val):
         self._value = val
 
@@ -1020,7 +1085,8 @@ def dumpstacks(sig=None, frame=None):
             code.append(line)
 
     if odoo.evented:
-        # code from http://stackoverflow.com/questions/12510648/in-gevent-how-can-i-dump-stack-traces-of-all-running-greenlets
+        # code from
+        # http://stackoverflow.com/questions/12510648/in-gevent-how-can-i-dump-stack-traces-of-all-running-greenlets
         import gc
         from greenlet import greenlet
         for ob in gc.get_objects():
@@ -1031,6 +1097,7 @@ def dumpstacks(sig=None, frame=None):
                 code.append(line)
 
     _logger.info("\n".join(code))
+
 
 def freehash(arg):
     try:
@@ -1043,64 +1110,89 @@ def freehash(arg):
         else:
             return id(arg)
 
+
 class frozendict(dict):
     """ An implementation of an immutable dictionary. """
+
     def __delitem__(self, key):
         raise NotImplementedError("'__delitem__' not supported on frozendict")
+
     def __setitem__(self, key, val):
         raise NotImplementedError("'__setitem__' not supported on frozendict")
+
     def clear(self):
         raise NotImplementedError("'clear' not supported on frozendict")
+
     def pop(self, key, default=None):
         raise NotImplementedError("'pop' not supported on frozendict")
+
     def popitem(self):
         raise NotImplementedError("'popitem' not supported on frozendict")
+
     def setdefault(self, key, default=None):
         raise NotImplementedError("'setdefault' not supported on frozendict")
+
     def update(self, *args, **kwargs):
         raise NotImplementedError("'update' not supported on frozendict")
+
     def __hash__(self):
         return hash(frozenset((key, freehash(val)) for key, val in self.items()))
+
 
 class Collector(Mapping):
     """ A mapping from keys to lists. This is essentially a space optimization
         for ``defaultdict(list)``.
     """
     __slots__ = ['_map']
+
     def __init__(self):
         self._map = {}
+
     def add(self, key, val):
         vals = self._map.setdefault(key, [])
         if val not in vals:
             vals.append(val)
+
     def __getitem__(self, key):
         return self._map.get(key, ())
+
     def __iter__(self):
         return iter(self._map)
+
     def __len__(self):
         return len(self._map)
+
 
 class OrderedSet(MutableSet):
     """ A set collection that remembers the elements first insertion order. """
     __slots__ = ['_map']
+
     def __init__(self, elems=()):
         self._map = OrderedDict((elem, None) for elem in elems)
+
     def __contains__(self, elem):
         return elem in self._map
+
     def __iter__(self):
         return iter(self._map)
+
     def __len__(self):
         return len(self._map)
+
     def add(self, elem):
         self._map[elem] = None
+
     def discard(self, elem):
         self._map.pop(elem, None)
 
+
 class LastOrderedSet(OrderedSet):
     """ A set collection that remembers the elements last insertion order. """
+
     def add(self, elem):
         OrderedSet.discard(self, elem)
         OrderedSet.add(self, elem)
+
 
 @contextmanager
 def ignore(*exc):
@@ -1109,13 +1201,17 @@ def ignore(*exc):
     except exc:
         pass
 
-# Avoid DeprecationWarning while still remaining compatible with werkzeug pre-0.9
+
+#  # Avoid DeprecationWarning while still remaining compatible with
+
+# werkzeug pre-0.9
 if parse_version(getattr(werkzeug, '__version__', '0.0')) < parse_version('0.9.0'):
     def html_escape(text):
         return werkzeug.utils.escape(text, quote=True)
 else:
     def html_escape(text):
         return werkzeug.utils.escape(text)
+
 
 def formatLang(env, value, digits=None, grouping=True, monetary=False, dp=False, currency_obj=False):
     """
@@ -1134,9 +1230,9 @@ def formatLang(env, value, digits=None, grouping=True, monetary=False, dp=False,
         elif currency_obj:
             digits = currency_obj.decimal_places
         elif (hasattr(value, '_field') and isinstance(value._field, (float_field, function_field)) and value._field.digits):
-                digits = value._field.digits[1]
-                if not digits and digits is not 0:
-                    digits = DEFAULT_DIGITS
+            digits = value._field.digits[1]
+            if not digits and digits is not 0:
+                digits = DEFAULT_DIGITS
 
     if isinstance(value, str) and not value:
         return ''
@@ -1147,7 +1243,8 @@ def formatLang(env, value, digits=None, grouping=True, monetary=False, dp=False,
         lang_objs = env['res.lang'].search([], limit=1)
     lang_obj = lang_objs[0]
 
-    res = lang_obj.format('%.' + str(digits) + 'f', value, grouping=grouping, monetary=monetary)
+    res = lang_obj.format('%.' + str(digits) + 'f', value,
+                          grouping=grouping, monetary=monetary)
 
     if currency_obj and currency_obj.symbol:
         if currency_obj.position == 'after':
@@ -1156,23 +1253,28 @@ def formatLang(env, value, digits=None, grouping=True, monetary=False, dp=False,
             res = '%s %s' % (currency_obj.symbol, res)
     return res
 
+
 def _consteq(str1, str2):
     """ Constant-time string comparison. Suitable to compare bytestrings of fixed,
         known length only, because length difference is optimized. """
-    return len(str1) == len(str2) and sum(ord(x)^ord(y) for x, y in zip(str1, str2)) == 0
+    return len(str1) == len(str2) and sum(ord(x) ^ ord(y) for x, y in zip(str1, str2)) == 0
+
 
 consteq = getattr(passlib.utils, 'consteq', _consteq)
+
 
 class Pickle(object):
     @classmethod
     def load(cls, stream, errors=False):
         unpickler = pickle.Unpickler(stream)
-        # pickle builtins: str/unicode, int/long, float, bool, tuple, list, dict, None
+        # pickle builtins: str/unicode, int/long, float, bool, tuple, list,
+        # dict, None
         unpickler.find_global = None
         try:
             return unpickler.load()
         except Exception:
-            _logger.warning('Failed unpickling data, returning default: %r', errors, exc_info=True)
+            _logger.warning(
+                'Failed unpickling data, returning default: %r', errors, exc_info=True)
             return errors
 
     @classmethod
@@ -1181,5 +1283,6 @@ class Pickle(object):
 
     dumps = pickle.dumps
     dump = pickle.dump
+
 
 pickle = Pickle

@@ -9,6 +9,7 @@ from odoo.tools.misc import mute_logger
 
 ADMIN_USER_ID = common.ADMIN_USER_ID
 
+
 def registry():
     return odoo.registry(common.get_db_name())
 

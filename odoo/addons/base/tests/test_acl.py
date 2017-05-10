@@ -33,10 +33,12 @@ class TestACL(TransactionCase):
         form_view = currency.fields_view_get(False, 'form')
         view_arch = etree.fromstring(form_view.get('arch'))
         has_group_system = self.demo_user.has_group(GROUP_SYSTEM)
-        self.assertFalse(has_group_system, "`demo` user should not belong to the restricted group before the test")
-        self.assertIn('decimal_places', original_fields, "'decimal_places' field must be properly visible before the test")
+        self.assertFalse(
+            has_group_system, "`demo` user should not belong to the restricted group before the test")
+        self.assertIn('decimal_places', original_fields,
+                      "'decimal_places' field must be properly visible before the test")
         self.assertNotEqual(view_arch.xpath("//field[@name='decimal_places']"), [],
-                             "Field 'decimal_places' must be found in view definition before the test")
+                            "Field 'decimal_places' must be found in view definition before the test")
 
         # restrict access to the field and check it's gone
         self._set_field_groups(currency, 'decimal_places', GROUP_SYSTEM)
@@ -44,20 +46,24 @@ class TestACL(TransactionCase):
         fields = currency.fields_get([])
         form_view = currency.fields_view_get(False, 'form')
         view_arch = etree.fromstring(form_view.get('arch'))
-        self.assertNotIn('decimal_places', fields, "'decimal_places' field should be gone")
+        self.assertNotIn('decimal_places', fields,
+                         "'decimal_places' field should be gone")
         self.assertEqual(view_arch.xpath("//field[@name='decimal_places']"), [],
-                          "Field 'decimal_places' must not be found in view definition")
+                         "Field 'decimal_places' must not be found in view definition")
 
-        # Make demo user a member of the restricted group and check that the field is back
+        # Make demo user a member of the restricted group and check that the
+        # field is back
         self.erp_system_group.users += self.demo_user
         has_group_system = self.demo_user.has_group(GROUP_SYSTEM)
         fields = currency.fields_get([])
         form_view = currency.fields_view_get(False, 'form')
         view_arch = etree.fromstring(form_view.get('arch'))
-        self.assertTrue(has_group_system, "`demo` user should now belong to the restricted group")
-        self.assertIn('decimal_places', fields, "'decimal_places' field must be properly visible again")
+        self.assertTrue(
+            has_group_system, "`demo` user should now belong to the restricted group")
+        self.assertIn('decimal_places', fields,
+                      "'decimal_places' field must be properly visible again")
         self.assertNotEqual(view_arch.xpath("//field[@name='decimal_places']"), [],
-                             "Field 'decimal_places' must be found in view definition again")
+                            "Field 'decimal_places' must be found in view definition again")
 
     @mute_logger('odoo.models')
     def test_field_crud_restriction(self):
@@ -66,7 +72,8 @@ class TestACL(TransactionCase):
 
         # Verify the test environment first
         has_group_system = self.demo_user.has_group(GROUP_SYSTEM)
-        self.assertFalse(has_group_system, "`demo` user should not belong to the restricted group")
+        self.assertFalse(
+            has_group_system, "`demo` user should not belong to the restricted group")
         self.assertTrue(partner.read(['bank_ids']))
         self.assertTrue(partner.write({'bank_ids': []}))
 
@@ -81,7 +88,8 @@ class TestACL(TransactionCase):
         # Add the restricted group, and check that it works again
         self.erp_system_group.users += self.demo_user
         has_group_system = self.demo_user.has_group(GROUP_SYSTEM)
-        self.assertTrue(has_group_system, "`demo` user should now belong to the restricted group")
+        self.assertTrue(
+            has_group_system, "`demo` user should now belong to the restricted group")
         self.assertTrue(partner.read(['bank_ids']))
         self.assertTrue(partner.write({'bank_ids': []}))
 
@@ -119,25 +127,27 @@ class TestACL(TransactionCase):
             self.assertIsNone(view_arch.get(method))
 
     def test_m2o_field_create_edit_invisibility(self):
-        """ Test many2one field Create and Edit option visibility based on access rights of relation field""" 
+        """ Test many2one field Create and Edit option visibility based on access rights of relation field"""
         methods = ['create', 'write']
         company = self.env['res.company'].sudo(self.demo_user)
         company_view = company.fields_view_get(False, 'form')
         view_arch = etree.fromstring(company_view['arch'])
         field_node = view_arch.xpath("//field[@name='currency_id']")
-        self.assertTrue(len(field_node), "currency_id field should be in company from view")
+        self.assertTrue(len(field_node),
+                        "currency_id field should be in company from view")
         for method in methods:
             self.assertEqual(field_node[0].get('can_' + method), 'false')
 
     def test_m2o_field_create_edit_visibility(self):
-        """ Test many2one field Create and Edit option visibility based on access rights of relation field""" 
+        """ Test many2one field Create and Edit option visibility based on access rights of relation field"""
         self.erp_system_group.users += self.demo_user
         methods = ['create', 'write']
         company = self.env['res.company'].sudo(self.demo_user)
         company_view = company.fields_view_get(False, 'form')
         view_arch = etree.fromstring(company_view['arch'])
         field_node = view_arch.xpath("//field[@name='currency_id']")
-        self.assertTrue(len(field_node), "currency_id field should be in company from view")
+        self.assertTrue(len(field_node),
+                        "currency_id field should be in company from view")
         for method in methods:
             self.assertEqual(field_node[0].get('can_' + method), 'true')
 
@@ -172,7 +182,8 @@ class TestIrRule(TransactionCase):
         partners = partners_demo.search([])
         self.assertTrue(partners, "Demo user should see some partner.")
 
-        # create another ir_rule for the Employee group (to test multiple rules)
+        # create another ir_rule for the Employee group (to test multiple
+        # rules)
         rule2 = self.env['ir.rule'].create({
             'name': 'test_rule2',
             'model_id': model_res_partner.id,
@@ -194,7 +205,8 @@ class TestIrRule(TransactionCase):
         partners = partners_demo.search([])
         self.assertTrue(partners, "Demo user should see some partner.")
 
-        # create another ir_rule for the Employee group (to test multiple rules)
+        # create another ir_rule for the Employee group (to test multiple
+        # rules)
         rule3 = self.env['ir.rule'].create({
             'name': 'test_rule3',
             'model_id': model_res_partner.id,
@@ -225,7 +237,8 @@ class TestIrRule(TransactionCase):
         # normalization.
         rule2.domain_force = "[('id','=',False),('name','=',False)]"
 
-        # check that demo user still sees partners, because group-rules are OR'ed
+        # check that demo user still sees partners, because group-rules are
+        # OR'ed
         partners = partners_demo.search([])
         self.assertTrue(partners, "Demo user should see some partner.")
 
@@ -245,11 +258,13 @@ class TestIrRule(TransactionCase):
 
         # read the partners again as demo user, which should give results
         partners = partners_demo.search([])
-        self.assertTrue(partners, "Demo user should see partners even with the combined rules.")
+        self.assertTrue(
+            partners, "Demo user should see partners even with the combined rules.")
 
         # delete global domains (to combine only group domains)
         self.env['ir.rule'].search([('groups', '=', False)]).unlink()
 
-        # read the partners as demo user (several group domains, no global domain)
+        # read the partners as demo user (several group domains, no global
+        # domain)
         partners = partners_demo.search([])
         self.assertTrue(partners, "Demo user should see some partners.")

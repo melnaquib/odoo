@@ -6,14 +6,17 @@ import logging
 
 _logger = logging.getLogger(__name__)
 
+
 def is_initialized(cr):
     """ Check if a database has been initialized for the ORM.
 
     The database can be initialized with the 'initialize' function below.
 
     """
-    cr.execute("SELECT relname FROM pg_class WHERE relkind='r' AND relname='ir_module_module'")
+    cr.execute(
+        "SELECT relname FROM pg_class WHERE relkind='r' AND relname='ir_module_module'")
     return len(cr.fetchall()) > 0
+
 
 def initialize(cr):
     """ Initialize a database with for the ORM.
@@ -68,7 +71,7 @@ def initialize(cr):
         id = cr.fetchone()[0]
         cr.execute('INSERT INTO ir_model_data \
             (name,model,module, res_id, noupdate) VALUES (%s,%s,%s,%s,%s)', (
-                'module_'+i, 'ir.module.module', 'base', id, True))
+            'module_' + i, 'ir.module.module', 'base', id, True))
         dependencies = info['depends']
         for d in dependencies:
             cr.execute('INSERT INTO ir_module_module_dependency \
@@ -82,10 +85,13 @@ def initialize(cr):
                                    WHERE d.module_id = m.id AND mdep.state != 'to install'
                       )""")
         to_auto_install = [x[0] for x in cr.fetchall()]
-        if not to_auto_install: break
-        cr.execute("""UPDATE ir_module_module SET state='to install' WHERE name in %s""", (tuple(to_auto_install),))
+        if not to_auto_install:
+            break
+        cr.execute("""UPDATE ir_module_module SET state='to install' WHERE name in %s""", (tuple(
+            to_auto_install),))
 
     cr.commit()
+
 
 def create_categories(cr, categories):
     """ Create the ir_module_category entries for some categories.
@@ -100,7 +106,9 @@ def create_categories(cr, categories):
     category = []
     while categories:
         category.append(categories[0])
-        xml_id = 'module_category_' + ('_'.join([x.lower() for x in category])).replace('&', 'and').replace(' ', '_')
+        xml_id = 'module_category_' + \
+            ('_'.join([x.lower() for x in category])).replace(
+                '&', 'and').replace(' ', '_')
         # search via xml_id (because some categories are renamed)
         cr.execute("SELECT res_id FROM ir_model_data WHERE name=%s AND module=%s AND model=%s",
                    (xml_id, "base", "ir.module.category"))
@@ -118,6 +126,7 @@ def create_categories(cr, categories):
         p_id = c_id
         categories = categories[1:]
     return p_id
+
 
 def has_unaccent(cr):
     """ Test if the database has an unaccent function.

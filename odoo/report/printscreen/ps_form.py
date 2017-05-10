@@ -20,7 +20,7 @@ class report_printscreen_list(report_int):
                 attrsa = node.attrib
                 attrs = {}
                 if not attrsa is None:
-                    for key,val in list(attrsa.items()):
+                    for key, val in list(attrsa.items()):
                         attrs[key] = val
                 result.append(attrs['name'])
             else:
@@ -33,7 +33,7 @@ class report_printscreen_list(report_int):
 
     def create(self, cr, uid, ids, datas, context=None):
         if not context:
-            context={}
+            context = {}
         env = odoo.api.Environment(cr, uid, context)
         datas['ids'] = ids
         records = env[datas['model']].browse(ids)
@@ -43,11 +43,12 @@ class report_printscreen_list(report_int):
 
         fields_order = self._parse_string(result['arch'])
         rows = records.read(list(result['fields']))
-        self._create_table(uid, datas['ids'], result['fields'], fields_order, rows, context, records._description)
+        self._create_table(uid, datas['ids'], result['fields'],
+                           fields_order, rows, context, records._description)
         return self.obj.get(), 'pdf'
 
     def _create_table(self, uid, ids, fields, fields_order, results, context, title=''):
-        pageSize=[297.0,210.0]
+        pageSize = [297.0, 210.0]
 
         new_doc = etree.Element("report")
         config = etree.SubElement(new_doc, 'config')
@@ -60,15 +61,15 @@ class report_printscreen_list(report_int):
         _append_node('date', time.strftime('%d/%m/%Y'))
         _append_node('PageSize', '%.2fmm,%.2fmm' % tuple(pageSize))
         _append_node('PageWidth', '%.2f' % (pageSize[0] * 2.8346,))
-        _append_node('PageHeight', '%.2f' %(pageSize[1] * 2.8346,))
+        _append_node('PageHeight', '%.2f' % (pageSize[1] * 2.8346,))
         _append_node('report-header', title)
 
         l = []
         t = 0
-        strmax = (pageSize[0]-40) * 2.8346
+        strmax = (pageSize[0] - 40) * 2.8346
         for f in fields_order:
             s = 0
-            if fields[f]['type'] in ('date','time','float','integer'):
+            if fields[f]['type'] in ('date', 'time', 'float', 'integer'):
                 s = 60
                 strmax -= s
             else:
@@ -78,7 +79,7 @@ class report_printscreen_list(report_int):
             if not l[pos]:
                 s = fields[fields_order[pos]].get('size', 56) / 28 + 1
                 l[pos] = strmax * s / t
-        _append_node('tableSize', ','.join(map(str,l)) )
+        _append_node('tableSize', ','.join(map(str, l)))
 
         header = etree.SubElement(new_doc, 'header')
         for f in fields_order:
@@ -89,13 +90,14 @@ class report_printscreen_list(report_int):
         for line in results:
             node_line = etree.SubElement(lines, 'row')
             for f in fields_order:
-                if fields[f]['type']=='many2one' and line[f]:
+                if fields[f]['type'] == 'many2one' and line[f]:
                     line[f] = line[f][1]
-                if fields[f]['type'] in ('one2many','many2many') and line[f]:
-                    line[f] = '( '+str(len(line[f])) + ' )'
+                if fields[f]['type'] in ('one2many', 'many2many') and line[f]:
+                    line[f] = '( ' + str(len(line[f])) + ' )'
                 if fields[f]['type'] == 'float':
-                    precision=(('digits' in fields[f]) and fields[f]['digits'][1]) or 2
-                    line[f]=round(line[f],precision)
+                    precision = (
+                        ('digits' in fields[f]) and fields[f]['digits'][1]) or 2
+                    line[f] = round(line[f], precision)
                 col = etree.SubElement(node_line, 'col', tree='no')
                 if line[f] is not None:
                     col.text = tools.ustr(line[f] or '')
@@ -110,5 +112,6 @@ class report_printscreen_list(report_int):
         self.obj = render.rml(rml, self.title)
         self.obj.render()
         return True
+
 
 report_printscreen_list('report.printscreen.form')

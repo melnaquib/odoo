@@ -7,18 +7,20 @@ from .translate import _
 _logger = logging.getLogger(__name__)
 
 #-------------------------------------------------------------
-#ENGLISH
+# ENGLISH
 #-------------------------------------------------------------
 
-to_19 = ( 'Zero',  'One',   'Two',  'Three', 'Four',   'Five',   'Six',
-          'Seven', 'Eight', 'Nine', 'Ten',   'Eleven', 'Twelve', 'Thirteen',
-          'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen' )
-tens  = ( 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety')
-denom = ( '',
-          'Thousand',     'Million',         'Billion',       'Trillion',       'Quadrillion',
-          'Quintillion',  'Sextillion',      'Septillion',    'Octillion',      'Nonillion',
-          'Decillion',    'Undecillion',     'Duodecillion',  'Tredecillion',   'Quattuordecillion',
-          'Sexdecillion', 'Septendecillion', 'Octodecillion', 'Novemdecillion', 'Vigintillion' )
+to_19 = ('Zero',  'One',   'Two',  'Three', 'Four',   'Five',   'Six',
+         'Seven', 'Eight', 'Nine', 'Ten',   'Eleven', 'Twelve', 'Thirteen',
+         'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen')
+tens = ('Twenty', 'Thirty', 'Forty', 'Fifty',
+        'Sixty', 'Seventy', 'Eighty', 'Ninety')
+denom = ('',
+         'Thousand',     'Million',         'Billion',       'Trillion',       'Quadrillion',
+         'Quintillion',  'Sextillion',      'Septillion',    'Octillion',      'Nonillion',
+         'Decillion',    'Undecillion',     'Duodecillion',  'Tredecillion',   'Quattuordecillion',
+         'Sexdecillion', 'Septendecillion', 'Octodecillion', 'Novemdecillion', 'Vigintillion')
+
 
 def _convert_nn(val):
     """convert a value < 100 to English.
@@ -30,6 +32,7 @@ def _convert_nn(val):
             if val % 10:
                 return dcap + '-' + to_19[val % 10]
             return dcap
+
 
 def _convert_nnn(val):
     """
@@ -47,11 +50,12 @@ def _convert_nnn(val):
         word += _convert_nn(mod)
     return word
 
+
 def english_number(val):
     if val < 100:
         return _convert_nn(val)
     if val < 1000:
-         return _convert_nnn(val)
+        return _convert_nnn(val)
     for (didx, dval) in ((v - 1, 1000 ** v) for v in range(len(denom))):
         if dval > val:
             mod = 1000 ** didx
@@ -61,6 +65,7 @@ def english_number(val):
             if r > 0:
                 ret = ret + ', ' + english_number(r)
             return ret
+
 
 def amount_to_text(number, currency):
     number = '%.2f' % number
@@ -78,36 +83,41 @@ def amount_to_text(number, currency):
 # Generic functions
 #-------------------------------------------------------------
 
-_translate_funcs = {'en' : amount_to_text}
-    
-#TODO: we should use the country AND language (ex: septante VS soixante dix)
-#TODO: we should use en by default, but the translation func is yet to be implemented
+_translate_funcs = {'en': amount_to_text}
+
+# TODO: we should use the country AND language (ex: septante VS soixante dix)
+# TODO: we should use en by default, but the translation func is yet to be
+# implemented
+
+
 def amount_to_text(nbr, lang='en', currency='euro'):
     """ Converts an integer to its textual representation, using the language set in the context if any.
-    
+
         Example::
-        
+
             1654: thousands six cent cinquante-quatre.
     """
     import odoo.loglevels as loglevels
 #    if nbr > 10000000:
 #        _logger.warning(_("Number too large '%d', can not translate it"))
 #        return str(nbr)
-    
+
     if lang not in _translate_funcs:
-        _logger.warning(_("no translation function found for lang: '%s'"), lang)
-        #TODO: (default should be en) same as above
+        _logger.warning(
+            _("no translation function found for lang: '%s'"), lang)
+        # TODO: (default should be en) same as above
         lang = 'en'
     return _translate_funcs[lang](abs(nbr), currency)
 
-if __name__=='__main__':
+
+if __name__ == '__main__':
     from sys import argv
-    
+
     lang = 'nl'
     if len(argv) < 2:
-        for i in range(1,200):
+        for i in range(1, 200):
             print(i, ">>", int_to_text(i, lang))
-        for i in range(200,999999,139):
+        for i in range(200, 999999, 139):
             print(i, ">>", int_to_text(i, lang))
     else:
         print(int_to_text(int(argv[1]), lang))

@@ -2,9 +2,11 @@
 
 from odoo.tests import common
 
+
 def strip_prefix(prefix, names):
     size = len(prefix)
     return [name[size:] for name in names if name.startswith(prefix)]
+
 
 class TestOnChange(common.TransactionCase):
 
@@ -47,7 +49,8 @@ class TestOnChange(common.TransactionCase):
         self.env.invalidate_all()
         result = self.Message.onchange(values, 'discussion', field_onchange)
         self.assertIn('name', result['value'])
-        self.assertEqual(result['value']['name'], "[%s] %s" % (discussion.name, USER.name))
+        self.assertEqual(result['value']['name'], "[%s] %s" %
+                         (discussion.name, USER.name))
 
         # changing 'body' should recompute 'size'
         values = {
@@ -90,7 +93,8 @@ class TestOnChange(common.TransactionCase):
         }
 
         self.env.invalidate_all()
-        result = Category.onchange(values, 'parent', field_onchange).get('value', {})
+        result = Category.onchange(
+            values, 'parent', field_onchange).get('value', {})
         self.assertIn('root_categ', result)
         self.assertEqual(result['root_categ'], root.name_get()[0])
 
@@ -98,7 +102,8 @@ class TestOnChange(common.TransactionCase):
         values['parent'] = False
 
         self.env.invalidate_all()
-        result = Category.onchange(values, 'parent', field_onchange).get('value', {})
+        result = Category.onchange(
+            values, 'parent', field_onchange).get('value', {})
         self.assertIn('root_categ', result)
         self.assertIs(result['root_categ'], False)
 
@@ -172,7 +177,8 @@ class TestOnChange(common.TransactionCase):
             'lines.partner': None,
         })
 
-        values = multi._convert_to_write({key: multi[key] for key in ('name', 'partner', 'lines')})
+        values = multi._convert_to_write(
+            {key: multi[key] for key in ('name', 'partner', 'lines')})
         self.assertEqual(values, {
             'name': partner.name,
             'partner': partner.id,
@@ -192,8 +198,10 @@ class TestOnChange(common.TransactionCase):
             'name': partner.name,
             'lines': [
                 (5,),
-                (1, line.id, {'name': partner.name, 'partner': (partner.id, partner.name)}),
-                (0, 0, {'name': partner.name, 'partner': (partner.id, partner.name)}),
+                (1, line.id, {'name': partner.name,
+                              'partner': (partner.id, partner.name)}),
+                (0, 0, {'name': partner.name, 'partner': (
+                    partner.id, partner.name)}),
             ],
         })
 

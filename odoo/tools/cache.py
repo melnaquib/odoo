@@ -26,6 +26,7 @@ class ormcache_counter(object):
     def ratio(self):
         return 100.0 * self.hit / (self.hit + self.miss or 1)
 
+
 # statistic counters dictionary, maps (dbname, modelname, method) to counter
 STAT = defaultdict(ormcache_counter)
 
@@ -46,6 +47,7 @@ class ormcache(object):
         def _compute_domain(self, model_name, mode="read"):
             ...
     """
+
     def __init__(self, *args, **kwargs):
         self.args = args
         self.skiparg = kwargs.get('skiparg')
@@ -103,6 +105,7 @@ class ormcache_context(ormcache):
     keys are looked up in the ``context`` parameter and combined to the cache
     key made by :class:`ormcache`.
     """
+
     def __init__(self, *args, **kwargs):
         super(ormcache_context, self).__init__(*args, **kwargs)
         self.keys = kwargs['keys']
@@ -116,7 +119,8 @@ class ormcache_context(ormcache):
         cont_expr = "(context or {})" if 'context' in spec.args else "self._context"
         keys_expr = "tuple(map(%s.get, %r))" % (cont_expr, self.keys)
         if self.args:
-            code = "lambda %s: (%s, %s)" % (args, ", ".join(self.args), keys_expr)
+            code = "lambda %s: (%s, %s)" % (
+                args, ", ".join(self.args), keys_expr)
         else:
             code = "lambda %s: (%s,)" % (args, keys_expr)
         self.key = unsafe_eval(code)
@@ -128,6 +132,7 @@ class ormcache_multi(ormcache):
     corresponding argument is iterated on, and every value leads to a cache
     entry under its own key.
     """
+
     def __init__(self, *args, **kwargs):
         super(ormcache_multi, self).__init__(*args, **kwargs)
         self.multi = kwargs['multi']
@@ -135,7 +140,8 @@ class ormcache_multi(ormcache):
     def determine_key(self):
         """ Determine the function that computes a cache key from arguments. """
         assert self.skiparg is None, "ormcache_multi() no longer supports skiparg"
-        assert isinstance(self.multi, str), "ormcache_multi() parameter multi must be an argument name"
+        assert isinstance(
+            self.multi, str), "ormcache_multi() parameter multi must be an argument name"
 
         super(ormcache_multi, self).determine_key()
 
@@ -183,6 +189,7 @@ class ormcache_multi(ormcache):
 
 class dummy_cache(object):
     """ Cache decorator replacement to actually do no caching. """
+
     def __init__(self, *l, **kw):
         pass
 
@@ -222,6 +229,7 @@ def get_cache_key_counter(bound_method, *args, **kwargs):
     cache, key0, counter = ormcache.lru(model)
     key = key0 + ormcache.key(model, *args, **kwargs)
     return cache, key, counter
+
 
 # For backward compatibility
 cache = ormcache

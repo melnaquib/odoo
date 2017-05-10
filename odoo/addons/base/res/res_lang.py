@@ -23,22 +23,29 @@ class Lang(models.Model):
     _order = "active desc,name"
 
     _disallowed_datetime_patterns = list(tools.DATETIME_FORMATS_MAP.keys())
-    _disallowed_datetime_patterns.remove('%y') # this one is in fact allowed, just not good practice
+    # this one is in fact allowed, just not good practice
+    _disallowed_datetime_patterns.remove('%y')
 
     name = fields.Char(required=True)
-    code = fields.Char(string='Locale Code', required=True, help='This field is used to set/get locales for user')
-    iso_code = fields.Char(string='ISO code', help='This ISO code is the name of po files to use for translations')
+    code = fields.Char(string='Locale Code', required=True,
+                       help='This field is used to set/get locales for user')
+    iso_code = fields.Char(
+        string='ISO code', help='This ISO code is the name of po files to use for translations')
     translatable = fields.Boolean()
     active = fields.Boolean()
-    direction = fields.Selection([('ltr', 'Left-to-Right'), ('rtl', 'Right-to-Left')], required=True, default='ltr')
-    date_format = fields.Char(string='Date Format', required=True, default=DEFAULT_DATE_FORMAT)
-    time_format = fields.Char(string='Time Format', required=True, default=DEFAULT_TIME_FORMAT)
+    direction = fields.Selection(
+        [('ltr', 'Left-to-Right'), ('rtl', 'Right-to-Left')], required=True, default='ltr')
+    date_format = fields.Char(string='Date Format',
+                              required=True, default=DEFAULT_DATE_FORMAT)
+    time_format = fields.Char(string='Time Format',
+                              required=True, default=DEFAULT_TIME_FORMAT)
     grouping = fields.Char(string='Separator Format', required=True, default='[]',
-        help="The Separator Format should be like [,n] where 0 < n :starting from Unit digit. "
-             "-1 will end the separation. e.g. [3,2,-1] will represent 106500 to be 1,06,500; "
-             "[1,2,-1] will represent it to be 106,50,0;[3] will represent it as 106,500. "
-             "Provided ',' as the thousand separator in each case.")
-    decimal_point = fields.Char(string='Decimal Separator', required=True, default='.')
+                           help="The Separator Format should be like [,n] where 0 < n :starting from Unit digit. "
+                           "-1 will end the separation. e.g. [3,2,-1] will represent 106500 to be 1,06,500; "
+                           "[1,2,-1] will represent it to be 106,50,0;[3] will represent it as 106,500. "
+                           "Provided ',' as the thousand separator in each case.")
+    decimal_point = fields.Char(
+        string='Decimal Separator', required=True, default='.')
     thousands_sep = fields.Char(string='Thousands Separator', default=',')
 
     _sql_constraints = [
@@ -85,7 +92,8 @@ class Lang(models.Model):
     def load_lang(self, lang, lang_name=None):
         """ Create the given language if necessary, and make it active. """
         # if the language exists, simply make it active
-        language = self.with_context(active_test=False).search([('code', '=', lang)], limit=1)
+        language = self.with_context(active_test=False).search(
+            [('code', '=', lang)], limit=1)
         if language:
             language.write({'active': True})
             return language.id
@@ -136,11 +144,11 @@ class Lang(models.Model):
             'name': lang_name,
             'active': True,
             'translatable': True,
-            'date_format' : fix_datetime_format(locale.nl_langinfo(locale.D_FMT)),
-            'time_format' : fix_datetime_format(locale.nl_langinfo(locale.T_FMT)),
-            'decimal_point' : fix_xa0(str(conv['decimal_point'])),
-            'thousands_sep' : fix_xa0(str(conv['thousands_sep'])),
-            'grouping' : str(conv.get('grouping', [])),
+            'date_format': fix_datetime_format(locale.nl_langinfo(locale.D_FMT)),
+            'time_format': fix_datetime_format(locale.nl_langinfo(locale.T_FMT)),
+            'decimal_point': fix_xa0(str(conv['decimal_point'])),
+            'thousands_sep': fix_xa0(str(conv['thousands_sep'])),
+            'grouping': str(conv.get('grouping', [])),
         }
         try:
             return self.create(lang_info).id
@@ -159,15 +167,18 @@ class Lang(models.Model):
 
         """
         # config['load_language'] is a comma-separated list or None
-        lang_code = (tools.config.get('load_language') or 'en_US').split(',')[0]
+        lang_code = (tools.config.get('load_language')
+                     or 'en_US').split(',')[0]
         lang = self.search([('code', '=', lang_code)])
         if not lang:
             self.load_lang(lang_code)
         IrValues = self.env['ir.values']
         default_value = IrValues.get_defaults('res.partner', condition=False)
         if not default_value:
-            IrValues.set_default('res.partner', 'lang', lang_code, condition=False)
-            # set language of main company, created directly by db bootstrap SQL
+            IrValues.set_default('res.partner', 'lang',
+                                 lang_code, condition=False)
+            # set language of main company, created directly by db bootstrap
+            # SQL
             partner = self.env.user.company_id.partner_id
             if not partner.lang:
                 partner.write({'lang': lang_code})
@@ -218,7 +229,8 @@ class Lang(models.Model):
             raise UserError(_("Language code cannot be modified."))
         if vals.get('active') == False:
             if self.env['res.users'].search([('lang', 'in', lang_codes)]):
-                raise UserError(_("Cannot unactivate a language that is currently used by users."))
+                raise UserError(
+                    _("Cannot unactivate a language that is currently used by users."))
             # delete linked ir.value specifying default partner's language
             default_lang = self.env['ir.values'].search([
                 ('key', '=', 'default'),
@@ -236,10 +248,13 @@ class Lang(models.Model):
                 raise UserError(_("Base Language 'en_US' can not be deleted!"))
             ctx_lang = self._context.get('lang')
             if ctx_lang and (language.code == ctx_lang):
-                raise UserError(_("You cannot delete the language which is User's Preferred Language!"))
+                raise UserError(
+                    _("You cannot delete the language which is User's Preferred Language!"))
             if language.active:
-                raise UserError(_("You cannot delete the language which is Active!\nPlease de-activate the language first."))
-            self.env['ir.translation'].search([('lang', '=', language.code)]).unlink()
+                raise UserError(
+                    _("You cannot delete the language which is Active!\nPlease de-activate the language first."))
+            self.env['ir.translation'].search(
+                [('lang', '=', language.code)]).unlink()
         self.clear_caches()
         return super(Lang, self).unlink()
 
@@ -248,23 +263,27 @@ class Lang(models.Model):
         """ Format() will return the language-specific output for float values"""
         self.ensure_one()
         if percent[0] != '%':
-            raise ValueError(_("format() must be given exactly one %char format specifier"))
+            raise ValueError(
+                _("format() must be given exactly one %char format specifier"))
 
         formatted = percent % value
 
         # floats and decimal ints need special action!
         if grouping:
-            lang_grouping, thousands_sep, decimal_point = self._data_get(monetary)
+            lang_grouping, thousands_sep, decimal_point = self._data_get(
+                monetary)
             eval_lang_grouping = safe_eval(lang_grouping)
 
             if percent[-1] in 'eEfFgG':
                 parts = formatted.split('.')
-                parts[0] = intersperse(parts[0], eval_lang_grouping, thousands_sep)[0]
+                parts[0] = intersperse(
+                    parts[0], eval_lang_grouping, thousands_sep)[0]
 
                 formatted = decimal_point.join(parts)
 
             elif percent[-1] in 'diu':
-                formatted = intersperse(formatted, eval_lang_grouping, thousands_sep)[0]
+                formatted = intersperse(
+                    formatted, eval_lang_grouping, thousands_sep)[0]
 
         return formatted
 
@@ -287,7 +306,7 @@ def split(l, counts):
 
     """
     res = []
-    saved_count = len(l) # count to use when encoutering a zero
+    saved_count = len(l)  # count to use when encoutering a zero
     for count in counts:
         if not l:
             break
@@ -305,7 +324,9 @@ def split(l, counts):
         res.append(l)
     return res
 
+
 intersperse_pat = re.compile('([^0-9]*)([^ ]*)(.*)')
+
 
 def intersperse(string, counts, separator=''):
     """
@@ -314,7 +335,8 @@ def intersperse(string, counts, separator=''):
 
     """
     left, rest, right = intersperse_pat.match(string).groups()
+
     def reverse(s): return s[::-1]
     splits = split(reverse(rest), counts)
     res = separator.join(map(reverse, reverse(splits)))
-    return left + res + right, len(splits) > 0 and len(splits) -1 or 0
+    return left + res + right, len(splits) > 0 and len(splits) - 1 or 0

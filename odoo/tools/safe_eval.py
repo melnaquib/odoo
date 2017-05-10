@@ -40,7 +40,7 @@ _UNSAFE_ATTRIBUTES = ['f_builtins', 'f_globals', 'f_locals', 'gi_frame',
 
 _CONST_OPCODES = set(opmap[x] for x in [
     'POP_TOP', 'ROT_TWO', 'ROT_THREE', 'ROT_FOUR', 'DUP_TOP', 'DUP_TOPX',
-    'POP_BLOCK','SETUP_LOOP', 'BUILD_LIST', 'BUILD_MAP', 'BUILD_TUPLE',
+    'POP_BLOCK', 'SETUP_LOOP', 'BUILD_LIST', 'BUILD_MAP', 'BUILD_TUPLE',
     'LOAD_CONST', 'RETURN_VALUE', 'STORE_SUBSCR', 'STORE_MAP'] if x in opmap)
 
 _EXPR_OPCODES = _CONST_OPCODES.union(set(opmap[x] for x in [
@@ -52,7 +52,7 @@ _EXPR_OPCODES = _CONST_OPCODES.union(set(opmap[x] for x in [
     'BINARY_OR', 'INPLACE_ADD', 'INPLACE_SUBTRACT', 'INPLACE_MULTIPLY',
     'INPLACE_DIVIDE', 'INPLACE_REMAINDER', 'INPLACE_POWER',
     'INPLACE_LEFTSHIFT', 'INPLACE_RIGHTSHIFT', 'INPLACE_AND',
-    'INPLACE_XOR','INPLACE_OR'
+    'INPLACE_XOR', 'INPLACE_OR'
 ] if x in opmap))
 
 _SAFE_OPCODES = _EXPR_OPCODES.union(set(opmap[x] for x in [
@@ -65,10 +65,11 @@ _SAFE_OPCODES = _EXPR_OPCODES.union(set(opmap[x] for x in [
     'JUMP_IF_FALSE_OR_POP', 'JUMP_IF_TRUE_OR_POP', 'POP_JUMP_IF_FALSE',
     'POP_JUMP_IF_TRUE', 'SETUP_EXCEPT', 'END_FINALLY',
     'LOAD_FAST', 'STORE_FAST', 'DELETE_FAST', 'UNPACK_SEQUENCE',
-    'LOAD_GLOBAL', # Only allows access to restricted globals
+    'LOAD_GLOBAL',  # Only allows access to restricted globals
 ] if x in opmap))
 
 _logger = logging.getLogger(__name__)
+
 
 def _get_opcodes(codeobj):
     """_get_opcodes(codeobj) -> [opcodes]
@@ -89,6 +90,7 @@ def _get_opcodes(codeobj):
             i += 3
         else:
             i += 1
+
 
 def assert_no_dunder_name(code_obj, expr):
     """ assert_no_dunder_name(code_obj, expr) -> None
@@ -112,6 +114,7 @@ def assert_no_dunder_name(code_obj, expr):
     for name in code_obj.co_names:
         if "__" in name or name in _UNSAFE_ATTRIBUTES:
             raise NameError('Access to forbidden name %r (%r)' % (name, expr))
+
 
 def assert_valid_codeobj(allowed_codes, code_obj, expr):
     """ Asserts that the provided code object validates against the bytecode
@@ -142,6 +145,7 @@ def assert_valid_codeobj(allowed_codes, code_obj, expr):
         if isinstance(const, CodeType):
             assert_valid_codeobj(allowed_codes, const, 'lambda')
 
+
 def test_expr(expr, allowed_codes, mode="eval"):
     """test_expr(expression, allowed_codes[, mode]) -> code_object
 
@@ -160,7 +164,8 @@ def test_expr(expr, allowed_codes, mode="eval"):
     except Exception as e:
         import sys
         exc_info = sys.exc_info()
-        raise ValueError('"%s" while compiling\n%r' % (ustr(e), expr)).with_traceback(exc_info[2])
+        raise ValueError('"%s" while compiling\n%r' %
+                         (ustr(e), expr)).with_traceback(exc_info[2])
     assert_valid_codeobj(allowed_codes, code_obj, expr)
     return code_obj
 
@@ -186,6 +191,7 @@ def const_eval(expr):
     c = test_expr(expr, _CONST_OPCODES)
     return unsafe_eval(c)
 
+
 def expr_eval(expr):
     """expr_eval(expression) -> value
 
@@ -207,6 +213,7 @@ def expr_eval(expr):
     c = test_expr(expr, _EXPR_OPCODES)
     return unsafe_eval(c)
 
+
 def _import(name, globals=None, locals=None, fromlist=None, level=-1):
     if globals is None:
         globals = {}
@@ -217,6 +224,8 @@ def _import(name, globals=None, locals=None, fromlist=None, level=-1):
     if name in _ALLOWED_MODULES:
         return __import__(name, globals, locals, level)
     raise ImportError(name)
+
+
 _BUILTINS = {
     '__import__': _import,
     'True': True,
@@ -255,6 +264,8 @@ _BUILTINS = {
     'zip': zip,
     'Exception': Exception,
 }
+
+
 def safe_eval(expr, globals_dict=None, locals_dict=None, mode="eval", nocopy=False, locals_builtins=False):
     """safe_eval(expression[, globals[, locals[, mode[, nocopy]]]]) -> result
 
@@ -273,7 +284,8 @@ def safe_eval(expr, globals_dict=None, locals_dict=None, mode="eval", nocopy=Fal
     :throws ValueError: If the expression provided uses forbidden bytecode
     """
     if type(expr) is CodeType:
-        raise TypeError("safe_eval does not allow direct evaluation of code objects.")
+        raise TypeError(
+            "safe_eval does not allow direct evaluation of code objects.")
 
     # prevent altering the globals/locals from within the sandbox
     # by taking a copy.
@@ -323,7 +335,10 @@ def safe_eval(expr, globals_dict=None, locals_dict=None, mode="eval", nocopy=Fal
     except Exception as e:
         import sys
         exc_info = sys.exc_info()
-        raise ValueError('%s: "%s" while evaluating\n%r' % (ustr(type(e)), ustr(e), expr)).with_traceback(exc_info[2])
+        raise ValueError('%s: "%s" while evaluating\n%r' % (
+            ustr(type(e)), ustr(e), expr)).with_traceback(exc_info[2])
+
+
 def test_python_expr(expr, mode="eval"):
     try:
         test_expr(expr, _SAFE_OPCODES, mode=mode)
@@ -336,7 +351,8 @@ def test_python_expr(expr, mode="eval"):
                 'offset': err.args[1][2],
                 'error_line': err.args[1][3],
             }
-            msg = "%s : %s at line %d\n%s" % (type(err).__name__, error['message'], error['lineno'], error['error_line'])
+            msg = "%s : %s at line %d\n%s" % (
+                type(err).__name__, error['message'], error['lineno'], error['error_line'])
         else:
             msg = ustr(err)
         return msg

@@ -16,11 +16,13 @@ from odoo.tools.safe_eval import safe_eval
 # extra definitions for backward compatibility
 browse_record_list = BaseModel
 
+
 class browse_record(object):
     """ Pseudo-class for testing record instances """
     class __metaclass__(type):
         def __instancecheck__(self, inst):
             return isinstance(inst, BaseModel) and len(inst) <= 1
+
 
 class browse_null(object):
     """ Pseudo-class for testing null instances """
@@ -35,14 +37,15 @@ def transfer_field_to_modifiers(field, modifiers):
     for attr in ('invisible', 'readonly', 'required'):
         state_exceptions[attr] = []
         default_values[attr] = bool(field.get(attr))
-    for state, modifs in list((field.get("states",{})).items()):
+    for state, modifs in list((field.get("states", {})).items()):
         for modif in modifs:
             if default_values[modif[0]] != modif[1]:
                 state_exceptions[modif[0]].append(state)
 
     for attr, default_value in list(default_values.items()):
         if state_exceptions[attr]:
-            modifiers[attr] = [("state", "not in" if default_value else "in", state_exceptions[attr])]
+            modifiers[attr] = [
+                ("state", "not in" if default_value else "in", state_exceptions[attr])]
         else:
             modifiers[attr] = default_value
 
@@ -57,9 +60,11 @@ def transfer_node_to_modifiers(node, modifiers, context=None, in_tree_view=False
     if node.get('states'):
         if 'invisible' in modifiers and isinstance(modifiers['invisible'], list):
             # TODO combine with AND or OR, use implicit AND for now.
-            modifiers['invisible'].append(('state', 'not in', node.get('states').split(',')))
+            modifiers['invisible'].append(
+                ('state', 'not in', node.get('states').split(',')))
         else:
-            modifiers['invisible'] = [('state', 'not in', node.get('states').split(','))]
+            modifiers['invisible'] = [
+                ('state', 'not in', node.get('states').split(','))]
 
     for a in ('invisible', 'readonly', 'required'):
         if node.get(a):
@@ -84,6 +89,7 @@ def transfer_modifiers_to_node(modifiers, node):
     if modifiers:
         simplify_modifiers(modifiers)
         node.set('modifiers', json.dumps(modifiers))
+
 
 def setup_modifiers(node, field=None, context=None, in_tree_view=False):
     """ Processes node attributes and field descriptors to generate
@@ -112,6 +118,7 @@ def setup_modifiers(node, field=None, context=None, in_tree_view=False):
         node, modifiers, context=context, in_tree_view=in_tree_view)
     transfer_modifiers_to_node(modifiers, node)
 
+
 def test_modifiers(what, expected):
     modifiers = {}
     if isinstance(what, str):
@@ -138,10 +145,14 @@ def modifiers_tests():
     test_modifiers('<field name="a" invisible="0"/>', '{}')
     test_modifiers('<field name="a" readonly="0"/>', '{}')
     test_modifiers('<field name="a" required="0"/>', '{}')
-    test_modifiers('<field name="a" invisible="1" required="1"/>', '{"invisible": true, "required": true}') # TODO order is not guaranteed
-    test_modifiers('<field name="a" invisible="1" required="0"/>', '{"invisible": true}')
-    test_modifiers('<field name="a" invisible="0" required="1"/>', '{"required": true}')
-    test_modifiers("""<field name="a" attrs="{'invisible': [('b', '=', 'c')]}"/>""", '{"invisible": [["b", "=", "c"]]}')
+    test_modifiers('<field name="a" invisible="1" required="1"/>',
+                   '{"invisible": true, "required": true}')  # TODO order is not guaranteed
+    test_modifiers('<field name="a" invisible="1" required="0"/>',
+                   '{"invisible": true}')
+    test_modifiers('<field name="a" invisible="0" required="1"/>',
+                   '{"required": true}')
+    test_modifiers(
+        """<field name="a" attrs="{'invisible': [('b', '=', 'c')]}"/>""", '{"invisible": [["b", "=", "c"]]}')
 
     # The dictionary is supposed to be the result of fields_get().
     test_modifiers({}, '{}')

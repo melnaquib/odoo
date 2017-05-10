@@ -8,6 +8,7 @@ from . import res
 from . import report
 from . import tests
 
+
 def post_init(cr, registry):
     """Rewrite ICP's to force groups"""
     from odoo import api, SUPERUSER_ID

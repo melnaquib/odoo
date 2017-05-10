@@ -82,7 +82,8 @@ class AssetsBundle(object):
     def __init__(self, name, files, remains, env=None):
         self.name = name
         self.env = request.env if env is None else env
-        self.max_css_rules = self.env.context.get('max_css_rules', MAX_CSS_RULES)
+        self.max_css_rules = self.env.context.get(
+            'max_css_rules', MAX_CSS_RULES)
         self.javascripts = []
         self.stylesheets = []
         self.css_errors = []
@@ -92,13 +93,17 @@ class AssetsBundle(object):
         self.remains = remains
         for f in files:
             if f['atype'] == 'text/sass':
-                self.stylesheets.append(SassStylesheetAsset(self, url=f['url'], filename=f['filename'], inline=f['content'], media=f['media']))
+                self.stylesheets.append(SassStylesheetAsset(
+                    self, url=f['url'], filename=f['filename'], inline=f['content'], media=f['media']))
             elif f['atype'] == 'text/less':
-                self.stylesheets.append(LessStylesheetAsset(self, url=f['url'], filename=f['filename'], inline=f['content'], media=f['media']))
+                self.stylesheets.append(LessStylesheetAsset(
+                    self, url=f['url'], filename=f['filename'], inline=f['content'], media=f['media']))
             elif f['atype'] == 'text/css':
-                self.stylesheets.append(StylesheetAsset(self, url=f['url'], filename=f['filename'], inline=f['content'], media=f['media']))
+                self.stylesheets.append(StylesheetAsset(
+                    self, url=f['url'], filename=f['filename'], inline=f['content'], media=f['media']))
             elif f['atype'] == 'text/javascript':
-                self.javascripts.append(JavascriptAsset(self, url=f['url'], filename=f['filename'], inline=f['content']))
+                self.javascripts.append(JavascriptAsset(
+                    self, url=f['url'], filename=f['filename'], inline=f['content']))
 
     def to_html(self, sep=None, css=True, js=True, debug=False, async=False, url_for=(lambda url: url)):
         if sep is None:
@@ -110,7 +115,8 @@ class AssetsBundle(object):
                     self.preprocess_css(debug=debug)
                     if self.css_errors:
                         msg = '\n'.join(self.css_errors)
-                        self.stylesheets.append(StylesheetAsset(self, inline=self.css_message(msg)))
+                        self.stylesheets.append(StylesheetAsset(
+                            self, inline=self.css_message(msg)))
                 for style in self.stylesheets:
                     response.append(style.to_html())
             if js:
@@ -121,14 +127,17 @@ class AssetsBundle(object):
                 css_attachments = self.css()
                 if not self.css_errors:
                     for attachment in css_attachments:
-                        response.append('<link href="%s" rel="stylesheet"/>' % url_for(attachment.url))
+                        response.append(
+                            '<link href="%s" rel="stylesheet"/>' % url_for(attachment.url))
                 else:
                     msg = '\n'.join(self.css_errors)
-                    self.stylesheets.append(StylesheetAsset(self, inline=self.css_message(msg)))
+                    self.stylesheets.append(StylesheetAsset(
+                        self, inline=self.css_message(msg)))
                     for style in self.stylesheets:
                         response.append(style.to_html())
             if js and self.javascripts:
-                response.append('<script %s type="text/javascript" src="%s"></script>' % (async and 'async="async"' or '', url_for(self.js().url)))
+                response.append('<script %s type="text/javascript" src="%s"></script>' %
+                                (async and 'async="async"' or '', url_for(self.js().url)))
         response.extend(self.remains)
 
         return sep + sep.join(response)
@@ -151,7 +160,8 @@ class AssetsBundle(object):
         Not really a full checksum.
         We compute a SHA1 on the rendered bundle + max linked files last_modified date
         """
-        check = json.dumps(self.files) + ",".join(self.remains) + str(self.last_modified)
+        check = json.dumps(self.files) + \
+            ",".join(self.remains) + str(self.last_modified)
         return hashlib.sha1(check).hexdigest()
 
     def clean_attachments(self, type):
@@ -170,7 +180,9 @@ class AssetsBundle(object):
         """
         ira = self.env['ir.attachment']
         domain = [
-            ('url', '=like', '/web/content/%-%/{0}%.{1}'.format(self.name, type)),  # The wilcards are id, version and pagination number (if any)
+            # The wilcards are id, version and pagination number (if any)
+            ('url', '=like',
+             '/web/content/%-%/{0}%.{1}'.format(self.name, type)),
             '!', ('url', '=like', '/web/content/%-{}/%'.format(self.version))
         ]
 
@@ -187,7 +199,8 @@ class AssetsBundle(object):
         multiple time the same bundle in our `to_html` function, we group our ir.attachment records
         by file name and only return the one with the max id for each group.
         """
-        url_pattern = '/web/content/%-{0}/{1}{2}.{3}'.format(self.version, self.name, '.%' if type == 'css' else '', type)
+        url_pattern = '/web/content/%-{0}/{1}{2}.{3}'.format(
+            self.version, self.name, '.%' if type == 'css' else '', type)
         self.env.cr.execute("""
              SELECT max(id)
                FROM ir_attachment
@@ -201,7 +214,8 @@ class AssetsBundle(object):
     def save_attachment(self, type, content, inc=None):
         ira = self.env['ir.attachment']
 
-        fname = '%s%s.%s' % (self.name, ('' if inc is None else '.%s' % inc), type)
+        fname = '%s%s.%s' % (
+            self.name, ('' if inc is None else '.%s' % inc), type)
         values = {
             'name': "/web/content/%s" % type,
             'datas_fname': fname,
@@ -244,7 +258,8 @@ class AssetsBundle(object):
 
             # move up all @import rules to the top
             matches = []
-            css = re.sub(self.rx_css_import, lambda matchobj: matches.append(matchobj.group(0)) and '', css)
+            css = re.sub(self.rx_css_import, lambda matchobj: matches.append(
+                matchobj.group(0)) and '', css)
             matches.append(css)
             css = '\n'.join(matches)
 
@@ -286,19 +301,22 @@ class AssetsBundle(object):
         preprocessed = True
         for atype in (SassStylesheetAsset, LessStylesheetAsset):
             outdated = False
-            assets = dict((asset.html_url, asset) for asset in self.stylesheets if isinstance(asset, atype))
+            assets = dict((asset.html_url, asset)
+                          for asset in self.stylesheets if isinstance(asset, atype))
             if assets:
                 assets_domain = [('url', 'in', list(assets.keys()))]
-                attachments = self.env['ir.attachment'].sudo().search(assets_domain)
+                attachments = self.env['ir.attachment'].sudo().search(
+                    assets_domain)
                 for attachment in attachments:
                     asset = assets[attachment.url]
                     if asset.last_modified > fields.Datetime.from_string(attachment['__last_update']):
                         outdated = True
                         break
                     if asset._content is None:
-                        asset._content = attachment.datas and attachment.datas.decode('base64').decode('utf8') or ''
+                        asset._content = attachment.datas and attachment.datas.decode(
+                            'base64').decode('utf8') or ''
                         if not asset._content and attachment.file_size > 0:
-                            asset._content = None # file missing, force recompile
+                            asset._content = None  # file missing, force recompile
 
                 if any(asset._content is None for asset in assets.values()):
                     outdated = True
@@ -316,7 +334,8 @@ class AssetsBundle(object):
             Returns the bundle's flat css.
         """
         for atype in (SassStylesheetAsset, LessStylesheetAsset):
-            assets = [asset for asset in self.stylesheets if isinstance(asset, atype)]
+            assets = [
+                asset for asset in self.stylesheets if isinstance(asset, atype)]
             if assets:
                 cmd = assets[0].get_command()
                 source = '\n'.join([asset.get_source() for asset in assets])
@@ -325,11 +344,14 @@ class AssetsBundle(object):
                 fragments = self.rx_css_split.split(compiled)
                 at_rules = fragments.pop(0)
                 if at_rules:
-                    # Sass and less moves @at-rules to the top in order to stay css 2.1 compatible
-                    self.stylesheets.insert(0, StylesheetAsset(self, inline=at_rules))
+                    # Sass and less moves @at-rules to the top in order to stay
+                    # css 2.1 compatible
+                    self.stylesheets.insert(
+                        0, StylesheetAsset(self, inline=at_rules))
                 while fragments:
                     asset_id = fragments.pop(0)
-                    asset = next(asset for asset in self.stylesheets if asset.id == asset_id)
+                    asset = next(
+                        asset for asset in self.stylesheets if asset.id == asset_id)
                     asset._content = fragments.pop(0)
 
                     if debug:
@@ -338,7 +360,8 @@ class AssetsBundle(object):
                             url = asset.html_url
                             with self.env.cr.savepoint():
                                 self.env['ir.attachment'].sudo().create(dict(
-                                    datas=asset.content.encode('utf8').encode('base64'),
+                                    datas=asset.content.encode(
+                                        'utf8').encode('base64'),
                                     mimetype='text/css',
                                     type='binary',
                                     name=url,
@@ -389,14 +412,16 @@ class AssetsBundle(object):
 
     def get_preprocessor_error(self, stderr, source=None):
         """Improve and remove sensitive information from sass/less compilator error messages"""
-        error = misc.ustr(stderr).split('Load paths')[0].replace('  Use --trace for backtrace.', '')
+        error = misc.ustr(stderr).split('Load paths')[
+            0].replace('  Use --trace for backtrace.', '')
         if 'Cannot load compass' in error:
             error += "Maybe you should install the compass gem using this extra argument:\n\n" \
                      "    $ sudo gem install compass --pre\n"
         error += "This error occured while compiling the bundle '%s' containing:" % self.name
         for asset in self.stylesheets:
             if isinstance(asset, PreprocessedCSS):
-                error += '\n    - %s' % (asset.url if asset.url else '<inline sass>')
+                error += '\n    - %s' % (
+                    asset.url if asset.url else '<inline sass>')
         return error
 
 
@@ -414,11 +439,13 @@ class WebAsset(object):
         self.url = url
         self.html_url_args = url
         if not inline and not url:
-            raise Exception("An asset should either be inlined or url linked, defined in bundle '%s'" % bundle.name)
+            raise Exception(
+                "An asset should either be inlined or url linked, defined in bundle '%s'" % bundle.name)
 
     @func.lazy_property
     def id(self):
-        if self._id is None: self._id = str(uuid.uuid4())
+        if self._id is None:
+            self._id = str(uuid.uuid4())
         return self._id
 
     @func.lazy_property
@@ -440,7 +467,8 @@ class WebAsset(object):
                 # Test url against ir.attachments
                 fields = ['__last_update', 'datas', 'mimetype']
                 domain = [('type', '=', 'binary'), ('url', '=', self.url)]
-                attach = self.bundle.env['ir.attachment'].sudo().search_read(domain, fields)
+                attach = self.bundle.env['ir.attachment'].sudo(
+                ).search_read(domain, fields)
                 self._ir_attach = attach[0]
             except Exception:
                 raise AssetNotFound("Could not find %s" % self.name)
@@ -515,7 +543,8 @@ class JavascriptAsset(WebAsset):
 
 class StylesheetAsset(WebAsset):
     rx_import = re.compile(r"""@import\s+('|")(?!'|"|/|https?://)""", re.U)
-    rx_url = re.compile(r"""url\s*\(\s*('|"|)(?!'|"|/|https?://|data:)""", re.U)
+    rx_url = re.compile(
+        r"""url\s*\(\s*('|"|)(?!'|"|/|https?://|data:)""", re.U)
     rx_sourceMap = re.compile(r'(/\*# sourceMappingURL=.*)', re.U)
     rx_charset = re.compile(r'(@charset "[^"]+";)', re.U)
 
@@ -567,7 +596,8 @@ class StylesheetAsset(WebAsset):
         return self.with_header(content)
 
     def to_html(self):
-        media = (' media="%s"' % werkzeug.utils.escape(self.media)) if self.media else ''
+        media = (' media="%s"' % werkzeug.utils.escape(
+            self.media)) if self.media else ''
         if self.url:
             href = self.html_url
             return '<link rel="stylesheet" href="%s" type="text/css"%s/>' % (href, media)
@@ -608,7 +638,8 @@ class SassStylesheetAsset(PreprocessedCSS):
             if self.indent is None:
                 self.indent = ind
                 if self.indent == self.reindent:
-                    # Don't reindent the file if identation is the final one (reindent)
+                    # Don't reindent the file if identation is the final one
+                    # (reindent)
                     raise StopIteration()
             return ind.replace(self.indent, self.reindent)
 
@@ -636,5 +667,6 @@ class LessStylesheetAsset(PreprocessedCSS):
                 lessc = misc.find_in_path('lessc')
         except IOError:
             lessc = 'lessc'
-        lesspath = get_resource_path('web', 'static', 'lib', 'bootstrap', 'less')
+        lesspath = get_resource_path(
+            'web', 'static', 'lib', 'bootstrap', 'less')
         return [lessc, '-', '--no-js', '--no-color', '--include-path=%s' % lesspath]

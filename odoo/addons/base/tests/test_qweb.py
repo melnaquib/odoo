@@ -29,8 +29,8 @@ class TestQWebTField(TransactionCase):
         self.assertEqual(
             result,
             '<span data-oe-model="res.company" data-oe-id="%d" '
-                  'data-oe-field="name" data-oe-type="char" '
-                  'data-oe-expression="company.name">%s</span>' % (
+            'data-oe-field="name" data-oe-type="char" '
+            'data-oe-expression="company.name">%s</span>' % (
                 company.id,
                 "My Test Company",
             ),
@@ -45,8 +45,8 @@ class TestQWebTField(TransactionCase):
         self.assertEqual(
             result,
             '<span data-oe-model="res.company" data-oe-id="%d" '
-                  'data-oe-field="name" data-oe-type="char" '
-                  'data-oe-expression="company.name">%s</span>' % (
+            'data-oe-field="name" data-oe-type="char" '
+            'data-oe-expression="company.name">%s</span>' % (
                 company.id,
                 cgi.escape(s.encode('utf-8')),
             ),
@@ -66,6 +66,8 @@ class TestQWebTField(TransactionCase):
 
 
 from copy import deepcopy
+
+
 class FileSystemLoader(object):
     def __init__(self, path):
         # TODO: support multiple files #add_file() + add cache
@@ -83,7 +85,8 @@ class FileSystemLoader(object):
             if node.get('t-name') == name:
                 root = etree.Element('templates')
                 root.append(deepcopy(node))
-                arch = etree.tostring(root, encoding='utf-8', xml_declaration=True)
+                arch = etree.tostring(
+                    root, encoding='utf-8', xml_declaration=True)
                 return arch
 
 
@@ -124,7 +127,8 @@ class TestQWeb(TransactionCase):
             param = doc.find('params[@id="{}"]'.format(template))
             # OrderedDict to ensure JSON mappings are iterated in source order
             # so output is predictable & repeatable
-            params = {} if param is None else json.loads(param.text, object_pairs_hook=collections.OrderedDict)
+            params = {} if param is None else json.loads(
+                param.text, object_pairs_hook=collections.OrderedDict)
 
             result = doc.find('result[@id="{}"]'.format(template)).text
             self.assertEqual(
@@ -132,6 +136,7 @@ class TestQWeb(TransactionCase):
                 (result or '').strip().encode('utf-8'),
                 template
             )
+
 
 def load_tests(loader, suite, _):
     # can't override TestQWeb.__dir__ because dir() called on *class* not

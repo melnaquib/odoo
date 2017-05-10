@@ -23,7 +23,8 @@ class test_guess_mimetype(unittest.TestCase):
         mimetype = guess_mimetype('')
         # odoo implementation returns application/octet-stream by default
         # if available, python-magic returns application/x-empty
-        self.assertIn(mimetype, ('application/octet-stream', 'application/x-empty'))
+        self.assertIn(
+            mimetype, ('application/octet-stream', 'application/x-empty'))
 
     def test_default_mimetype(self):
         mimetype = guess_mimetype('', default='test')

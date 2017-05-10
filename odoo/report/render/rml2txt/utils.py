@@ -11,21 +11,24 @@ from odoo.tools.safe_eval import safe_eval
 
 _regex = re.compile('\[\[(.+?)\]\]')
 
+
 def _child_get(node, self=None, tagname=None):
     for n in node:
         if self and self.localcontext and n.get('rml_loop', False):
             oldctx = self.localcontext
-            for ctx in safe_eval(n.get('rml_loop'),{}, self.localcontext):
+            for ctx in safe_eval(n.get('rml_loop'), {}, self.localcontext):
                 self.localcontext.update(ctx)
-                if (tagname is None) or (n.tag==tagname):
+                if (tagname is None) or (n.tag == tagname):
                     if n.get('rml_except', False):
                         try:
-                            safe_eval(n.get('rml_except'), {}, self.localcontext)
+                            safe_eval(n.get('rml_except'),
+                                      {}, self.localcontext)
                         except Exception:
                             continue
                     if n.get('rml_tag'):
                         try:
-                            (tag,attr) = safe_eval(n.get('rml_tag'),{}, self.localcontext)
+                            (tag, attr) = safe_eval(
+                                n.get('rml_tag'), {}, self.localcontext)
                             n2 = copy.copy(n)
                             n2.tag = tag
                             n2.attrib.update(attr)
@@ -41,35 +44,38 @@ def _child_get(node, self=None, tagname=None):
                 safe_eval(n.get('rml_except'), {}, self.localcontext)
             except Exception:
                 continue
-        if (tagname is None) or (n.tag==tagname):
+        if (tagname is None) or (n.tag == tagname):
             yield n
 
+
 def _process_text(self, txt):
-        if not self.localcontext:
-            return txt
-        if not txt:
-            return ''
-        result = ''
-        sps = _regex.split(txt)
-        while sps:
-            # This is a simple text to translate
-            result += self.localcontext.get('translate', lambda x:x)(sps.pop(0))
-            if sps:
-                try:
-                    txt2 = safe_eval(sps.pop(0),self.localcontext)
-                except Exception:
-                    txt2 = ''
-                if isinstance(txt2, (int, float)):
-                    txt2 = str(txt2)
-                if isinstance(txt2, str):
-                    result += txt2
-        return result
+    if not self.localcontext:
+        return txt
+    if not txt:
+        return ''
+    result = ''
+    sps = _regex.split(txt)
+    while sps:
+        # This is a simple text to translate
+        result += self.localcontext.get('translate', lambda x: x)(sps.pop(0))
+        if sps:
+            try:
+                txt2 = safe_eval(sps.pop(0), self.localcontext)
+            except Exception:
+                txt2 = ''
+            if isinstance(txt2, (int, float)):
+                txt2 = str(txt2)
+            if isinstance(txt2, str):
+                result += txt2
+    return result
+
 
 def text_get(node):
     rc = ''
     for node in node.getchildren():
-            rc = rc + node.text
+        rc = rc + node.text
     return rc
+
 
 units = [
     (re.compile('^(-?[0-9\.]+)\s*in$'), reportlab.lib.units.inch),
@@ -78,14 +84,16 @@ units = [
     (re.compile('^(-?[0-9\.]+)\s*$'), 1)
 ]
 
+
 def unit_get(size):
     global units
     if size:
         for unit in units:
             res = unit[0].search(size, 0)
             if res:
-                return unit[1]*float(res.group(1))
+                return unit[1] * float(res.group(1))
     return False
+
 
 def tuple_int_get(node, attr_name, default=None):
     if not node.get(attr_name):
@@ -93,8 +101,10 @@ def tuple_int_get(node, attr_name, default=None):
     res = [int(x) for x in node.get(attr_name).split(',')]
     return res
 
+
 def bool_get(value):
-    return (str(value)=="1") or (value.lower()=='yes')
+    return (str(value) == "1") or (value.lower() == 'yes')
+
 
 def attr_get(node, attrs, dict=None):
     if dict is None:
@@ -105,12 +115,12 @@ def attr_get(node, attrs, dict=None):
             res[name] = unit_get(node.get(name))
     for key in dict:
         if node.get(key):
-            if dict[key]=='str':
+            if dict[key] == 'str':
                 res[key] = str(node.get(key))
-            elif dict[key]=='bool':
+            elif dict[key] == 'bool':
                 res[key] = bool_get(node.get(key))
-            elif dict[key]=='int':
+            elif dict[key] == 'int':
                 res[key] = int(node.get(key))
-            elif dict[key]=='unit':
+            elif dict[key] == 'unit':
                 res[key] = unit_get(node.get(key))
     return res

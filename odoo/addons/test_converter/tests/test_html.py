@@ -9,6 +9,7 @@ from odoo.tools import html_escape as e
 
 directory = os.path.dirname(__file__)
 
+
 class TestExport(common.TransactionCase):
     _model = None
 
@@ -122,9 +123,9 @@ class TestCurrencyExport(TestExport):
         self.assertEqual(
             converted, '<span class="oe_currency_value">\u20110.12</span>'
                        '\N{NO-BREAK SPACE}{symbol}'.format(
-                obj=obj,
-                symbol=currency.symbol.encode('utf-8')
-            ),)
+                           obj=obj,
+                           symbol=currency.symbol.encode('utf-8')
+                       ),)
 
     def test_currency_pre(self):
         currency = self.create(
@@ -135,8 +136,8 @@ class TestCurrencyExport(TestExport):
 
         self.assertEqual(
             converted,
-                      '{symbol}\N{NO-BREAK SPACE}'
-                      '<span class="oe_currency_value">0.12</span>'.format(
+            '{symbol}\N{NO-BREAK SPACE}'
+            '<span class="oe_currency_value">0.12</span>'.format(
                 obj=obj,
                 symbol=currency.symbol.encode('utf-8')
             ),)
@@ -151,8 +152,8 @@ class TestCurrencyExport(TestExport):
 
         self.assertEqual(
             converted,
-                      '<span class="oe_currency_value">0.12</span>'
-                      '\N{NO-BREAK SPACE}{symbol}'.format(
+            '<span class="oe_currency_value">0.12</span>'
+            '\N{NO-BREAK SPACE}{symbol}'.format(
                 obj=obj,
                 symbol=currency.symbol.encode('utf-8')
             ),)
@@ -242,7 +243,8 @@ class TestSelectionExport(TestBasicExport):
 
         converter = self.get_converter('selection_str')
         value = converter('C')
-        self.assertEqual(value, "Qu'est-ce qu'il fout ce maudit pancake, tabernacle ?")
+        self.assertEqual(
+            value, "Qu'est-ce qu'il fout ce maudit pancake, tabernacle ?")
 
 
 class TestHTMLExport(TestBasicExport):

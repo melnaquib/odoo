@@ -1,16 +1,20 @@
 # -*- coding: utf-8 -*-
-# taken from http://code.activestate.com/recipes/252524-length-limited-o1-lru-cache-implementation/
+# taken from
+# http://code.activestate.com/recipes/252524-length-limited-o1-lru-cache-implementation/
 import threading
 from .func import synchronized
 
 __all__ = ['LRU']
 
+
 class LRUNode(object):
     __slots__ = ['prev', 'next', 'me']
+
     def __init__(self, prev, me):
         self.prev = prev
         self.me = me
         self.next = None
+
 
 class LRU(object):
     """
@@ -19,6 +23,7 @@ class LRU(object):
     http://pype.sourceforge.net
     Copyright 2003 Josiah Carlson.
     """
+
     def __init__(self, count, pairs=[]):
         self._lock = threading.RLock()
         self.count = max(count, 1)
@@ -106,7 +111,7 @@ class LRU(object):
 
     @synchronized()
     def itervalues(self):
-        for i,j in self.items():
+        for i, j in self.items():
             yield j
 
     @synchronized()
@@ -114,8 +119,8 @@ class LRU(object):
         return list(self.d.keys())
 
     @synchronized()
-    def pop(self,key):
-        v=self[key]
+    def pop(self, key):
+        v = self[key]
         del self[key]
         return v
 

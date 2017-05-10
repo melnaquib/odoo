@@ -19,7 +19,8 @@ class IrFilters(models.Model):
     domain = fields.Text(default='[]', required=True)
     context = fields.Text(default='{}', required=True)
     sort = fields.Text(default='[]', required=True)
-    model_id = fields.Selection(selection='_list_all_models', string='Model', required=True)
+    model_id = fields.Selection(
+        selection='_list_all_models', string='Model', required=True)
     is_default = fields.Boolean(string='Default filter')
     action_id = fields.Many2one('ir.actions.actions', string='Action', ondelete='cascade',
                                 help="The menu action this filter applies to. "
@@ -66,9 +67,11 @@ class IrFilters(models.Model):
             ``action_id`` (m2o tuple) and ``context`` of the matching ``ir.filters``.
         """
         # available filters: private filters (user_id=uid) and public filters (uid=NULL),
-        # and filters for the action (action_id=action_id) or global (action_id=NULL)
+        # and filters for the action (action_id=action_id) or global
+        # (action_id=NULL)
         action_domain = self._get_action_domain(action_id)
-        filters = self.search(action_domain + [('model_id', '=', model), ('user_id', 'in', [self._uid, False])])
+        filters = self.search(
+            action_domain + [('model_id', '=', model), ('user_id', 'in', [self._uid, False])])
         user_context = self.env.user.context_get()
         return filters.with_context(user_context).read(['name', 'is_default', 'domain', 'context', 'user_id', 'sort'])
 
@@ -101,7 +104,8 @@ class IrFilters(models.Model):
         if matching_filters and (matching_filters[0]['id'] == defaults.id):
             return
 
-        raise UserError(_("There is already a shared filter set as default for %(model)s, delete or change it before setting a new default") % {'model': vals.get('model_id')})
+        raise UserError(_("There is already a shared filter set as default for %(model)s, delete or change it before setting a new default") % {
+                        'model': vals.get('model_id')})
 
     @api.model
     @api.returns('self', lambda value: value.id)
@@ -143,15 +147,20 @@ class IrFilters(models.Model):
         # Partial constraint, complemented by unique index (see below). Still
         # useful to keep because it provides a proper error message when a
         # violation occurs, as it shares the same prefix as the unique index.
-        ('name_model_uid_unique', 'unique (name, model_id, user_id, action_id)', 'Filter names must be unique'),
+        ('name_model_uid_unique', 'unique (name, model_id, user_id, action_id)',
+         'Filter names must be unique'),
     ]
 
     @api.model_cr_context
     def _auto_init(self):
         result = super(IrFilters, self)._auto_init()
-        # Use unique index to implement unique constraint on the lowercase name (not possible using a constraint)
-        self._cr.execute("DROP INDEX IF EXISTS ir_filters_name_model_uid_unique_index")  # drop old index w/o action
-        self._cr.execute("SELECT indexname FROM pg_indexes WHERE indexname = 'ir_filters_name_model_uid_unique_action_index'")
+        # Use unique index to implement unique constraint on the lowercase name
+        # (not possible using a constraint)
+        # drop old index w/o action
+        self._cr.execute(
+            "DROP INDEX IF EXISTS ir_filters_name_model_uid_unique_index")
+        self._cr.execute(
+            "SELECT indexname FROM pg_indexes WHERE indexname = 'ir_filters_name_model_uid_unique_action_index'")
         if not self._cr.fetchone():
             self._cr.execute("""CREATE UNIQUE INDEX "ir_filters_name_model_uid_unique_action_index" ON ir_filters
                                 (lower(name), model_id, COALESCE(user_id,-1), COALESCE(action_id,-1))""")

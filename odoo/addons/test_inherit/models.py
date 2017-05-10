@@ -4,6 +4,8 @@
 from odoo import models, fields, api
 
 # We create a new model
+
+
 class mother(models.Model):
     _name = 'test.inherit.mother'
 
@@ -91,7 +93,8 @@ class test_inherit_property(models.Model):
     property_foo = fields.Integer(company_dependent=False)
 
     # override property_bar with a new-api computed field
-    property_bar = fields.Integer(compute='_compute_bar', company_dependent=False)
+    property_bar = fields.Integer(
+        compute='_compute_bar', company_dependent=False)
 
     @api.multi
     def _compute_bar(self):

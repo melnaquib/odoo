@@ -13,15 +13,17 @@ from odoo.models import check_method_name
 from odoo.tools.translate import translate
 from odoo.tools.translate import _
 
-import security
+from . import security
 
 _logger = logging.getLogger(__name__)
 
-PG_CONCURRENCY_ERRORS_TO_RETRY = (errorcodes.LOCK_NOT_AVAILABLE, errorcodes.SERIALIZATION_FAILURE, errorcodes.DEADLOCK_DETECTED)
+PG_CONCURRENCY_ERRORS_TO_RETRY = (
+    errorcodes.LOCK_NOT_AVAILABLE, errorcodes.SERIALIZATION_FAILURE, errorcodes.DEADLOCK_DETECTED)
 MAX_TRIES_ON_CONCURRENCY_FAILURE = 5
 
+
 def dispatch(method, params):
-    (db, uid, passwd ) = params[0:3]
+    (db, uid, passwd) = params[0:3]
 
     # set uid tracker - cleaned up at the WSGI
     # dispatching phase in odoo.service.wsgi_server.application
@@ -29,15 +31,17 @@ def dispatch(method, params):
 
     params = params[3:]
     if method == 'obj_list':
-        raise NameError("obj_list has been discontinued via RPC as of 6.0, please query ir.model directly!")
+        raise NameError(
+            "obj_list has been discontinued via RPC as of 6.0, please query ir.model directly!")
     if method not in ['execute', 'execute_kw', 'exec_workflow']:
         raise NameError("Method not available %s" % method)
-    security.check(db,uid,passwd)
+    security.check(db, uid, passwd)
     registry = odoo.registry(db).check_signaling()
     fn = globals()[method]
     res = fn(db, uid, *params)
     registry.signal_caches_change()
     return res
+
 
 def check(f):
     @wraps(f)
@@ -61,9 +65,8 @@ def check(f):
                     # http entry points such as call_kw()
                     ctx = kwargs['kwargs'].get('context')
 
-
             uid = 1
-            if args and isinstance(args[0], (long, int)):
+            if args and isinstance(args[0], int):
                 uid = args[0]
 
             lang = ctx and ctx.get('lang')
@@ -78,12 +81,14 @@ def check(f):
                 # callable. We need to find the right parameters to call
                 # the  orm._sql_message(self, cr, uid, ids, context) function,
                 # or we skip..
-                # our signature is f(registry, dbname [,uid, obj, method, args])
+                # our signature is f(registry, dbname [,uid, obj, method,
+                # args])
                 try:
                     if args and len(args) > 1:
-                        # TODO self doesn't exist, but was already wrong before (it was not a registry but just the object_service.
+                        # TODO self doesn't exist, but was already wrong before
+                        # (it was not a registry but just the object_service.
                         obj = self.get(args[1])
-                        if len(args) > 3 and isinstance(args[3], (long, int, list)):
+                        if len(args) > 3 and isinstance(args[3], (int, list)):
                             ids = args[3]
                         else:
                             ids = []
@@ -92,10 +97,11 @@ def check(f):
                 except Exception:
                     pass
                 finally:
-                    if cr: cr.close()
+                    if cr:
+                        cr.close()
 
-                return False # so that the original SQL error will
-                             # be returned, it is the best we have.
+                return False  # so that the original SQL error will
+                # be returned, it is the best we have.
 
             try:
                 cr = odoo.sql_db.db_connect(dbname).cursor()
@@ -106,7 +112,8 @@ def check(f):
                 else:
                     return src
             finally:
-                if cr: cr.close()
+                if cr:
+                    cr.close()
 
         def _(src):
             return tr(src, 'code')
@@ -115,7 +122,8 @@ def check(f):
         while True:
             try:
                 if odoo.registry(dbname)._init and not odoo.tools.config['test_enable']:
-                    raise odoo.exceptions.Warning('Currently, this database is not fully loaded and can not be used.')
+                    raise odoo.exceptions.Warning(
+                        'Currently, this database is not fully loaded and can not be used.')
                 return f(dbname, *args, **kwargs)
             except (OperationalError, QWebException) as e:
                 if isinstance(e, QWebException):
@@ -124,34 +132,41 @@ def check(f):
                         e = cause
                     else:
                         raise
-                # Automatically retry the typical transaction serialization errors
+                # Automatically retry the typical transaction serialization
+                # errors
                 if e.pgcode not in PG_CONCURRENCY_ERRORS_TO_RETRY:
                     raise
                 if tries >= MAX_TRIES_ON_CONCURRENCY_FAILURE:
-                    _logger.info("%s, maximum number of tries reached" % errorcodes.lookup(e.pgcode))
+                    _logger.info("%s, maximum number of tries reached" %
+                                 errorcodes.lookup(e.pgcode))
                     raise
                 wait_time = random.uniform(0.0, 2 ** tries)
                 tries += 1
-                _logger.info("%s, retry %d/%d in %.04f sec..." % (errorcodes.lookup(e.pgcode), tries, MAX_TRIES_ON_CONCURRENCY_FAILURE, wait_time))
+                _logger.info("%s, retry %d/%d in %.04f sec..." % (errorcodes.lookup(
+                    e.pgcode), tries, MAX_TRIES_ON_CONCURRENCY_FAILURE, wait_time))
                 time.sleep(wait_time)
-            except IntegrityError, inst:
+            except IntegrityError as inst:
                 registry = odoo.registry(dbname)
                 for key in registry._sql_error.keys():
                     if key in inst[0]:
-                        raise ValidationError(tr(registry._sql_error[key], 'sql_constraint') or inst[0])
+                        raise ValidationError(
+                            tr(registry._sql_error[key], 'sql_constraint') or inst[0])
                 if inst.pgcode in (errorcodes.NOT_NULL_VIOLATION, errorcodes.FOREIGN_KEY_VIOLATION, errorcodes.RESTRICT_VIOLATION):
                     msg = _('The operation cannot be completed, probably due to the following:\n- deletion: you may be trying to delete a record while other records still reference it\n- creation/update: a mandatory field is not correctly set')
                     _logger.debug("IntegrityError", exc_info=True)
                     try:
-                        errortxt = inst.pgerror.replace('«','"').replace('»','"')
+                        errortxt = inst.pgerror.replace(
+                            '«', '"').replace('»', '"')
                         if '"public".' in errortxt:
                             context = errortxt.split('"public".')[1]
                             model_name = table = context.split('"')[1]
                         else:
                             last_quote_end = errortxt.rfind('"')
-                            last_quote_begin = errortxt.rfind('"', 0, last_quote_end)
-                            model_name = table = errortxt[last_quote_begin+1:last_quote_end].strip()
-                        model = table.replace("_",".")
+                            last_quote_begin = errortxt.rfind(
+                                '"', 0, last_quote_end)
+                            model_name = table = errortxt[last_quote_begin +
+                                                          1:last_quote_end].strip()
+                        model = table.replace("_", ".")
                         if model in registry:
                             model_class = registry[model]
                             model_name = model_class._description or model_class._name
@@ -164,6 +179,7 @@ def check(f):
 
     return wrapper
 
+
 def execute_cr(cr, uid, obj, method, *args, **kw):
     recs = odoo.api.Environment(cr, uid, {}).get(obj)
     if recs is None:
@@ -174,6 +190,7 @@ def execute_cr(cr, uid, obj, method, *args, **kw):
 def execute_kw(db, uid, obj, method, args, kw=None):
     return execute(db, uid, obj, method, *args, **kw or {})
 
+
 @check
 def execute(db, uid, obj, method, *args, **kw):
     threading.currentThread().dbname = db
@@ -181,8 +198,10 @@ def execute(db, uid, obj, method, *args, **kw):
         check_method_name(method)
         res = execute_cr(cr, uid, obj, method, *args, **kw)
         if res is None:
-            _logger.info('The method %s of the object %s can not return `None` !', method, obj)
+            _logger.info(
+                'The method %s of the object %s can not return `None` !', method, obj)
         return res
+
 
 def exec_workflow_cr(cr, uid, obj, signal, *args):
     res_id = args[0]

@@ -9,9 +9,11 @@ from odoo.tests import common
 #: Stores state information across multiple test classes
 test_state = None
 
+
 def setUpModule():
     global test_state
     test_state = {}
+
 
 def tearDownModule():
     global test_state
@@ -59,6 +61,7 @@ class TestPhaseInstall02(unittest.TestCase):
     Warning: relies on *classes* being run in alphabetical order in test
     modules
     """
+
     def test_check_state(self):
         self.assertTrue(test_state.get('set_at_install'),
                         "The flag should be set if local overriding of runstate")

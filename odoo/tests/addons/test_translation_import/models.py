@@ -2,6 +2,7 @@
 
 from odoo import models, fields, _
 
+
 class m(models.TransientModel):
     """ A model to provide source strings. """
     _name = 'test.translation.import'

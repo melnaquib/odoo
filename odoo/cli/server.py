@@ -31,12 +31,14 @@ __version__ = odoo.release.version
 # Also use the `odoo` logger for the main script.
 _logger = logging.getLogger('odoo')
 
+
 def check_root_user():
     """Warn if the process's user is 'root' (on POSIX system)."""
     if os.name == 'posix':
         import pwd
         if pwd.getpwuid(os.getuid())[0] == 'root':
             sys.stderr.write("Running as user 'root' is a security risk.\n")
+
 
 def check_postgres_user():
     """ Exit if the configured database user is 'postgres'.
@@ -45,8 +47,10 @@ def check_postgres_user():
     """
     config = odoo.tools.config
     if config['db_user'] == 'postgres':
-        sys.stderr.write("Using the database user 'postgres' is a security risk, aborting.")
+        sys.stderr.write(
+            "Using the database user 'postgres' is a security risk, aborting.")
         sys.exit(1)
+
 
 def report_configuration():
     """ Log the server version and some configuration values.
@@ -63,6 +67,7 @@ def report_configuration():
     user = config['db_user'] or os.environ.get('PGUSER', 'default')
     _logger.info('database: %s@%s:%s', user, host, port)
 
+
 def rm_pid_file(main_pid):
     config = odoo.tools.config
     if config['pidfile'] and main_pid == os.getpid():
@@ -70,6 +75,7 @@ def rm_pid_file(main_pid):
             os.unlink(config['pidfile'])
         except OSError:
             pass
+
 
 def setup_pid_file():
     """ Create a file with the process id written in it.
@@ -83,6 +89,7 @@ def setup_pid_file():
             fd.write(str(pid))
         atexit.register(rm_pid_file, pid)
 
+
 def export_translation():
     config = odoo.tools.config
     dbname = config['db_name']
@@ -92,7 +99,7 @@ def export_translation():
     else:
         msg = "new language"
     _logger.info('writing translation file for %s to %s', msg,
-        config["translate_out"])
+                 config["translate_out"])
 
     fileformat = os.path.splitext(config["translate_out"])[-1][1:].lower()
 
@@ -101,9 +108,10 @@ def export_translation():
         with odoo.api.Environment.manage():
             with registry.cursor() as cr:
                 odoo.tools.trans_export(config["language"],
-                    config["translate_modules"] or ["all"], buf, fileformat, cr)
+                                        config["translate_modules"] or ["all"], buf, fileformat, cr)
 
     _logger.info('translation file written successfully')
+
 
 def import_translation():
     config = odoo.tools.config
@@ -116,6 +124,7 @@ def import_translation():
             odoo.tools.trans_load(
                 cr, config["translate_in"], config["language"], context=context,
             )
+
 
 def main(args):
     check_root_user()
@@ -158,7 +167,9 @@ def main(args):
     rc = odoo.service.server.start(preload=preload, stop=stop)
     sys.exit(rc)
 
+
 class Server(Command):
     """Start the odoo server (default command)"""
+
     def run(self, args):
         main(args)

@@ -4,6 +4,7 @@
 from odoo import SUPERUSER_ID
 from odoo.http import Controller, request, route
 
+
 class TestAssetsBundleController(Controller):
     @route('/test_assetsbundle/js', type='http', auth='user')
     def bundle(self):

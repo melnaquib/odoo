@@ -10,7 +10,8 @@ SUPPORTED_DEBUGGER = {'pdb', 'ipdb', 'wdb', 'pudb'}
 
 def post_mortem(config, info):
     if config['dev_mode'] and isinstance(info[2], types.TracebackType):
-        debug = next((opt for opt in config['dev_mode'] if opt in SUPPORTED_DEBUGGER), None)
+        debug = next(
+            (opt for opt in config['dev_mode'] if opt in SUPPORTED_DEBUGGER), None)
         if debug:
             try:
                 # Try to import the xpdb from config (pdb, ipdb, pudb, ...)

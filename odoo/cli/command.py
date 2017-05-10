@@ -8,6 +8,7 @@ from odoo.modules import get_modules, get_module_path
 
 commands = {}
 
+
 class CommandType(type):
     def __init__(cls, name, bases, attrs):
         super(CommandType, cls).__init__(name, bases, attrs)
@@ -16,14 +17,17 @@ class CommandType(type):
         if name != 'command':
             commands[name] = cls
 
+
 class Command(object, metaclass=CommandType):
     """Subclass this class to define new odoo subcommands """
 
     def run(self, args):
         pass
 
+
 class Help(Command):
     """Display the list of available commands"""
+
     def run(self, args):
         print("Available commands:\n")
         names = list(commands.keys())
@@ -32,7 +36,9 @@ class Help(Command):
             name = k.ljust(padding, ' ')
             doc = (commands[k].__doc__ or '').strip()
             print("    %s%s" % (name, doc))
-        print("\nUse '%s <command> --help' for individual command help." % sys.argv[0].split(os.path.sep)[-1])
+        print("\nUse '%s <command> --help' for individual command help." %
+              sys.argv[0].split(os.path.sep)[-1])
+
 
 def main():
     args = sys.argv[1:]

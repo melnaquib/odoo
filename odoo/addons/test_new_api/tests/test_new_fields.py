@@ -88,7 +88,8 @@ class TestFields(common.TransactionCase):
         def check_stored(disc):
             """ Check the stored computed field on disc.messages """
             for msg in disc.messages:
-                self.assertEqual(msg.name, "[%s] %s" % (disc.name, msg.author.name))
+                self.assertEqual(msg.name, "[%s] %s" %
+                                 (disc.name, msg.author.name))
 
         # find the demo discussion, and check messages
         discussion1 = self.env.ref('test_new_api.discussion_0')
@@ -177,14 +178,18 @@ class TestFields(common.TransactionCase):
         self.assertEqual(ewan.display_name, "Gabriel / Catherine / Ewan")
 
         cath.parent = finn
-        self.assertEqual(ewan.display_name, "Gabriel / Finnley / Catherine / Ewan")
+        self.assertEqual(ewan.display_name,
+                         "Gabriel / Finnley / Catherine / Ewan")
 
     def test_12_recursive_recompute(self):
         """ test recomputation on recursively dependent field """
         a = self.env['test_new_api.recursive'].create({'name': 'A'})
-        b = self.env['test_new_api.recursive'].create({'name': 'B', 'parent': a.id})
-        c = self.env['test_new_api.recursive'].create({'name': 'C', 'parent': b.id})
-        d = self.env['test_new_api.recursive'].create({'name': 'D', 'parent': c.id})
+        b = self.env['test_new_api.recursive'].create(
+            {'name': 'B', 'parent': a.id})
+        c = self.env['test_new_api.recursive'].create(
+            {'name': 'C', 'parent': b.id})
+        d = self.env['test_new_api.recursive'].create(
+            {'name': 'D', 'parent': c.id})
         self.assertEqual(a.display_name, 'A')
         self.assertEqual(b.display_name, 'A / B')
         self.assertEqual(c.display_name, 'A / B / C')
@@ -283,7 +288,8 @@ class TestFields(common.TransactionCase):
         # messages in discussion
         discussion.participants -= self.env.user
         with self.assertRaises(Exception):
-            self.env['test_new_api.message'].create({'discussion': discussion.id, 'body': 'Whatever'})
+            self.env['test_new_api.message'].create(
+                {'discussion': discussion.id, 'body': 'Whatever'})
 
         # make sure that assertRaises() does not leave fields to recompute
         self.assertFalse(self.env.has_todo())
@@ -291,7 +297,8 @@ class TestFields(common.TransactionCase):
         # put back oneself into discussion participants: now we can create
         # messages in discussion
         discussion.participants += self.env.user
-        self.env['test_new_api.message'].create({'discussion': discussion.id, 'body': 'Whatever'})
+        self.env['test_new_api.message'].create(
+            {'discussion': discussion.id, 'body': 'Whatever'})
 
     def test_20_float(self):
         """ test float fields """
@@ -317,7 +324,8 @@ class TestFields(common.TransactionCase):
         self.assertEqual(record.amount, 14.700000000000001)
 
         # however when stored to database, it should be serialized as 14.70
-        self.cr.execute('SELECT amount FROM test_new_api_mixed WHERE id=%s', (record.id,))
+        self.cr.execute(
+            'SELECT amount FROM test_new_api_mixed WHERE id=%s', (record.id,))
         (amount,) = self.cr.fetchone()
         self.assertEqual(amount, 14.7)
 
@@ -438,12 +446,15 @@ class TestFields(common.TransactionCase):
         self.assertEqual(discussion2.name, 'X3')
 
         # search on related field, and check result
-        search_on_related = self.env['test_new_api.message'].search([('discussion_name', '=', 'Bar')])
-        search_on_regular = self.env['test_new_api.message'].search([('discussion.name', '=', 'Bar')])
+        search_on_related = self.env['test_new_api.message'].search(
+            [('discussion_name', '=', 'Bar')])
+        search_on_regular = self.env['test_new_api.message'].search(
+            [('discussion.name', '=', 'Bar')])
         self.assertEqual(search_on_related, search_on_regular)
 
         # check that field attributes are copied
-        message_field = message.fields_get(['discussion_name'])['discussion_name']
+        message_field = message.fields_get(['discussion_name'])[
+            'discussion_name']
         discussion_field = discussion.fields_get(['name'])['name']
         self.assertEqual(message_field['help'], discussion_field['help'])
 
@@ -469,7 +480,8 @@ class TestFields(common.TransactionCase):
 
     def test_25_related_multi(self):
         """ test write() on several related fields based on a common computed field. """
-        foo = self.env['test_new_api.foo'].create({'name': 'A', 'value1': 1, 'value2': 2})
+        foo = self.env['test_new_api.foo'].create(
+            {'name': 'A', 'value1': 1, 'value2': 2})
         bar = self.env['test_new_api.bar'].create({'name': 'A'})
         self.assertEqual(bar.foo, foo)
         self.assertEqual(bar.value1, 1)
@@ -493,8 +505,10 @@ class TestFields(common.TransactionCase):
         """ test company-dependent fields. """
         # consider three companies
         company0 = self.env.ref('base.main_company')
-        company1 = self.env['res.company'].create({'name': 'A', 'parent_id': company0.id})
-        company2 = self.env['res.company'].create({'name': 'B', 'parent_id': company1.id})
+        company1 = self.env['res.company'].create(
+            {'name': 'A', 'parent_id': company0.id})
+        company2 = self.env['res.company'].create(
+            {'name': 'B', 'parent_id': company1.id})
         # create one user per company
         user0 = self.env['res.users'].create({'name': 'Foo', 'login': 'foo',
                                               'company_id': company0.id, 'company_ids': []})
@@ -522,7 +536,8 @@ class TestFields(common.TransactionCase):
         self.assertEqual(record.sudo(user2).foo, 'default')
 
         # create company record and attribute
-        company_record = self.env['test_new_api.company'].create({'foo': 'ABC'})
+        company_record = self.env['test_new_api.company'].create({
+                                                                 'foo': 'ABC'})
         attribute_record = self.env['test_new_api.company.attr'].create({
             'company': company_record.id,
             'quantity': 1,
@@ -556,7 +571,7 @@ class TestFields(common.TransactionCase):
         ]
         for n, (key, val) in enumerate(values):
             record.write({key: val})
-            self.assertEqual(record.data, dict(values[:n+1]))
+            self.assertEqual(record.data, dict(values[:n + 1]))
 
         for key, val in values[:-1]:
             self.assertEqual(record[key], val)
@@ -564,7 +579,7 @@ class TestFields(common.TransactionCase):
 
         for n, (key, val) in enumerate(values):
             record.write({key: False})
-            self.assertEqual(record.data, dict(values[n+1:]))
+            self.assertEqual(record.data, dict(values[n + 1:]))
 
         # check reflection of sparse fields in 'ir.model.fields'
         names = [name for name, _ in values]
@@ -599,7 +614,8 @@ class TestFields(common.TransactionCase):
         self.assertEqual(cat2.name, 'ACCESS')
         # both categories should be ready for prefetching
         self.assertItemsEqual(cat2._prefetch[Category._name], cats.ids)
-        # but due to our (lame) overwrite of `read`, it should not forbid us to read records we have access to
+        # but due to our (lame) overwrite of `read`, it should not forbid us to
+        # read records we have access to
         self.assertFalse(cat2.discussions)
         self.assertEqual(cat2.parent, cat1)
         with self.assertRaises(AccessError):
@@ -706,9 +722,11 @@ class TestHtmlField(common.TransactionCase):
 
     def test_00_sanitize(self):
         self.assertEqual(self.model._fields['comment1'].sanitize, False)
-        self.assertEqual(self.model._fields['comment2'].sanitize_attributes, True)
+        self.assertEqual(
+            self.model._fields['comment2'].sanitize_attributes, True)
         self.assertEqual(self.model._fields['comment2'].strip_classes, False)
-        self.assertEqual(self.model._fields['comment3'].sanitize_attributes, True)
+        self.assertEqual(
+            self.model._fields['comment3'].sanitize_attributes, True)
         self.assertEqual(self.model._fields['comment3'].strip_classes, True)
 
         some_ugly_html = """<p>Oops this should maybe be sanitized
@@ -735,18 +753,23 @@ class TestHtmlField(common.TransactionCase):
             'comment4': some_ugly_html,
         })
 
-        self.assertEqual(record.comment1, some_ugly_html, 'Error in HTML field: content was sanitized but field has sanitize=False')
+        self.assertEqual(record.comment1, some_ugly_html,
+                         'Error in HTML field: content was sanitized but field has sanitize=False')
 
         self.assertIn('<tr class="', record.comment2)
 
         # sanitize should have closed tags left open in the original html
-        self.assertIn('</table>', record.comment3, 'Error in HTML field: content does not seem to have been sanitized despise sanitize=True')
-        self.assertIn('</td>', record.comment3, 'Error in HTML field: content does not seem to have been sanitized despise sanitize=True')
-        self.assertIn('<tr style="', record.comment3, 'Style attr should not have been stripped')
+        self.assertIn('</table>', record.comment3,
+                      'Error in HTML field: content does not seem to have been sanitized despise sanitize=True')
+        self.assertIn('</td>', record.comment3,
+                      'Error in HTML field: content does not seem to have been sanitized despise sanitize=True')
+        self.assertIn('<tr style="', record.comment3,
+                      'Style attr should not have been stripped')
         # sanitize does not keep classes if asked to
         self.assertNotIn('<tr class="', record.comment3)
 
-        self.assertNotIn('<tr style="', record.comment4, 'Style attr should have been stripped')
+        self.assertNotIn('<tr style="', record.comment4,
+                         'Style attr should have been stripped')
 
 
 class TestMagicFields(common.TransactionCase):

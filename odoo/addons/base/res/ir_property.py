@@ -24,9 +24,11 @@ class Property(models.Model):
     _name = 'ir.property'
 
     name = fields.Char(index=True)
-    res_id = fields.Char(string='Resource', index=True, help="If not set, acts as a default value for new resources",)
+    res_id = fields.Char(string='Resource', index=True,
+                         help="If not set, acts as a default value for new resources",)
     company_id = fields.Many2one('res.company', string='Company', index=True)
-    fields_id = fields.Many2one('ir.model.fields', string='Field', ondelete='cascade', required=True, index=True)
+    fields_id = fields.Many2one(
+        'ir.model.fields', string='Field', ondelete='cascade', required=True, index=True)
     value_float = fields.Float()
     value_integer = fields.Integer()
     value_text = fields.Text()  # will contain (char, text)
@@ -123,18 +125,21 @@ class Property(models.Model):
         domain = self._get_domain(name, model)
         if domain is not None:
             domain = [('res_id', '=', res_id)] + domain
-            #make the search with company_id asc to make sure that properties specific to a company are given first
+            # make the search with company_id asc to make sure that properties
+            # specific to a company are given first
             prop = self.search(domain, limit=1, order='company_id')
             if prop:
                 return prop.get_by_record()
         return False
 
     def _get_domain(self, prop_name, model):
-        self._cr.execute("SELECT id FROM ir_model_fields WHERE name=%s AND model=%s", (prop_name, model))
+        self._cr.execute(
+            "SELECT id FROM ir_model_fields WHERE name=%s AND model=%s", (prop_name, model))
         res = self._cr.fetchone()
         if not res:
             return None
-        company_id = self._context.get('force_company') or self.env['res.company']._company_default_get(model, res[0]).id
+        company_id = self._context.get(
+            'force_company') or self.env['res.company']._company_default_get(model, res[0]).id
         return [('fields_id', '=', res[0]), ('company_id', 'in', [company_id, False])]
 
     @api.model
@@ -196,9 +201,11 @@ class Property(models.Model):
             default_value = clean(self.get(name, model))
 
         # retrieve the properties corresponding to the given record ids
-        self._cr.execute("SELECT id FROM ir_model_fields WHERE name=%s AND model=%s", (name, model))
+        self._cr.execute(
+            "SELECT id FROM ir_model_fields WHERE name=%s AND model=%s", (name, model))
         field_id = self._cr.fetchone()[0]
-        company_id = self.env.context.get('force_company') or self.env['res.company']._company_default_get(model, field_id).id
+        company_id = self.env.context.get(
+            'force_company') or self.env['res.company']._company_default_get(model, field_id).id
         refs = {('%s,%s' % (model, id)): id for id in values}
         props = self.search([
             ('fields_id', '=', field_id),
@@ -237,11 +244,13 @@ class Property(models.Model):
         field = self.env[model]._fields[name]
         if field.type == 'many2one':
             comodel = field.comodel_name
+
             def makeref(value):
                 return value and '%s,%s' % (comodel, value)
             if operator == "=":
                 value = makeref(value)
-                # if searching properties not set, search those not in those set
+                # if searching properties not set, search those not in those
+                # set
                 if value is False:
                     default_matches = True
             elif operator in ('!=', '<=', '<', '>', '>='):
@@ -251,7 +260,8 @@ class Property(models.Model):
             elif operator in ('=like', '=ilike', 'like', 'not like', 'ilike', 'not ilike'):
                 # most probably inefficient... but correct
                 target = self.env[comodel]
-                target_names = target.name_search(value, operator=operator, limit=None)
+                target_names = target.name_search(
+                    value, operator=operator, limit=None)
                 target_ids = list(map(itemgetter(0), target_names))
                 operator, value = 'in', list(map(makeref, target_ids))
         elif field.type in ('integer', 'float'):
@@ -275,12 +285,12 @@ class Property(models.Model):
                 operator = '>='
                 include_zero = True
 
-
         # retrieve the properties that match the condition
         domain = self._get_domain(name, model)
         if domain is None:
             raise Exception()
-        props = self.search(domain + [(TYPE2FIELD[field.type], operator, value)])
+        props = self.search(
+            domain + [(TYPE2FIELD[field.type], operator, value)])
 
         # retrieve the records corresponding to the properties that match
         good_ids = []

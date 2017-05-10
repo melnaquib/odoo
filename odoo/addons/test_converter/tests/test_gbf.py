@@ -3,6 +3,7 @@
 
 from odoo.tests import common
 
+
 class TestGBF(common.TransactionCase):
     def test_group_by_full(self):
         Sub = self.env['test_converter.test_model.sub']

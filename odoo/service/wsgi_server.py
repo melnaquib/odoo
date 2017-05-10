@@ -8,7 +8,9 @@ WSGI stack, common code.
 """
 
 import http.client
-import urllib.request, urllib.parse, urllib.error
+import urllib.request
+import urllib.parse
+import urllib.error
 import xmlrpc.client
 import io
 
@@ -32,11 +34,12 @@ _logger = logging.getLogger(__name__)
 # constants are also defined client-side and must remain in sync.
 # User code must use the exceptions defined in ``odoo.exceptions`` (not
 # create directly ``xmlrpclib.Fault`` objects).
-RPC_FAULT_CODE_CLIENT_ERROR = 1 # indistinguishable from app. error.
+RPC_FAULT_CODE_CLIENT_ERROR = 1  # indistinguishable from app. error.
 RPC_FAULT_CODE_APPLICATION_ERROR = 1
 RPC_FAULT_CODE_WARNING = 2
 RPC_FAULT_CODE_ACCESS_DENIED = 3
 RPC_FAULT_CODE_ACCESS_ERROR = 4
+
 
 def xmlrpc_return(start_response, service, method, params, string_faultcode=False):
     """
@@ -54,18 +57,22 @@ def xmlrpc_return(start_response, service, method, params, string_faultcode=Fals
     # exception handling.
     try:
         result = odoo.http.dispatch_rpc(service, method, params)
-        response = xmlrpc.client.dumps((result,), methodresponse=1, allow_none=False, encoding=None)
+        response = xmlrpc.client.dumps(
+            (result,), methodresponse=1, allow_none=False, encoding=None)
     except Exception as e:
         if string_faultcode:
             response = xmlrpc_handle_exception_string(e)
         else:
             response = xmlrpc_handle_exception_int(e)
-    start_response("200 OK", [('Content-Type','text/xml'), ('Content-Length', str(len(response)))])
+    start_response("200 OK", [('Content-Type', 'text/xml'),
+                              ('Content-Length', str(len(response)))])
     return [response]
+
 
 def xmlrpc_handle_exception_int(e):
     if isinstance(e, odoo.exceptions.UserError):
-        fault = xmlrpc.client.Fault(RPC_FAULT_CODE_WARNING, odoo.tools.ustr(e.value))
+        fault = xmlrpc.client.Fault(
+            RPC_FAULT_CODE_WARNING, odoo.tools.ustr(e.value))
         response = xmlrpc.client.dumps(fault, allow_none=False, encoding=None)
     elif isinstance(e, odoo.exceptions.RedirectWarning):
         fault = xmlrpc.client.Fault(RPC_FAULT_CODE_WARNING, str(e))
@@ -73,7 +80,7 @@ def xmlrpc_handle_exception_int(e):
     elif isinstance(e, odoo.exceptions.MissingError):
         fault = xmlrpc.client.Fault(RPC_FAULT_CODE_WARNING, str(e))
         response = xmlrpc.client.dumps(fault, allow_none=False, encoding=None)
-    elif isinstance (e, odoo.exceptions.AccessError):
+    elif isinstance(e, odoo.exceptions.AccessError):
         fault = xmlrpc.client.Fault(RPC_FAULT_CODE_ACCESS_ERROR, str(e))
         response = xmlrpc.client.dumps(fault, allow_none=False, encoding=None)
     elif isinstance(e, odoo.exceptions.AccessDenied):
@@ -84,25 +91,31 @@ def xmlrpc_handle_exception_int(e):
         # Which one is the best ?
         formatted_info = "".join(traceback.format_exception(*info))
         #formatted_info = odoo.tools.exception_to_unicode(e) + '\n' + info
-        fault = xmlrpc.client.Fault(RPC_FAULT_CODE_APPLICATION_ERROR, formatted_info)
+        fault = xmlrpc.client.Fault(
+            RPC_FAULT_CODE_APPLICATION_ERROR, formatted_info)
         response = xmlrpc.client.dumps(fault, allow_none=False, encoding=None)
     else:
-        if hasattr(e, 'message') and e.message == 'AccessDenied': # legacy
+        if hasattr(e, 'message') and e.message == 'AccessDenied':  # legacy
             fault = xmlrpc.client.Fault(RPC_FAULT_CODE_ACCESS_DENIED, str(e))
-            response = xmlrpc.client.dumps(fault, allow_none=False, encoding=None)
-        #InternalError
+            response = xmlrpc.client.dumps(
+                fault, allow_none=False, encoding=None)
+        # InternalError
         else:
             info = sys.exc_info()
             # Which one is the best ?
             formatted_info = "".join(traceback.format_exception(*info))
             #formatted_info = odoo.tools.exception_to_unicode(e) + '\n' + info
-            fault = xmlrpc.client.Fault(RPC_FAULT_CODE_APPLICATION_ERROR, formatted_info)
-            response = xmlrpc.client.dumps(fault, allow_none=None, encoding=None)
+            fault = xmlrpc.client.Fault(
+                RPC_FAULT_CODE_APPLICATION_ERROR, formatted_info)
+            response = xmlrpc.client.dumps(
+                fault, allow_none=None, encoding=None)
     return response
+
 
 def xmlrpc_handle_exception_string(e):
     if isinstance(e, odoo.exceptions.UserError):
-        fault = xmlrpc.client.Fault('warning -- %s\n\n%s' % (e.name, e.value), '')
+        fault = xmlrpc.client.Fault(
+            'warning -- %s\n\n%s' % (e.name, e.value), '')
         response = xmlrpc.client.dumps(fault, allow_none=False, encoding=None)
     elif isinstance(e, odoo.exceptions.RedirectWarning):
         fault = xmlrpc.client.Fault('warning -- Warning\n\n' + str(e), '')
@@ -120,13 +133,15 @@ def xmlrpc_handle_exception_string(e):
         formatted_info = "".join(traceback.format_exception(*info))
         fault = xmlrpc.client.Fault(odoo.tools.ustr(e.message), formatted_info)
         response = xmlrpc.client.dumps(fault, allow_none=False, encoding=None)
-    #InternalError
+    # InternalError
     else:
         info = sys.exc_info()
         formatted_info = "".join(traceback.format_exception(*info))
-        fault = xmlrpc.client.Fault(odoo.tools.exception_to_unicode(e), formatted_info)
+        fault = xmlrpc.client.Fault(
+            odoo.tools.exception_to_unicode(e), formatted_info)
         response = xmlrpc.client.dumps(fault, allow_none=None, encoding=None)
     return response
+
 
 def wsgi_xmlrpc(environ, start_response):
     """ Two routes are available for XML-RPC
@@ -152,13 +167,14 @@ def wsgi_xmlrpc(environ, start_response):
         params, method = xmlrpc.client.loads(data)
         return xmlrpc_return(start_response, service, method, params, string_faultcode)
 
+
 def application_unproxied(environ, start_response):
     """ WSGI entry point."""
     # cleanup db/uid trackers - they're set at HTTP dispatch in
     # web.session.OpenERPSession.send() and at RPC dispatch in
     # odoo.service.web_services.objects_proxy.dispatch().
     # /!\ The cleanup cannot be done at the end of this `application`
-    # method because werkzeug still produces relevant logging afterwards 
+    # method because werkzeug still produces relevant logging afterwards
     if hasattr(threading.current_thread(), 'uid'):
         del threading.current_thread().uid
     if hasattr(threading.current_thread(), 'dbname'):
@@ -174,8 +190,10 @@ def application_unproxied(environ, start_response):
 
     # We never returned from the loop.
     response = 'No handler found.\n'
-    start_response('404 Not Found', [('Content-Type', 'text/plain'), ('Content-Length', str(len(response)))])
+    start_response('404 Not Found', [
+                   ('Content-Type', 'text/plain'), ('Content-Length', str(len(response)))])
     return [response]
+
 
 def application(environ, start_response):
     if config['proxy_mode'] and 'HTTP_X_FORWARDED_HOST' in environ:

@@ -20,11 +20,13 @@ class BaseModuleUpgrade(models.TransientModel):
     def _default_module_info(self):
         return "\n".join("%s: %s" % (mod.name, mod.state) for mod in self.get_module_list())
 
-    module_info = fields.Text('Apps to Update', readonly=True, default=_default_module_info)
+    module_info = fields.Text(
+        'Apps to Update', readonly=True, default=_default_module_info)
 
     @api.model
     def fields_view_get(self, view_id=None, view_type='form', toolbar=False, submenu=False):
-        res = super(BaseModuleUpgrade, self).fields_view_get(view_id, view_type, toolbar=toolbar,submenu=False)
+        res = super(BaseModuleUpgrade, self).fields_view_get(
+            view_id, view_type, toolbar=toolbar, submenu=False)
         if view_type != 'form':
             return res
 
@@ -45,7 +47,8 @@ class BaseModuleUpgrade(models.TransientModel):
     @api.multi
     def upgrade_module_cancel(self):
         Module = self.env['ir.module.module']
-        to_install = Module.search([('state', 'in', ['to upgrade', 'to remove'])])
+        to_install = Module.search(
+            [('state', 'in', ['to upgrade', 'to remove'])])
         to_install.write({'state': 'installed'})
         to_uninstall = Module.search([('state', '=', 'to install')])
         to_uninstall.write({'state': 'uninstalled'})
@@ -66,7 +69,8 @@ class BaseModuleUpgrade(models.TransientModel):
             self._cr.execute(query, (tuple(mods.ids), ('uninstalled',)))
             unmet_packages = [row[0] for row in self._cr.fetchall()]
             if unmet_packages:
-                raise UserError(_('The following modules are not installed or unknown: %s') % ('\n\n' + '\n'.join(unmet_packages)))
+                raise UserError(_('The following modules are not installed or unknown: %s') % (
+                    '\n\n' + '\n'.join(unmet_packages)))
 
             mods.download()
 

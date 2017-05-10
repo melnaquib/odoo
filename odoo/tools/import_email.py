@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-import os, sys
+import os
+import sys
 import re
 import smtplib
-import email, mimetypes
+import email
+import mimetypes
 from email.header import decode_header
 from email.mime.text import MIMEText
 import xmlrpc.client
@@ -16,32 +18,37 @@ Le message avec le sujet "%s" n'a pu être archivé dans l'ERP.
 
 """.decode('utf-8')
 
+
 class EmailParser(object):
 
     def __init__(self, headers, dispatcher):
         self.headers = headers
         self.dispatcher = dispatcher
-    
+
     def parse(self, msg):
         dispatcher((self.headers, msg))
+
 
 class CommandDispatcher(object):
 
     def __init__(self, receiver):
         self.receiver = receiver
-    
+
     def __call__(self, request):
         return self.receiver(request)
+
 
 class RPCProxy(object):
 
     def __init__(self, uid, passwd, host='localhost', port=8069, path='object'):
-        self.rpc = xmlrpc.client.ServerProxy('http://%s:%s/%s' % (host, port, path))
+        self.rpc = xmlrpc.client.ServerProxy(
+            'http://%s:%s/%s' % (host, port, path))
         self.user_id = uid
         self.passwd = passwd
-    
+
     def __call__(self, request):
         return self.rpc.execute(self.user_id, self.passwd, *request)
+
 
 class ReceiverEmail2Event(object):
 
@@ -56,10 +63,9 @@ class ReceiverEmail2Event(object):
 
     project_re = re.compile(r"^ *\[?(\d{4}\.?\d{0,3})\]?", re.UNICODE)
 
-
     def __init__(self, rpc):
         self.rpc = rpc
-    
+
     def get_addresses(self, headers, msg):
         hcontent = ''
         for header in [h for h in headers if h in msg]:
@@ -68,7 +74,8 @@ class ReceiverEmail2Event(object):
 
     def get_partners(self, headers, msg):
         alladdresses = self.get_addresses(headers, msg)
-        address_ids = self.rpc(('res.partner', 'search', [('email', 'in', alladdresses)]))
+        address_ids = self.rpc(
+            ('res.partner', 'search', [('email', 'in', alladdresses)]))
         addresses = self.rpc(('res.partner', 'read', address_ids))
         return [x['partner_id'][0] for x in addresses]
 
@@ -84,19 +91,21 @@ class ReceiverEmail2Event(object):
         if partners:
             self.save_mail(msg, subject, partners)
         else:
-            warning = MIMEText((warn_msg % (subject,)).encode('utf-8'), 'plain', 'utf-8')
+            warning = MIMEText((warn_msg % (subject,)).encode(
+                'utf-8'), 'plain', 'utf-8')
             warning['Subject'] = 'Message de OpenERP'
             warning['From'] = 'erp@steel-sa.com'
             warning['To'] = msg['From']
             s = smtplib.SMTP()
             s.connect()
-            s.sendmail('erp@steel-sa.com', self.email_re.findall(msg['From']), warning.as_string())
+            s.sendmail('erp@steel-sa.com',
+                       self.email_re.findall(msg['From']), warning.as_string())
             s.close()
 
         if msg.is_multipart():
             for message in [m for m in msg.get_payload() if m.get_content_type() == 'message/rfc822']:
                 self((headers, message.get_payload()[0]))
-    
+
     def save_mail(self, msg, subject, partners):
         counter, description = 1, ''
         if msg.is_multipart():
@@ -114,11 +123,13 @@ class ReceiverEmail2Event(object):
                     continue
                 elif part.get_content_maintype() == 'text':
                     if part.get_content_subtype() == 'plain':
-                        description += part.get_payload(decode=1).decode(part.get_charsets()[0])
+                        description += part.get_payload(
+                            decode=1).decode(part.get_charsets()[0])
                         description += '\n\nVous trouverez les éventuels fichiers dans le répertoire: %s' % stockdir
                         continue
                     else:
-                        description += '\n\nCe message est en "%s", vous trouverez ce texte dans le répertoire: %s' % (part.get_content_type(), stockdir)
+                        description += '\n\nCe message est en "%s", vous trouverez ce texte dans le répertoire: %s' % (
+                            part.get_content_type(), stockdir)
                 elif part.get_content_type() == 'message/rfc822':
                     continue
                 if not os.path.isdir(newdir):
@@ -129,7 +140,8 @@ class ReceiverEmail2Event(object):
                 fd.write(part.get_payload(decode=1))
                 fd.close()
         else:
-            description = msg.get_payload(decode=1).decode(msg.get_charsets()[0])
+            description = msg.get_payload(
+                decode=1).decode(msg.get_charsets()[0])
 
         project = self.project_re.search(subject)
         if project:
@@ -138,7 +150,8 @@ class ReceiverEmail2Event(object):
             project = ''
 
         for partner in partners:
-            self.rpc(('res.partner.event', 'create', {'name' : subject, 'partner_id' : partner, 'description' : description, 'project' : project}))
+            self.rpc(('res.partner.event', 'create', {
+                     'name': subject, 'partner_id': partner, 'description': description, 'project': project}))
 
 
 if __name__ == '__main__':

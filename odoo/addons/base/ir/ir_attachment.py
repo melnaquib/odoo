@@ -38,7 +38,8 @@ class IrAttachment(models.Model):
     def _compute_res_name(self):
         for attachment in self:
             if attachment.res_model and attachment.res_id:
-                record = self.env[attachment.res_model].browse(attachment.res_id)
+                record = self.env[attachment.res_model].browse(
+                    attachment.res_id)
                 attachment.res_name = record.display_name
 
     @api.model
@@ -53,7 +54,8 @@ class IrAttachment(models.Model):
     def force_storage(self):
         """Force all attachments to be stored in the currently configured storage"""
         if not self.env.user._is_admin():
-            raise AccessError(_('Only administrators can execute this action.'))
+            raise AccessError(
+                _('Only administrators can execute this action.'))
 
         # domain to retrieve the attachments to migrate
         domain = {
@@ -97,7 +99,7 @@ class IrAttachment(models.Model):
             if bin_size:
                 r = human_size(os.path.getsize(full_path))
             else:
-                r = open(full_path,'rb').read().encode('base64')
+                r = open(full_path, 'rb').read().encode('base64')
         except (IOError, OSError):
             _logger.info("_read_file reading %s", full_path, exc_info=True)
         return r
@@ -113,7 +115,8 @@ class IrAttachment(models.Model):
                 # add fname to checklist, in case the transaction aborts
                 self._mark_for_gc(fname)
             except IOError:
-                _logger.info("_file_write writing %s", full_path, exc_info=True)
+                _logger.info("_file_write writing %s",
+                             full_path, exc_info=True)
         return fname
 
     @api.model
@@ -162,7 +165,8 @@ class IrAttachment(models.Model):
         # determine which files to keep among the checklist
         whitelist = set()
         for names in cr.split_for_in_conditions(checklist):
-            cr.execute("SELECT store_fname FROM ir_attachment WHERE store_fname IN %s", [names])
+            cr.execute(
+                "SELECT store_fname FROM ir_attachment WHERE store_fname IN %s", [names])
             whitelist.update(row[0] for row in cr.fetchall())
 
         # remove garbage files, and clean up checklist
@@ -173,13 +177,15 @@ class IrAttachment(models.Model):
                     os.unlink(self._full_path(fname))
                     removed += 1
                 except (OSError, IOError):
-                    _logger.info("_file_gc could not unlink %s", self._full_path(fname), exc_info=True)
+                    _logger.info("_file_gc could not unlink %s",
+                                 self._full_path(fname), exc_info=True)
             with tools.ignore(OSError):
                 os.unlink(filepath)
 
         # commit to release the lock
         cr.commit()
-        _logger.info("filestore gc %d checked, %d removed", len(checklist), removed)
+        _logger.info("filestore gc %d checked, %d removed",
+                     len(checklist), removed)
 
     @api.depends('store_fname', 'db_datas')
     def _compute_datas(self):
@@ -240,9 +246,10 @@ class IrAttachment(models.Model):
 
     def _check_contents(self, values):
         mimetype = values['mimetype'] = self._compute_mimetype(values)
-        xml_like = 'ht' in mimetype or 'xml' in mimetype # hta, html, xhtml, etc.
+        # hta, html, xhtml, etc.
+        xml_like = 'ht' in mimetype or 'xml' in mimetype
         force_text = (xml_like and (not self.env.user._is_admin() or
-            self.env.context.get('attachments_mime_plainxml')))
+                                    self.env.context.get('attachments_mime_plainxml')))
         if force_text:
             values['mimetype'] = 'text/plain'
         return values
@@ -257,7 +264,7 @@ class IrAttachment(models.Model):
         index_content = False
         if file_type:
             index_content = file_type.split('/')[0]
-            if index_content == 'text': # compute index_content only for text type
+            if index_content == 'text':  # compute index_content only for text type
                 words = re.findall("[^\x00-\x1F\x7F-\xFF]{4,}", bin_data)
                 index_content = ustr("\n".join(words))
         return index_content
@@ -265,10 +272,13 @@ class IrAttachment(models.Model):
     name = fields.Char('Attachment Name', required=True)
     datas_fname = fields.Char('File Name')
     description = fields.Text('Description')
-    res_name = fields.Char('Resource Name', compute='_compute_res_name', store=True)
-    res_model = fields.Char('Resource Model', readonly=True, help="The database object this attachment will be attached to.")
+    res_name = fields.Char(
+        'Resource Name', compute='_compute_res_name', store=True)
+    res_model = fields.Char('Resource Model', readonly=True,
+                            help="The database object this attachment will be attached to.")
     res_field = fields.Char('Resource Field', readonly=True)
-    res_id = fields.Integer('Resource ID', readonly=True, help="The record id this is attached to.")
+    res_id = fields.Integer('Resource ID', readonly=True,
+                            help="The record id this is attached to.")
     create_date = fields.Datetime('Date Created', readonly=True)
     create_uid = fields.Many2one('res.users', string='Owner', readonly=True)
     company_id = fields.Many2one('res.company', string='Company', change_default=True,
@@ -280,20 +290,24 @@ class IrAttachment(models.Model):
     public = fields.Boolean('Is public document')
 
     # the field 'datas' is computed and may use the other fields below
-    datas = fields.Binary(string='File Content', compute='_compute_datas', inverse='_inverse_datas')
+    datas = fields.Binary(string='File Content',
+                          compute='_compute_datas', inverse='_inverse_datas')
     db_datas = fields.Binary('Database Data')
     store_fname = fields.Char('Stored Filename')
     file_size = fields.Integer('File Size', readonly=True)
     checksum = fields.Char("Checksum/SHA1", size=40, index=True, readonly=True)
     mimetype = fields.Char('Mime Type', readonly=True)
-    index_content = fields.Text('Indexed Content', readonly=True, prefetch=False)
+    index_content = fields.Text(
+        'Indexed Content', readonly=True, prefetch=False)
 
     @api.model_cr_context
     def _auto_init(self):
         res = super(IrAttachment, self)._auto_init()
-        self._cr.execute('SELECT indexname FROM pg_indexes WHERE indexname = %s', ('ir_attachment_res_idx',))
+        self._cr.execute(
+            'SELECT indexname FROM pg_indexes WHERE indexname = %s', ('ir_attachment_res_idx',))
         if not self._cr.fetchone():
-            self._cr.execute('CREATE INDEX ir_attachment_res_idx ON ir_attachment (res_model, res_id)')
+            self._cr.execute(
+                'CREATE INDEX ir_attachment_res_idx ON ir_attachment (res_model, res_id)')
             self._cr.commit()
         return res
 
@@ -307,7 +321,8 @@ class IrAttachment(models.Model):
         model_ids = defaultdict(set)            # {model_name: set(ids)}
         require_employee = False
         if self:
-            self._cr.execute('SELECT res_model, res_id, create_uid, public FROM ir_attachment WHERE id IN %s', [tuple(self.ids)])
+            self._cr.execute('SELECT res_model, res_id, create_uid, public FROM ir_attachment WHERE id IN %s', [
+                             tuple(self.ids)])
             for res_model, res_id, create_uid, public in self._cr.fetchall():
                 if public and mode == 'read':
                     continue
@@ -332,12 +347,14 @@ class IrAttachment(models.Model):
                 require_employee = True
             # For related models, check if we can write to the model, as unlinking
             # and creating attachments can be seen as an update to the model
-            records.check_access_rights('write' if mode in ('create', 'unlink') else mode)
+            records.check_access_rights(
+                'write' if mode in ('create', 'unlink') else mode)
             records.check_access_rule(mode)
 
         if require_employee:
             if not (self.env.user._is_admin() or self.env.user.has_group('base.group_user')):
-                raise AccessError(_("Sorry, you are not allowed to access this document."))
+                raise AccessError(
+                    _("Sorry, you are not allowed to access this document."))
 
     @api.model
     def _search(self, args, offset=0, limit=None, order=None, count=False, access_rights_uid=None):
@@ -366,8 +383,10 @@ class IrAttachment(models.Model):
         # the linked document.
         # Use pure SQL rather than read() as it is about 50% faster for large dbs (100k+ docs),
         # and the permissions are checked in super() and below anyway.
-        model_attachments = defaultdict(lambda: defaultdict(set))   # {res_model: {res_id: set(ids)}}
-        self._cr.execute("""SELECT id, res_model, res_id, public FROM ir_attachment WHERE id IN %s""", [tuple(ids)])
+        # {res_model: {res_id: set(ids)}}
+        model_attachments = defaultdict(lambda: defaultdict(set))
+        self._cr.execute(
+            """SELECT id, res_model, res_id, public FROM ir_attachment WHERE id IN %s""", [tuple(ids)])
         for row in self._cr.dictfetchall():
             if not row['res_model'] or row['public']:
                 continue
@@ -385,7 +404,8 @@ class IrAttachment(models.Model):
                 continue
             # filter ids according to what access rules permit
             target_ids = list(targets)
-            allowed = self.env[res_model].with_context(active_test=False).search([('id', 'in', target_ids)])
+            allowed = self.env[res_model].with_context(
+                active_test=False).search([('id', 'in', target_ids)])
             for res_id in set(target_ids).difference(allowed.ids):
                 ids.difference_update(targets[res_id])
 
@@ -421,7 +441,8 @@ class IrAttachment(models.Model):
         # database allowed it. Helps avoid errors when concurrent transactions
         # are deleting the same file, and some of the transactions are
         # rolled back by PostgreSQL (due to concurrent updates detection).
-        to_delete = set(attach.store_fname for attach in self if attach.store_fname)
+        to_delete = set(
+            attach.store_fname for attach in self if attach.store_fname)
         res = super(IrAttachment, self).unlink()
         for file_path in to_delete:
             self._file_delete(file_path)

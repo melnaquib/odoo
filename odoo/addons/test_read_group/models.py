@@ -8,6 +8,7 @@ class GroupOnDate(models.Model):
     date = fields.Date("Date")
     value = fields.Integer("Value")
 
+
 class BooleanAggregate(models.Model):
     _name = 'test_read_group.aggregate.boolean'
     _order = 'key DESC'

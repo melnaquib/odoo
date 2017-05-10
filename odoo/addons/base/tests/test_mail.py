@@ -38,58 +38,81 @@ class TestSanitizer(unittest.TestCase):
         ]
         for content, expected in cases:
             html = html_sanitize(content, silent=False)
-            self.assertEqual(html, expected, 'html_sanitize: broken mako management')
+            self.assertEqual(
+                html, expected, 'html_sanitize: broken mako management')
 
     def test_evil_malicious_code(self):
-        # taken from https://www.owasp.org/index.php/XSS_Filter_Evasion_Cheat_Sheet#Tests
+        # taken from
+        # https://www.owasp.org/index.php/XSS_Filter_Evasion_Cheat_Sheet#Tests
         cases = [
             ("<IMG SRC=javascript:alert('XSS')>"),  # no quotes and semicolons
-            ("<IMG SRC=&#106;&#97;&#118;&#97;&#115;&#99;&#114;&#105;&#112;&#116;&#58;&#97;&#108;&#101;&#114;&#116;&#40;&#39;&#88;&#83;&#83;&#39;&#41;>"),  # UTF-8 Unicode encoding
+            # UTF-8 Unicode encoding
+            ("<IMG SRC=&#106;&#97;&#118;&#97;&#115;&#99;&#114;&#105;&#112;&#116;&#58;&#97;&#108;&#101;&#114;&#116;&#40;&#39;&#88;&#83;&#83;&#39;&#41;>"),
             ("<IMG SRC=&#x6A&#x61&#x76&#x61&#x73&#x63&#x72&#x69&#x70&#x74&#x3A&#x61&#x6C&#x65&#x72&#x74&#x28&#x27&#x58&#x53&#x53&#x27&#x29>"),  # hex encoding
-            ("<IMG SRC=\"jav&#x0D;ascript:alert('XSS');\">"),  # embedded carriage return
+            # embedded carriage return
+            ("<IMG SRC=\"jav&#x0D;ascript:alert('XSS');\">"),
             ("<IMG SRC=\"jav&#x0A;ascript:alert('XSS');\">"),  # embedded newline
             ("<IMG SRC=\"jav   ascript:alert('XSS');\">"),  # embedded tab
-            ("<IMG SRC=\"jav&#x09;ascript:alert('XSS');\">"),  # embedded encoded tab
-            ("<IMG SRC=\" &#14;  javascript:alert('XSS');\">"),  # spaces and meta-characters
+            # embedded encoded tab
+            ("<IMG SRC=\"jav&#x09;ascript:alert('XSS');\">"),
+            # spaces and meta-characters
+            ("<IMG SRC=\" &#14;  javascript:alert('XSS');\">"),
             ("<IMG SRC=\"javascript:alert('XSS')\""),  # half-open html
             ("<IMG \"\"\"><SCRIPT>alert(\"XSS\")</SCRIPT>\">"),  # malformed tag
-            ("<SCRIPT/XSS SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT>"),  # non-alpha-non-digits
-            ("<SCRIPT/SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT>"),  # non-alpha-non-digits
+            # non-alpha-non-digits
+            ("<SCRIPT/XSS SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT>"),
+            # non-alpha-non-digits
+            ("<SCRIPT/SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT>"),
             ("<<SCRIPT>alert(\"XSS\");//<</SCRIPT>"),  # extraneous open brackets
-            ("<SCRIPT SRC=http://ha.ckers.org/xss.js?< B >"),  # non-closing script tags
+            # non-closing script tags
+            ("<SCRIPT SRC=http://ha.ckers.org/xss.js?< B >"),
             ("<INPUT TYPE=\"IMAGE\" SRC=\"javascript:alert('XSS');\">"),  # input image
             ("<BODY BACKGROUND=\"javascript:alert('XSS')\">"),  # body image
             ("<IMG DYNSRC=\"javascript:alert('XSS')\">"),  # img dynsrc
             ("<IMG LOWSRC=\"javascript:alert('XSS')\">"),  # img lowsrc
             ("<TABLE BACKGROUND=\"javascript:alert('XSS')\">"),  # table
             ("<TABLE><TD BACKGROUND=\"javascript:alert('XSS')\">"),  # td
-            ("<DIV STYLE=\"background-image: url(javascript:alert('XSS'))\">"),  # div background
-            ("<DIV STYLE=\"background-image:\0075\0072\006C\0028'\006a\0061\0076\0061\0073\0063\0072\0069\0070\0074\003a\0061\006c\0065\0072\0074\0028.1027\0058.1053\0053\0027\0029'\0029\">"),  # div background with unicoded exploit
-            ("<DIV STYLE=\"background-image: url(&#1;javascript:alert('XSS'))\">"),  # div background + extra characters
+            # div background
+            ("<DIV STYLE=\"background-image: url(javascript:alert('XSS'))\">"),
+            # div background with unicoded exploit
+            ("<DIV STYLE=\"background-image:\0075\0072\006C\0028'\006a\0061\0076\0061\0073\0063\0072\0069\0070\0074\003a\0061\006c\0065\0072\0074\0028.1027\0058.1053\0053\0027\0029'\0029\">"),
+            # div background + extra characters
+            ("<DIV STYLE=\"background-image: url(&#1;javascript:alert('XSS'))\">"),
             ("<IMG SRC='vbscript:msgbox(\"XSS\")'>"),  # VBscrip in an image
             ("<BODY ONLOAD=alert('XSS')>"),  # event handler
             ("<BR SIZE=\"&{alert('XSS')}\>"),  # & javascript includes
-            ("<LINK REL=\"stylesheet\" HREF=\"javascript:alert('XSS');\">"),  # style sheet
-            ("<LINK REL=\"stylesheet\" HREF=\"http://ha.ckers.org/xss.css\">"),  # remote style sheet
-            ("<STYLE>@import'http://ha.ckers.org/xss.css';</STYLE>"),  # remote style sheet 2
-            ("<META HTTP-EQUIV=\"Link\" Content=\"<http://ha.ckers.org/xss.css>; REL=stylesheet\">"),  # remote style sheet 3
-            ("<STYLE>BODY{-moz-binding:url(\"http://ha.ckers.org/xssmoz.xml#xss\")}</STYLE>"),  # remote style sheet 4
-            ("<IMG STYLE=\"xss:expr/*XSS*/ession(alert('XSS'))\">"),  # style attribute using a comment to break up expression
+            # style sheet
+            ("<LINK REL=\"stylesheet\" HREF=\"javascript:alert('XSS');\">"),
+            # remote style sheet
+            ("<LINK REL=\"stylesheet\" HREF=\"http://ha.ckers.org/xss.css\">"),
+            # remote style sheet 2
+            ("<STYLE>@import'http://ha.ckers.org/xss.css';</STYLE>"),
+            # remote style sheet 3
+            ("<META HTTP-EQUIV=\"Link\" Content=\"<http://ha.ckers.org/xss.css>; REL=stylesheet\">"),
+            # remote style sheet 4
+            ("<STYLE>BODY{-moz-binding:url(\"http://ha.ckers.org/xssmoz.xml#xss\")}</STYLE>"),
+            # style attribute using a comment to break up expression
+            ("<IMG STYLE=\"xss:expr/*XSS*/ession(alert('XSS'))\">"),
         ]
         for content in cases:
             html = html_sanitize(content)
-            self.assertNotIn('javascript', html, 'html_sanitize did not remove a malicious javascript')
-            self.assertTrue('ha.ckers.org' not in html or 'http://ha.ckers.org/xss.css' in html, 'html_sanitize did not remove a malicious code in %s (%s)' % (content, html))
+            self.assertNotIn(
+                'javascript', html, 'html_sanitize did not remove a malicious javascript')
+            self.assertTrue('ha.ckers.org' not in html or 'http://ha.ckers.org/xss.css' in html,
+                            'html_sanitize did not remove a malicious code in %s (%s)' % (content, html))
 
-        content = "<!--[if gte IE 4]><SCRIPT>alert('XSS');</SCRIPT><![endif]-->"  # down-level hidden block
+        # down-level hidden block
+        content = "<!--[if gte IE 4]><SCRIPT>alert('XSS');</SCRIPT><![endif]-->"
         self.assertEqual(html_sanitize(content, silent=False), '')
 
     def test_html(self):
         sanitized_html = html_sanitize(test_mail_examples.MISC_HTML_SOURCE)
         for tag in ['<div', '<b', '<i', '<u', '<strike', '<li', '<blockquote', '<a href']:
-            self.assertIn(tag, sanitized_html, 'html_sanitize stripped too much of original html')
+            self.assertIn(tag, sanitized_html,
+                          'html_sanitize stripped too much of original html')
         for attr in ['javascript']:
-            self.assertNotIn(attr, sanitized_html, 'html_sanitize did not remove enough unwanted attributes')
+            self.assertNotIn(
+                attr, sanitized_html, 'html_sanitize did not remove enough unwanted attributes')
 
     def test_sanitize_escape_emails(self):
         emails = [
@@ -99,7 +122,8 @@ class TestSanitizer(unittest.TestCase):
             "Div nico <div-nico@open.com>"
         ]
         for email in emails:
-            self.assertIn(cgi.escape(email), html_sanitize(email), 'html_sanitize stripped emails of original html')
+            self.assertIn(cgi.escape(email), html_sanitize(email),
+                          'html_sanitize stripped emails of original html')
 
     def test_sanitize_unescape_emails(self):
         not_emails = [
@@ -107,8 +131,11 @@ class TestSanitizer(unittest.TestCase):
             '<img alt="@github-login" class="avatar" src="/web/image/pi" height="36" width="36">']
         for email in not_emails:
             sanitized = html_sanitize(email)
-            left_part = email.split('>')[0]  # take only left part, as the sanitizer could add data information on node
-            self.assertNotIn(cgi.escape(email), sanitized, 'html_sanitize stripped emails of original html')
+            # take only left part, as the sanitizer could add data information
+            # on node
+            left_part = email.split('>')[0]
+            self.assertNotIn(cgi.escape(email), sanitized,
+                             'html_sanitize stripped emails of original html')
             self.assertIn(left_part, sanitized)
 
     def test_style_parsing(self):
@@ -133,25 +160,29 @@ class TestSanitizer(unittest.TestCase):
         ]
 
         for test, in_lst, out_lst in test_data:
-            new_html = html_sanitize(test, sanitize_attributes=False, sanitize_style=True, strip_style=False, strip_classes=False)
+            new_html = html_sanitize(test, sanitize_attributes=False,
+                                     sanitize_style=True, strip_style=False, strip_classes=False)
             for text in in_lst:
                 self.assertIn(text, new_html)
             for text in out_lst:
                 self.assertNotIn(text, new_html)
 
         # style should not be sanitized if removed
-        new_html = html_sanitize(test_data[0][0], sanitize_attributes=False, strip_style=True, strip_classes=False)
+        new_html = html_sanitize(
+            test_data[0][0], sanitize_attributes=False, strip_style=True, strip_classes=False)
         self.assertEqual(new_html, '<span>Coin coin </span>')
 
     def test_style_class(self):
-        html = html_sanitize(test_mail_examples.REMOVE_CLASS, sanitize_attributes=True, sanitize_style=True, strip_classes=True)
+        html = html_sanitize(test_mail_examples.REMOVE_CLASS,
+                             sanitize_attributes=True, sanitize_style=True, strip_classes=True)
         for ext in test_mail_examples.REMOVE_CLASS_IN:
             self.assertIn(ext, html)
         for ext in test_mail_examples.REMOVE_CLASS_OUT:
             self.assertNotIn(ext, html,)
 
     def test_style_class_only(self):
-        html = html_sanitize(test_mail_examples.REMOVE_CLASS, sanitize_attributes=False, sanitize_style=True, strip_classes=True)
+        html = html_sanitize(test_mail_examples.REMOVE_CLASS,
+                             sanitize_attributes=False, sanitize_style=True, strip_classes=True)
         for ext in test_mail_examples.REMOVE_CLASS_IN:
             self.assertIn(ext, html)
         for ext in test_mail_examples.REMOVE_CLASS_OUT:
@@ -165,21 +196,24 @@ class TestSanitizer(unittest.TestCase):
         self.assertIn(
             'src="https://www.paypal.com/en_US/i/btn/btn_paynowCC_LG.gif"', html,
             'html_sanitize removed valid img')
-        self.assertNotIn('</body></html>', html, 'html_sanitize did not remove extra closing tags')
+        self.assertNotIn('</body></html>', html,
+                         'html_sanitize did not remove extra closing tags')
 
     def test_quote_blockquote(self):
         html = html_sanitize(test_mail_examples.QUOTE_BLOCKQUOTE)
         for ext in test_mail_examples.QUOTE_BLOCKQUOTE_IN:
             self.assertIn(ext, html)
         for ext in test_mail_examples.QUOTE_BLOCKQUOTE_OUT:
-            self.assertIn('<span data-o-mail-quote="1">%s' % cgi.escape(ext.decode('utf-8')), html)
+            self.assertIn('<span data-o-mail-quote="1">%s' %
+                          cgi.escape(ext.decode('utf-8')), html)
 
     def test_quote_thunderbird(self):
         html = html_sanitize(test_mail_examples.QUOTE_THUNDERBIRD_1)
         for ext in test_mail_examples.QUOTE_THUNDERBIRD_1_IN:
             self.assertIn(ext, html)
         for ext in test_mail_examples.QUOTE_THUNDERBIRD_1_OUT:
-            self.assertIn('<span data-o-mail-quote="1">%s</span>' % cgi.escape(ext.decode('utf-8')), html)
+            self.assertIn('<span data-o-mail-quote="1">%s</span>' %
+                          cgi.escape(ext.decode('utf-8')), html)
 
     def test_quote_hotmail_html(self):
         html = html_sanitize(test_mail_examples.QUOTE_HOTMAIL_HTML)
@@ -226,13 +260,15 @@ class TestSanitizer(unittest.TestCase):
             for text in in_lst:
                 self.assertIn(text, new_html)
             for text in out_lst:
-                self.assertIn('<span data-o-mail-quote="1">%s</span>' % cgi.escape(text), new_html)
+                self.assertIn('<span data-o-mail-quote="1">%s</span>' %
+                              cgi.escape(text), new_html)
 
     def test_quote_signature(self):
         test_data = [
             (
                 """<div>Hello<pre>--<br />Administrator</pre></div>""",
-                ["<pre data-o-mail-quote=\"1\">--", "<br data-o-mail-quote=\"1\">"],
+                ["<pre data-o-mail-quote=\"1\">--",
+                    "<br data-o-mail-quote=\"1\">"],
             )
         ]
         for test, in_lst in test_data:
@@ -245,27 +281,31 @@ class TestSanitizer(unittest.TestCase):
         for ext in test_mail_examples.GMAIL_1_IN:
             self.assertIn(ext, html)
         for ext in test_mail_examples.GMAIL_1_OUT:
-            self.assertIn('<span data-o-mail-quote="1">%s</span>' % cgi.escape(ext), html)
+            self.assertIn('<span data-o-mail-quote="1">%s</span>' %
+                          cgi.escape(ext), html)
 
     def test_quote_text(self):
         html = html_sanitize(test_mail_examples.TEXT_1)
         for ext in test_mail_examples.TEXT_1_IN:
             self.assertIn(ext, html)
         for ext in test_mail_examples.TEXT_1_OUT:
-            self.assertIn('<span data-o-mail-quote="1">%s</span>' % cgi.escape(ext), html)
+            self.assertIn('<span data-o-mail-quote="1">%s</span>' %
+                          cgi.escape(ext), html)
 
         html = html_sanitize(test_mail_examples.TEXT_2)
         for ext in test_mail_examples.TEXT_2_IN:
             self.assertIn(ext, html)
         for ext in test_mail_examples.TEXT_2_OUT:
-            self.assertIn('<span data-o-mail-quote="1">%s</span>' % cgi.escape(ext), html)
+            self.assertIn('<span data-o-mail-quote="1">%s</span>' %
+                          cgi.escape(ext), html)
 
     def test_quote_bugs(self):
         html = html_sanitize(test_mail_examples.BUG1)
         for ext in test_mail_examples.BUG_1_IN:
             self.assertIn(ext, html)
         for ext in test_mail_examples.BUG_1_OUT:
-            self.assertIn('<span data-o-mail-quote="1">%s</span>' % cgi.escape(ext.decode('utf-8')), html)
+            self.assertIn('<span data-o-mail-quote="1">%s</span>' %
+                          cgi.escape(ext.decode('utf-8')), html)
 
     def test_misc(self):
         # False / void should not crash
@@ -313,7 +353,8 @@ class TestHtmlTools(unittest.TestCase):
              '<html><body>some <b>content</b>\n\n\n<p>--</p>\n<p>Yours truly</p>\n\n\n</body></html>'),
         ]
         for html, content, plaintext_flag, preserve_flag, container_tag, expected in test_samples:
-            self.assertEqual(append_content_to_html(html, content, plaintext_flag, preserve_flag, container_tag), expected, 'append_content_to_html is broken')
+            self.assertEqual(append_content_to_html(html, content, plaintext_flag,
+                                                    preserve_flag, container_tag), expected, 'append_content_to_html is broken')
 
 
 class TestEmailTools(unittest.TestCase):
@@ -323,9 +364,13 @@ class TestEmailTools(unittest.TestCase):
         cases = [
             ("John <12345@gmail.com>", ['12345@gmail.com']),  # regular form
             ("d@x; 1@2", ['d@x', '1@2']),  # semi-colon + extra space
-            ("'(ss)' <123@gmail.com>, 'foo' <foo@bar>", ['123@gmail.com', 'foo@bar']),  # comma + single-quoting
-            ('"john@gmail.com"<johnny@gmail.com>', ['johnny@gmail.com']),  # double-quoting
-            ('"<jg>" <johnny@gmail.com>', ['johnny@gmail.com']),  # double-quoting with brackets
+            ("'(ss)' <123@gmail.com>, 'foo' <foo@bar>", [
+             '123@gmail.com', 'foo@bar']),  # comma + single-quoting
+            ('"john@gmail.com"<johnny@gmail.com>', [
+             'johnny@gmail.com']),  # double-quoting
+            # double-quoting with brackets
+            ('"<jg>" <johnny@gmail.com>', ['johnny@gmail.com']),
         ]
         for text, expected in cases:
-            self.assertEqual(email_split(text), expected, 'email_split is broken')
+            self.assertEqual(email_split(text), expected,
+                             'email_split is broken')

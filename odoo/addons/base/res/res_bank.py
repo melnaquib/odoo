@@ -22,13 +22,15 @@ class Bank(models.Model):
     street2 = fields.Char()
     zip = fields.Char()
     city = fields.Char()
-    state = fields.Many2one('res.country.state', 'Fed. State', domain="[('country_id', '=', country)]")
+    state = fields.Many2one('res.country.state', 'Fed. State',
+                            domain="[('country_id', '=', country)]")
     country = fields.Many2one('res.country')
     email = fields.Char()
     phone = fields.Char()
     fax = fields.Char()
     active = fields.Boolean(default=True)
-    bic = fields.Char('Bank Identifier Code', index=True, help="Sometimes called BIC or Swift.")
+    bic = fields.Char('Bank Identifier Code', index=True,
+                      help="Sometimes called BIC or Swift.")
 
     @api.multi
     @api.depends('name', 'bic')
@@ -44,7 +46,8 @@ class Bank(models.Model):
         args = args or []
         domain = []
         if name:
-            domain = ['|', ('bic', '=ilike', name + '%'), ('name', operator, name)]
+            domain = ['|', ('bic', '=ilike', name + '%'),
+                      ('name', operator, name)]
             if operator in expression.NEGATIVE_TERM_OPERATORS:
                 domain = ['&'] + domain
         banks = self.search(domain + args, limit=limit)
@@ -57,25 +60,31 @@ class ResPartnerBank(models.Model):
     _description = 'Bank Accounts'
     _order = 'sequence'
 
-    acc_type = fields.Char(compute='_compute_acc_type', help='Bank account type, inferred from account number')
+    acc_type = fields.Char(compute='_compute_acc_type',
+                           help='Bank account type, inferred from account number')
     acc_number = fields.Char('Account Number', required=True)
-    sanitized_acc_number = fields.Char(compute='_compute_sanitized_acc_number', string='Sanitized Account Number', readonly=True, store=True)
-    partner_id = fields.Many2one('res.partner', 'Account Holder', ondelete='cascade', index=True, domain=['|', ('is_company', '=', True), ('parent_id', '=', False)])
+    sanitized_acc_number = fields.Char(
+        compute='_compute_sanitized_acc_number', string='Sanitized Account Number', readonly=True, store=True)
+    partner_id = fields.Many2one('res.partner', 'Account Holder', ondelete='cascade', index=True, domain=[
+                                 '|', ('is_company', '=', True), ('parent_id', '=', False)])
     bank_id = fields.Many2one('res.bank', string='Bank')
     bank_name = fields.Char(related='bank_id.name')
     bank_bic = fields.Char(related='bank_id.bic')
     sequence = fields.Integer()
     currency_id = fields.Many2one('res.currency', string='Currency')
-    company_id = fields.Many2one('res.company', 'Company', default=lambda self: self.env.user.company_id, ondelete='cascade')
+    company_id = fields.Many2one(
+        'res.company', 'Company', default=lambda self: self.env.user.company_id, ondelete='cascade')
 
     _sql_constraints = [
-        ('unique_number', 'unique(sanitized_acc_number, company_id)', 'Account Number must be unique'),
+        ('unique_number', 'unique(sanitized_acc_number, company_id)',
+         'Account Number must be unique'),
     ]
 
     @api.depends('acc_number')
     def _compute_sanitized_acc_number(self):
         for bank in self:
-            bank.sanitized_acc_number = sanitize_account_number(bank.acc_number)
+            bank.sanitized_acc_number = sanitize_account_number(
+                bank.acc_number)
 
     @api.multi
     def _compute_acc_type(self):

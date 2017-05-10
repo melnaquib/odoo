@@ -1,5 +1,6 @@
 import odoo.tests
 
+
 class TestUi(odoo.tests.HttpCase):
     post_install = True
     at_install = False

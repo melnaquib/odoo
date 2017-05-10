@@ -3,7 +3,9 @@
 
 """ Modules dependency graph. """
 
-import os, sys, imp
+import os
+import sys
+import imp
 from os.path import join as opj
 import itertools
 import zipimport
@@ -28,6 +30,7 @@ from functools import reduce
 
 _logger = logging.getLogger(__name__)
 
+
 class Graph(dict):
     """ Modules dependency graph.
 
@@ -38,7 +41,8 @@ class Graph(dict):
     def add_node(self, name, info):
         max_depth, father = 0, None
         for d in info['depends']:
-            n = self.get(d) or Node(d, self, None)  # lazy creation, do not use default value for get()
+            # lazy creation, do not use default value for get()
+            n = self.get(d) or Node(d, self, None)
             if n.depth >= max_depth:
                 father = n
                 max_depth = n.depth
@@ -51,15 +55,16 @@ class Graph(dict):
         if not len(self):
             return
         # update the graph with values from the database (if exist)
-        ## First, we set the default values for each package in graph
-        additional_data = dict((key, {'id': 0, 'state': 'uninstalled', 'dbdemo': False, 'installed_version': None}) for key in list(self.keys()))
-        ## Then we get the values from the database
+        # First, we set the default values for each package in graph
+        additional_data = dict((key, {'id': 0, 'state': 'uninstalled', 'dbdemo': False,
+                                      'installed_version': None}) for key in list(self.keys()))
+        # Then we get the values from the database
         cr.execute('SELECT name, id, state, demo AS dbdemo, latest_version AS installed_version'
                    '  FROM ir_module_module'
-                   ' WHERE name IN %s',(tuple(additional_data),)
+                   ' WHERE name IN %s', (tuple(additional_data),)
                    )
 
-        ## and we update the default values with values from the database
+        # and we update the default values with values from the database
         additional_data.update((x['name'], x) for x in cr.dictfetchall())
 
         for package in list(self.values()):
@@ -78,9 +83,11 @@ class Graph(dict):
             # This will raise an exception if no/unreadable descriptor file.
             # NOTE The call to load_information_from_description_file is already
             # done by db.initialize, so it is possible to not do it again here.
-            info = odoo.modules.module.load_information_from_description_file(module)
+            info = odoo.modules.module.load_information_from_description_file(
+                module)
             if info and info['installable']:
-                packages.append((module, info)) # TODO directly a dict, like in get_modules_with_version
+                # TODO directly a dict, like in get_modules_with_version
+                packages.append((module, info))
             elif module != 'studio_customization':
                 _logger.warning('module %s: not installable, skipped', module)
 
@@ -91,7 +98,8 @@ class Graph(dict):
             package, info = packages[0]
             deps = info['depends']
 
-            # if all dependencies of 'package' are already in the graph, add 'package' in the graph
+            # if all dependencies of 'package' are already in the graph, add
+            # 'package' in the graph
             if reduce(lambda x, y: x and y in self, deps, True):
                 if not package in current:
                     packages.pop(0)
@@ -111,16 +119,17 @@ class Graph(dict):
 
         for package in later:
             unmet_deps = [p for p in dependencies[package] if p not in self]
-            _logger.error('module %s: Unmet dependencies: %s', package, ', '.join(unmet_deps))
+            _logger.error('module %s: Unmet dependencies: %s',
+                          package, ', '.join(unmet_deps))
 
         return len(self) - len_graph
-
 
     def __iter__(self):
         level = 0
         done = set(self.keys())
         while done:
-            level_modules = sorted((name, module) for name, module in list(self.items()) if module.depth==level)
+            level_modules = sorted((name, module) for name, module in list(
+                self.items()) if module.depth == level)
             for name, module in level_modules:
                 done.remove(name)
                 yield module
@@ -128,6 +137,7 @@ class Graph(dict):
 
     def __str__(self):
         return '\n'.join(str(n) for n in self if n.depth == 0)
+
 
 class Node(object):
     """ One module in the modules dependency graph.
@@ -188,5 +198,5 @@ class Node(object):
     def _pprint(self, depth=0):
         s = '%s\n' % self.name
         for c in self.children:
-            s += '%s`-> %s' % ('   ' * depth, c._pprint(depth+1))
+            s += '%s`-> %s' % ('   ' * depth, c._pprint(depth + 1))
         return s

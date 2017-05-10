@@ -31,7 +31,8 @@ from odoo.tools.translate import encode, xml_translate, TRANSLATED_ATTRS
 
 _logger = logging.getLogger(__name__)
 
-MOVABLE_BRANDING = ['data-oe-model', 'data-oe-id', 'data-oe-field', 'data-oe-xpath', 'data-oe-source-id']
+MOVABLE_BRANDING = ['data-oe-model', 'data-oe-id',
+                    'data-oe-field', 'data-oe-xpath', 'data-oe-source-id']
 
 
 def keep_query(*keep_params, **additional_params):
@@ -59,10 +60,13 @@ def keep_query(*keep_params, **additional_params):
 
 class ViewCustom(models.Model):
     _name = 'ir.ui.view.custom'
-    _order = 'create_date desc'  # search(limit=1) should return the last customization
+    # search(limit=1) should return the last customization
+    _order = 'create_date desc'
 
-    ref_id = fields.Many2one('ir.ui.view', string='Original View', index=True, required=True, ondelete='cascade')
-    user_id = fields.Many2one('res.users', string='User', index=True, required=True, ondelete='cascade')
+    ref_id = fields.Many2one('ir.ui.view', string='Original View',
+                             index=True, required=True, ondelete='cascade')
+    user_id = fields.Many2one(
+        'res.users', string='User', index=True, required=True, ondelete='cascade')
     arch = fields.Text(string='View Architecture', required=True)
 
     @api.multi
@@ -72,16 +76,19 @@ class ViewCustom(models.Model):
     @api.model
     def name_search(self, name, args=None, operator='ilike', limit=100):
         if name:
-            recs = self.search([('user_id', operator, name)] + (args or []), limit=limit)
+            recs = self.search([('user_id', operator, name)
+                                ] + (args or []), limit=limit)
             return recs.name_get()
         return super(ViewCustom, self).name_search(name, args=args, operator=operator, limit=limit)
 
     @api.model_cr_context
     def _auto_init(self):
         res = super(ViewCustom, self)._auto_init()
-        self._cr.execute("SELECT indexname FROM pg_indexes WHERE indexname = 'ir_ui_view_custom_user_id_ref_id'")
+        self._cr.execute(
+            "SELECT indexname FROM pg_indexes WHERE indexname = 'ir_ui_view_custom_user_id_ref_id'")
         if not self._cr.fetchone():
-            self._cr.execute("CREATE INDEX ir_ui_view_custom_user_id_ref_id ON ir_ui_view_custom (user_id, ref_id)")
+            self._cr.execute(
+                "CREATE INDEX ir_ui_view_custom_user_id_ref_id ON ir_ui_view_custom (user_id, ref_id)")
         return res
 
 
@@ -109,10 +116,12 @@ def get_view_arch_from_file(filename, xmlid):
         if node.tag == 'record':
             field = node.find('field[@name="arch"]')
             _fix_multiple_roots(field)
-            inner = ''.join([etree.tostring(child) for child in field.iterchildren()])
+            inner = ''.join([etree.tostring(child)
+                             for child in field.iterchildren()])
             return field.text + inner
         elif node.tag == 'template':
-            # The following dom operations has been copied from convert.py's _tag_template()
+            # The following dom operations has been copied from convert.py's
+            # _tag_template()
             if not node.get('inherit_id'):
                 node.set('t-name', xmlid)
                 node.tag = 't'
@@ -120,8 +129,10 @@ def get_view_arch_from_file(filename, xmlid):
                 node.tag = 'data'
             node.attrib.pop('id', None)
             return etree.tostring(node)
-    _logger.warning("Could not find view arch definition in file '%s' for xmlid '%s'", filename, xmlid)
+    _logger.warning(
+        "Could not find view arch definition in file '%s' for xmlid '%s'", filename, xmlid)
     return None
+
 
 xpath_utils = etree.FunctionNamespace(None)
 xpath_utils['hasclass'] = _hasclass
@@ -150,21 +161,29 @@ class View(models.Model):
                              ('kanban', 'Kanban'),
                              ('search', 'Search'),
                              ('qweb', 'QWeb')], string='View Type')
-    arch = fields.Text(compute='_compute_arch', inverse='_inverse_arch', string='View Architecture', nodrop=True)
-    arch_base = fields.Text(compute='_compute_arch_base', inverse='_inverse_arch_base', string='View Architecture')
-    arch_db = fields.Text(string='Arch Blob', translate=xml_translate, oldname='arch')
+    arch = fields.Text(compute='_compute_arch', inverse='_inverse_arch',
+                       string='View Architecture', nodrop=True)
+    arch_base = fields.Text(compute='_compute_arch_base',
+                            inverse='_inverse_arch_base', string='View Architecture')
+    arch_db = fields.Text(string='Arch Blob',
+                          translate=xml_translate, oldname='arch')
     arch_fs = fields.Char(string='Arch Filename')
-    inherit_id = fields.Many2one('ir.ui.view', string='Inherited View', ondelete='restrict', index=True)
-    inherit_children_ids = fields.One2many('ir.ui.view', 'inherit_id', string='Views which inherit from this one')
+    inherit_id = fields.Many2one(
+        'ir.ui.view', string='Inherited View', ondelete='restrict', index=True)
+    inherit_children_ids = fields.One2many(
+        'ir.ui.view', 'inherit_id', string='Views which inherit from this one')
     field_parent = fields.Char(string='Child Field')
-    model_data_id = fields.Many2one('ir.model.data', compute='_compute_model_data_id', string="Model Data", store=True)
+    model_data_id = fields.Many2one(
+        'ir.model.data', compute='_compute_model_data_id', string="Model Data", store=True)
     xml_id = fields.Char(string="External ID", compute='_compute_xml_id',
                          help="ID of the view defined in xml file")
     groups_id = fields.Many2many('res.groups', 'ir_ui_view_group_rel', 'view_id', 'group_id',
                                  string='Groups', help="If this field is empty, the view applies to all users. Otherwise, the view applies to the users of those groups only.")
-    model_ids = fields.One2many('ir.model.data', 'res_id', domain=[('model', '=', 'ir.ui.view')], auto_join=True)
+    model_ids = fields.One2many('ir.model.data', 'res_id', domain=[
+                                ('model', '=', 'ir.ui.view')], auto_join=True)
     create_date = fields.Datetime(readonly=True)
-    write_date = fields.Datetime(string='Last Modification Date', readonly=True)
+    write_date = fields.Datetime(
+        string='Last Modification Date', readonly=True)
 
     mode = fields.Selection([('primary', "Base view"), ('extension', "Extension View")],
                             string="View inheritance mode", default='primary', required=True,
@@ -197,11 +216,14 @@ actual arch.
         for view in self:
             arch_fs = None
             if 'xml' in config['dev_mode'] and view.arch_fs and view.xml_id:
-                # It is safe to split on / herebelow because arch_fs is explicitely stored with '/'
+                # It is safe to split on / herebelow because arch_fs is
+                # explicitely stored with '/'
                 fullpath = get_resource_path(*view.arch_fs.split('/'))
                 arch_fs = get_view_arch_from_file(fullpath, view.xml_id)
-                # replace %(xml_id)s, %(xml_id)d, %%(xml_id)s, %%(xml_id)d by the res_id
-                arch_fs = arch_fs and resolve_external_ids(arch_fs, view.xml_id)
+                # replace %(xml_id)s, %(xml_id)d, %%(xml_id)s, %%(xml_id)d by
+                # the res_id
+                arch_fs = arch_fs and resolve_external_ids(
+                    arch_fs, view.xml_id)
             view.arch = arch_fs or view.arch_db
 
     def _inverse_arch(self):
@@ -241,7 +263,8 @@ actual arch.
         xml_ids = collections.defaultdict(list)
         domain = [('model', '=', 'ir.ui.view'), ('res_id', 'in', self.ids)]
         for data in self.env['ir.model.data'].search_read(domain, ['module', 'name', 'res_id']):
-            xml_ids[data['res_id']].append("%s.%s" % (data['module'], data['name']))
+            xml_ids[data['res_id']].append(
+                "%s.%s" % (data['module'], data['name']))
         for view in self:
             view.xml_id = xml_ids.get(view.id, [''])[0]
 
@@ -252,7 +275,8 @@ actual arch.
                     relaxng_doc = etree.parse(frng)
                     self._relaxng_validator = etree.RelaxNG(relaxng_doc)
                 except Exception:
-                    _logger.exception('Failed to load RelaxNG XML schema for views validation')
+                    _logger.exception(
+                        'Failed to load RelaxNG XML schema for views validation')
         return self._relaxng_validator
 
     def _valid_inheritance(self, arch):
@@ -262,7 +286,8 @@ actual arch.
             if node.tag == 'xpath':
                 match = TRANSLATED_ATTRS_RE.search(node.get('expr', ''))
                 if match:
-                    message = "View inheritance may not use attribute %r as a selector." % match.group(1)
+                    message = "View inheritance may not use attribute %r as a selector." % match.group(
+                        1)
                     self.raise_view_error(message, self.id)
             else:
                 for attr in TRANSLATED_ATTRS:
@@ -304,14 +329,17 @@ actual arch.
     def _check_groups(self):
         for view in self:
             if view.type == 'qweb' and view.groups_id:
-                raise ValidationError(_("Qweb view cannot have 'Groups' define on the record. Use 'groups' attributes inside the view definition"))
+                raise ValidationError(
+                    _("Qweb view cannot have 'Groups' define on the record. Use 'groups' attributes inside the view definition"))
 
     @api.constrains('inherit_id')
     def _check_000_inheritance(self):
         # NOTE: constraints methods are check alphabetically. Always ensure this method will be
-        #       called before other constraint metheods to avoid infinite loop in `read_combined`.
+        # called before other constraint metheods to avoid infinite loop in
+        # `read_combined`.
         if not self._check_recursion(parent='inherit_id'):
-            raise ValidationError(_('You cannot create recursive inherited views.'))
+            raise ValidationError(
+                _('You cannot create recursive inherited views.'))
 
     _sql_constraints = [
         ('inheritance_mode',
@@ -323,14 +351,17 @@ actual arch.
     @api.model_cr_context
     def _auto_init(self):
         res = super(View, self)._auto_init()
-        self._cr.execute('SELECT indexname FROM pg_indexes WHERE indexname = \'ir_ui_view_model_type_inherit_id\'')
+        self._cr.execute(
+            'SELECT indexname FROM pg_indexes WHERE indexname = \'ir_ui_view_model_type_inherit_id\'')
         if not self._cr.fetchone():
-            self._cr.execute('CREATE INDEX ir_ui_view_model_type_inherit_id ON ir_ui_view (model, inherit_id)')
+            self._cr.execute(
+                'CREATE INDEX ir_ui_view_model_type_inherit_id ON ir_ui_view (model, inherit_id)')
         return res
 
     def _compute_defaults(self, values):
         if 'inherit_id' in values:
-            values.setdefault('mode', 'extension' if values['inherit_id'] else 'primary')
+            values.setdefault(
+                'mode', 'extension' if values['inherit_id'] else 'primary')
         return values
 
     @api.model
@@ -341,7 +372,8 @@ actual arch.
             else:
 
                 try:
-                    values['type'] = etree.fromstring(values.get('arch') or values.get('arch_base')).tag
+                    values['type'] = etree.fromstring(
+                        values.get('arch') or values.get('arch_base')).tag
                 except LxmlError:
                     # don't raise here, the constraint that runs `self._check_xml` will
                     # do the job properly.
@@ -364,13 +396,15 @@ actual arch.
     @api.multi
     def write(self, vals):
         # If view is modified we remove the arch_fs information thus activating the arch_db
-        # version. An `init` of the view will restore the arch_fs for the --dev mode
+        # version. An `init` of the view will restore the arch_fs for the --dev
+        # mode
         if ('arch' in vals or 'arch_base' in vals) and 'install_mode_data' not in self._context:
             vals['arch_fs'] = False
 
         # drop the corresponding view customizations (used for dashboards for example), otherwise
         # not all users would see the updated views
-        custom_view = self.env['ir.ui.view.custom'].search([('ref_id', 'in', self.ids)])
+        custom_view = self.env['ir.ui.view.custom'].search(
+            [('ref_id', 'in', self.ids)])
         if custom_view:
             custom_view.unlink()
 
@@ -395,7 +429,8 @@ actual arch.
         :return: id of the default view of False if none found
         :rtype: int
         """
-        domain = [('model', '=', model), ('type', '=', view_type), ('mode', '=', 'primary')]
+        domain = [('model', '=', model), ('type', '=',
+                                          view_type), ('mode', '=', 'primary')]
         return self.search(domain, limit=1).id
 
     #------------------------------------------------------
@@ -431,8 +466,10 @@ actual arch.
             # cannot currently use relationships that are
             # not required. The root cause is the INNER JOIN
             # used to implement it.
-            views = self.search(conditions + [('model_ids.module', 'in', tuple(self.pool._init_modules))])
-            views = self.search(conditions + [('id', 'in', list(self._context.get('check_view_ids') or (0,)) + list(map(int, views)))])
+            views = self.search(
+                conditions + [('model_ids.module', 'in', tuple(self.pool._init_modules))])
+            views = self.search(
+                conditions + [('id', 'in', list(self._context.get('check_view_ids') or (0,)) + list(map(int, views)))])
         else:
             views = self.search(conditions)
 
@@ -555,10 +592,14 @@ actual arch.
                             separator = child.get('separator', ',')
                             if separator == ' ':
                                 separator = None    # squash spaces
-                            to_add = list(filter(bool, list(map(str.strip, child.get('add', '').split(separator)))))
-                            to_remove = list(map(str.strip, child.get('remove', '').split(separator)))
-                            values = list(map(str.strip, node.get(attribute, '').split(separator)))
-                            value = (separator or ' ').join([s for s in values if s not in to_remove] + to_add)
+                            to_add = list(
+                                filter(bool, list(map(str.strip, child.get('add', '').split(separator)))))
+                            to_remove = list(
+                                map(str.strip, child.get('remove', '').split(separator)))
+                            values = list(map(str.strip, node.get(
+                                attribute, '').split(separator)))
+                            value = (separator or ' ').join(
+                                [s for s in values if s not in to_remove] + to_add)
                         if value:
                             node.set(attribute, value)
                         elif attribute in node.attrib:
@@ -577,7 +618,8 @@ actual arch.
                         elif pos == 'before':
                             node.addprevious(child)
                         else:
-                            self.raise_view_error(_("Invalid position attribute: '%s'") % pos, inherit_id)
+                            self.raise_view_error(
+                                _("Invalid position attribute: '%s'") % pos, inherit_id)
             else:
                 attrs = ''.join([
                     ' %s="%s"' % (attr, spec.get(attr))
@@ -585,7 +627,8 @@ actual arch.
                     if attr != 'position'
                 ])
                 tag = "<%s%s>" % (spec.tag, attrs)
-                self.raise_view_error(_("Element '%s' cannot be located in parent view") % tag, inherit_id)
+                self.raise_view_error(
+                    _("Element '%s' cannot be located in parent view") % tag, inherit_id)
 
         return source
 
@@ -608,7 +651,8 @@ actual arch.
             if self._context.get('inherit_branding'):
                 self.inherit_branding(specs_tree, view_id, root_id)
             source = self.apply_inheritance_specs(source, specs_tree, view_id)
-            source = self.apply_view_inheritance(source, view_id, model, root_id=root_id)
+            source = self.apply_view_inheritance(
+                source, view_id, model, root_id=root_id)
         return source
 
     @api.multi
@@ -632,7 +676,8 @@ actual arch.
         root = self
         while root.mode != 'primary':
             # Add inherited views to the list of loading forced views
-            # Otherwise, inherited views could not find elements created in their direct parents if that parent is defined in the same module
+            # Otherwise, inherited views could not find elements created in
+            # their direct parents if that parent is defined in the same module
             check_view_ids.append(root.id)
             root = root.inherit_id
 
@@ -648,7 +693,8 @@ actual arch.
         else:
             parent_view = root.inherit_id.read_combined(fields=fields)
             arch_tree = etree.fromstring(parent_view['arch'])
-            arch_tree = self.apply_inheritance_specs(arch_tree, view_arch, parent_view['id'])
+            arch_tree = self.apply_inheritance_specs(
+                arch_tree, view_arch, parent_view['id'])
 
         if self._context.get('inherit_branding'):
             arch_tree.attrib.update({
@@ -687,7 +733,8 @@ actual arch.
                 node.set('invisible', '1')
                 modifiers['invisible'] = True
                 if 'attrs' in node.attrib:
-                    del node.attrib['attrs']    # avoid making field visible later
+                    # avoid making field visible later
+                    del node.attrib['attrs']
             del node.attrib['groups']
         return True
 
@@ -715,7 +762,8 @@ actual arch.
 
         modifiers = {}
         if model not in self.env:
-            self.raise_view_error(_('Model not found: %(model)s') % dict(model=model), view_id)
+            self.raise_view_error(
+                _('Model not found: %(model)s') % dict(model=model), view_id)
         Model = self.env[model]
 
         if node.tag in ('field', 'node', 'arrow'):
@@ -723,7 +771,8 @@ actual arch.
                 attrs = {}
                 views = {}
                 xml_form = E.form(*(f for f in node if f.tag == 'field'))
-                xarch, xfields = self.with_context(base_model_name=model).postprocess_and_fields(node.get('object'), xml_form, view_id)
+                xarch, xfields = self.with_context(base_model_name=model).postprocess_and_fields(
+                    node.get('object'), xml_form, view_id)
                 views['form'] = {
                     'arch': xarch,
                     'fields': xfields,
@@ -739,7 +788,8 @@ actual arch.
                     for f in node:
                         if f.tag in ('form', 'tree', 'graph', 'kanban', 'calendar'):
                             node.remove(f)
-                            xarch, xfields = self.with_context(base_model_name=model).postprocess_and_fields(field.comodel_name, f, view_id)
+                            xarch, xfields = self.with_context(
+                                base_model_name=model).postprocess_and_fields(field.comodel_name, f, view_id)
                             views[str(f.tag)] = {
                                 'arch': xarch,
                                 'fields': xfields,
@@ -747,8 +797,10 @@ actual arch.
                     attrs = {'views': views}
                     if field.comodel_name in self.env and field.type in ('many2one', 'many2many'):
                         Comodel = self.env[field.comodel_name]
-                        node.set('can_create', 'true' if Comodel.check_access_rights('create', raise_exception=False) else 'false')
-                        node.set('can_write', 'true' if Comodel.check_access_rights('write', raise_exception=False) else 'false')
+                        node.set('can_create', 'true' if Comodel.check_access_rights(
+                            'create', raise_exception=False) else 'false')
+                        node.set('can_write', 'true' if Comodel.check_access_rights(
+                            'write', raise_exception=False) else 'false')
                 fields[node.get('name')] = attrs
 
                 field = model_fields.get(node.get('name'))
@@ -767,16 +819,19 @@ actual arch.
                     fields[node.get(additional_field)] = {}
 
         if not self._apply_group(model, node, modifiers, fields):
-            # node must be removed, no need to proceed further with its children
+            # node must be removed, no need to proceed further with its
+            # children
             return fields
 
         # The view architeture overrides the python model.
         # Get the attrs before they are (possibly) deleted by check_group below
-        orm.transfer_node_to_modifiers(node, modifiers, self._context, in_tree_view)
+        orm.transfer_node_to_modifiers(
+            node, modifiers, self._context, in_tree_view)
 
         for f in node:
             if children or (node.tag == 'field' and f.tag in ('filter', 'separator')):
-                fields.update(self.postprocess(model, f, view_id, in_tree_view, model_fields))
+                fields.update(self.postprocess(
+                    model, f, view_id, in_tree_view, model_fields))
 
         orm.transfer_modifiers_to_node(modifiers, node)
         return fields
@@ -821,7 +876,8 @@ actual arch.
         # TODO handle the case of more than one workflow for a model or multiple
         # transitions with different groups and same signal
         user_group_ids = set(self.env.user.groups_id.ids)
-        buttons = (n for n in node.getiterator('button') if n.get('type') != 'object')
+        buttons = (n for n in node.getiterator(
+            'button') if n.get('type') != 'object')
         for button in buttons:
             query = """SELECT DISTINCT t.group_id
                          FROM wkf
@@ -850,7 +906,8 @@ actual arch.
         """
         fields = {}
         if model not in self.env:
-            self.raise_view_error(_('Model not found: %(model)s') % dict(model=model), view_id)
+            self.raise_view_error(
+                _('Model not found: %(model)s') % dict(model=model), view_id)
         Model = self.env[model]
 
         is_base_model = self.env.context.get('base_model_name', model) == model
@@ -865,7 +922,8 @@ actual arch.
                         not self._context.get("create", True) and is_base_model):
                     node.set("create", 'false')
             if node.getchildren()[1].tag == 'arrow':
-                arrow_fields = self.env[node.getchildren()[1].get('object')].fields_get(None)
+                arrow_fields = self.env[node.getchildren()[1].get(
+                    'object')].fields_get(None)
                 fields.update(arrow_fields)
         else:
             fields = Model.fields_get(None)
@@ -899,7 +957,8 @@ actual arch.
             if field in fields:
                 fields[field].update(fields_def[field])
             else:
-                message = _("Field `%(field_name)s` does not exist") % dict(field_name=field)
+                message = _("Field `%(field_name)s` does not exist") % dict(
+                    field_name=field)
                 self.raise_view_error(message, view_id)
         return arch, fields
 
@@ -968,7 +1027,8 @@ actual arch.
                 if not attrs.intersection(descendant.attrib):
                     continue
                 self._pop_view_branding(descendant)
-            # TODO: find a better name and check if we have a string to boolean helper
+            # TODO: find a better name and check if we have a string to boolean
+            # helper
             return
 
         node_path = e.get('data-oe-xpath')
@@ -1028,7 +1088,8 @@ actual arch.
     @tools.ormcache('self.id')
     def get_view_xmlid(self):
         domain = [('model', '=', 'ir.ui.view'), ('res_id', '=', self.id)]
-        xmlid = self.env['ir.model.data'].search_read(domain, ['module', 'name'])[0]
+        xmlid = self.env['ir.model.data'].search_read(
+            domain, ['module', 'name'])[0]
         return '%s.%s' % (xmlid['module'], xmlid['name'])
 
     @api.model
@@ -1042,7 +1103,7 @@ actual arch.
         qcontext = dict(
             env=self.env,
             keep_query=keep_query,
-            request=request, # might be unbound if we're not in an httprequest context
+            request=request,  # might be unbound if we're not in an httprequest context
             debug=request.debug if request else False,
             json=json,
             quote_plus=werkzeug.url_quote_plus,
@@ -1091,10 +1152,12 @@ actual arch.
                 for node_key, node_value in Node._fields.items():
                     if node_value.type == 'one2many':
                         if node_value.comodel_name == conn_obj:
-                             # _Source_Field = "Incoming Arrows" (connected via des_node)
+                             # _Source_Field = "Incoming Arrows" (connected via
+                             # des_node)
                             if node_value.inverse_name == des_node:
                                 _Source_Field = node_key
-                             # _Destination_Field = "Outgoing Arrows" (connected via src_node)
+                             # _Destination_Field = "Outgoing Arrows"
+                             # (connected via src_node)
                             if node_value.inverse_name == src_node:
                                 _Destination_Field = node_key
 
@@ -1120,7 +1183,8 @@ actual arch.
                         if tools.ustr(lbl) in t and tools.ustr(t[lbl]) == 'False':
                             label_string += ' '
                         else:
-                            label_string = label_string + " " + tools.ustr(t[lbl])
+                            label_string = label_string + \
+                                " " + tools.ustr(t[lbl])
                 labels[str(t['id'])] = (line.id, label_string)
 
         g = graph(nodes, transitions, no_ancester)
@@ -1184,4 +1248,5 @@ actual arch.
             try:
                 self.browse(vid)._check_xml()
             except Exception as e:
-                self.raise_view_error("Can't validate view:\n%s" % (e.message or repr(e)), vid)
+                self.raise_view_error("Can't validate view:\n%s" %
+                                      (e.message or repr(e)), vid)

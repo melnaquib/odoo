@@ -5,6 +5,7 @@ import time
 
 from odoo import models, api
 
+
 class m(models.Model):
     """ This model exposes a few methods that will consume between 'almost no
         resource' and 'a lot of resource'.

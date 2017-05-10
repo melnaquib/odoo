@@ -34,7 +34,8 @@ class ResConfigModuleInstallationMixin(object):
         result = None
         if to_install_modules:
             result = to_install_modules.button_immediate_install()
-        #FIXME: if result is not none, the corresponding todo will be skipped because it was just marked done
+        # FIXME: if result is not none, the corresponding todo will be skipped
+        # because it was just marked done
         if to_install_missing_names:
             return {
                 'type': 'ir.actions.client',
@@ -58,7 +59,8 @@ class ResConfigConfigurable(models.TransientModel):
         Todos = self.env['ir.actions.todo']
         _logger.info('getting next %s', Todos)
 
-        active_todos = Todos.search(['&', ('type', '=', 'automatic'), ('state', '=', 'open')])
+        active_todos = Todos.search(
+            ['&', ('type', '=', 'automatic'), ('state', '=', 'open')])
         user_groups = self.env.user.groups_id
 
         for todo in active_todos:
@@ -271,7 +273,7 @@ class ResConfigInstaller(models.TransientModel, ResConfigModuleInstallationMixin
         selectable = [name for name, field in self._fields.items()
                       if field.type == 'boolean']
         return self.env['ir.module.module'].search([('name', 'in', selectable),
-                            ('state', 'in', ['to install', 'installed', 'to upgrade'])])
+                                                    ('state', 'in', ['to install', 'installed', 'to upgrade'])])
 
     def modules_to_install(self):
         """ selects all modules to install:
@@ -298,7 +300,7 @@ class ResConfigInstaller(models.TransientModel, ResConfigModuleInstallationMixin
 
         hooks_results = set()
         for module in base:
-            hook = getattr(self, '_if_%s'% module, None)
+            hook = getattr(self, '_if_%s' % module, None)
             if hook:
                 hooks_results.update(hook() or set())
 
@@ -322,15 +324,16 @@ class ResConfigInstaller(models.TransientModel, ResConfigModuleInstallationMixin
         res.config.installer doesn't handle uninstallations of already
         installed addons
         """
-        fields = super(ResConfigInstaller, self).fields_get(fields, attributes=attributes)
+        fields = super(ResConfigInstaller, self).fields_get(
+            fields, attributes=attributes)
 
         for name in self.already_installed():
             if name not in fields:
                 continue
             fields[name].update(
                 readonly=True,
-                help= ustr(fields[name].get('help', '')) +
-                     _('\n\nThis addon is already installed on your system'))
+                help=ustr(fields[name].get('help', '')) +
+                _('\n\nThis addon is already installed on your system'))
         return fields
 
     @api.multi
@@ -409,7 +412,7 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
             toolbar=toolbar, submenu=submenu)
 
         can_install_modules = self.env['ir.module.module'].check_access_rights(
-                                    'write', raise_exception=False)
+            'write', raise_exception=False)
 
         doc = etree.XML(ret_val['arch'])
 
@@ -424,7 +427,7 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
                     node.set("modifiers", json.dumps(modifiers))
                 if 'on_change' not in node.attrib:
                     node.set("on_change",
-                    "onchange_module(%s, '%s')" % (field, field))
+                             "onchange_module(%s, '%s')" % (field, field))
 
         ret_val['arch'] = etree.tostring(doc)
         return ret_val
@@ -434,7 +437,7 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
         ModuleSudo = self.env['ir.module.module'].sudo()
         modules = ModuleSudo.search(
             [('name', '=', module_name.replace("module_", '')),
-            ('state', 'in', ['to install', 'installed', 'to upgrade'])])
+             ('state', 'in', ['to install', 'installed', 'to upgrade'])])
 
         if modules and not field_value:
             deps = modules.sudo().downstream_dependencies()
@@ -467,11 +470,13 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
                 defaults.append((name, field.default_model, name[8:]))
             elif name.startswith('group_') and field.type in ('boolean', 'selection') and \
                     hasattr(field, 'implied_group'):
-                field_group_xmlids = getattr(field, 'group', 'base.group_user').split(',')
+                field_group_xmlids = getattr(
+                    field, 'group', 'base.group_user').split(',')
                 field_groups = reduce(add, list(map(ref, field_group_xmlids)))
                 groups.append((name, field_groups, ref(field.implied_group)))
             elif name.startswith('module_') and field.type in ('boolean', 'selection'):
-                module = IrModule.sudo().search([('name', '=', name[7:])], limit=1)
+                module = IrModule.sudo().search(
+                    [('name', '=', name[7:])], limit=1)
                 modules.append((name, module))
             else:
                 others.append(name)
@@ -493,13 +498,15 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
 
         # groups: which groups are implied by the group Employee
         for name, groups, implied_group in classified['group']:
-            res[name] = all(implied_group in group.implied_ids for group in groups)
+            res[name] = all(
+                implied_group in group.implied_ids for group in groups)
             if self._fields[name].type == 'selection':
                 res[name] = int(res[name])
 
         # modules: which modules are installed/to install
         for name, module in classified['module']:
-            res[name] = module.state in ('installed', 'to install', 'to upgrade')
+            res[name] = module.state in (
+                'installed', 'to install', 'to upgrade')
             if self._fields[name].type == 'selection':
                 res[name] = int(res[name])
 
@@ -530,7 +537,8 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
                 groups.write({'implied_ids': [(4, implied_group.id)]})
             else:
                 groups.write({'implied_ids': [(3, implied_group.id)]})
-                implied_group.write({'users': [(3, user.id) for user in groups.mapped('users')]})
+                implied_group.write(
+                    {'users': [(3, user.id) for user in groups.mapped('users')]})
 
         # other fields: execute all methods that start with 'set_'
         for method in dir(self):
@@ -573,7 +581,8 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
     @api.multi
     def cancel(self):
         # ignore the current record, and send the action to reopen the view
-        actions = self.env['ir.actions.act_window'].search([('res_model', '=', self._name)], limit=1)
+        actions = self.env['ir.actions.act_window'].search(
+            [('res_model', '=', self._name)], limit=1)
         if actions:
             return actions.read()[0]
         return {}
@@ -582,7 +591,8 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
     def name_get(self):
         """ Override name_get method to return an appropriate configuration wizard
         name, and not the generated name."""
-        action = self.env['ir.actions.act_window'].search([('res_model', '=', self._name)], limit=1)
+        action = self.env['ir.actions.act_window'].search(
+            [('res_model', '=', self._name)], limit=1)
         name = action.name or self._name
         return [(record.id, name) for record in self]
 

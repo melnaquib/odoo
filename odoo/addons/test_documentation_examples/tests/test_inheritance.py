@@ -3,6 +3,7 @@
 
 from odoo.tests import common
 
+
 class TestBasicInheritance(common.TransactionCase):
     def test_inherit_method(self):
         env = self.env

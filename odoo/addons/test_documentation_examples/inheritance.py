@@ -3,6 +3,7 @@
 
 from odoo import models, fields
 
+
 class Inheritance0(models.Model):
     _name = 'inheritance.0'
 
@@ -13,6 +14,7 @@ class Inheritance0(models.Model):
 
     def check(self, s):
         return "This is {} record {}".format(s, self.name)
+
 
 class Inheritance1(models.Model):
     _name = 'inheritance.1'

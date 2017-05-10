@@ -13,10 +13,10 @@ class TranslationToolsTestCase(unittest.TestCase):
 
         def test_string(str):
             quoted = quote(str)
-            #print "\n1:", repr(str)
-            #print "2:", repr(quoted)
+            # print "\n1:", repr(str)
+            # print "2:", repr(quoted)
             unquoted = unquote("".join(quoted.split('"\n"')))
-            #print "3:", repr(unquoted)
+            # print "3:", repr(unquoted)
             self.assertEqual(str, unquoted)
 
         test_string("""test \nall kinds\n \n o\r
@@ -42,7 +42,7 @@ class TranslationToolsTestCase(unittest.TestCase):
         result = xml_translate(terms.append, source)
         self.assertEqual(result, source)
         self.assertItemsEqual(terms,
-            ['Form stuff', 'Blah blah blah', 'Put some more text here'])
+                              ['Form stuff', 'Blah blah blah', 'Put some more text here'])
 
     def test_translate_xml_text(self):
         """ Test xml_translate() on plain text. """
@@ -71,7 +71,7 @@ class TranslationToolsTestCase(unittest.TestCase):
         result = xml_translate(terms.append, source)
         self.assertEqual(result, source)
         self.assertItemsEqual(terms,
-            ['Form stuff', 'Blah <i>blah</i> blah', 'Put some <b>more text</b> here'])
+                              ['Form stuff', 'Blah <i>blah</i> blah', 'Put some <b>more text</b> here'])
 
     def test_translate_xml_inline2(self):
         """ Test xml_translate() with formatting elements embedding other elements. """
@@ -84,7 +84,7 @@ class TranslationToolsTestCase(unittest.TestCase):
         result = xml_translate(terms.append, source)
         self.assertEqual(result, source)
         self.assertItemsEqual(terms,
-            ['Form stuff', 'Blah <i>blah</i> blah', 'Put <em>some <b>more text</b></em> here'])
+                              ['Form stuff', 'Blah <i>blah</i> blah', 'Put <em>some <b>more text</b></em> here'])
 
     def test_translate_xml_inline3(self):
         """ Test xml_translate() with formatting elements without actual text. """
@@ -101,7 +101,7 @@ class TranslationToolsTestCase(unittest.TestCase):
         result = xml_translate(terms.append, source)
         self.assertEqual(result, source)
         self.assertItemsEqual(terms,
-            ['Form stuff', 'Blah blah blah'])
+                              ['Form stuff', 'Blah blah blah'])
 
     def test_translate_xml_t(self):
         """ Test xml_translate() with t-* attributes. """
@@ -114,7 +114,7 @@ class TranslationToolsTestCase(unittest.TestCase):
         result = xml_translate(terms.append, source)
         self.assertEqual(result, source)
         self.assertItemsEqual(terms,
-            ['stuff before', 'stuff after'])
+                              ['stuff before', 'stuff after'])
 
     def test_translate_xml_off(self):
         """ Test xml_translate() with attribute translate="off". """
@@ -127,7 +127,7 @@ class TranslationToolsTestCase(unittest.TestCase):
         result = xml_translate(terms.append, source)
         self.assertEqual(result, source)
         self.assertItemsEqual(terms,
-            ['stuff before', 'stuff after'])
+                              ['stuff before', 'stuff after'])
 
     def test_translate_xml_attribute(self):
         """ Test xml_translate() with <attribute> elements. """
@@ -139,7 +139,7 @@ class TranslationToolsTestCase(unittest.TestCase):
         result = xml_translate(terms.append, source)
         self.assertEqual(result, source)
         self.assertItemsEqual(terms,
-            ['Translate this'])
+                              ['Translate this'])
 
     def test_translate_xml_a(self):
         """ Test xml_translate() with <a> elements. """
@@ -160,7 +160,7 @@ class TranslationToolsTestCase(unittest.TestCase):
         result = xml_translate(terms.append, source)
         self.assertEqual(result, source)
         self.assertItemsEqual(terms,
-            ['<span class="oe_menu_text">Blah</span>', 'More <b class="caret"/>'])
+                              ['<span class="oe_menu_text">Blah</span>', 'More <b class="caret"/>'])
 
     def test_translate_html(self):
         """ Test xml_translate() and html_translate() with <i> elements. """
@@ -176,11 +176,12 @@ class TestTranslation(TransactionCase):
     def setUp(self):
         super(TestTranslation, self).setUp()
         self.env['ir.translation'].load_module_terms(['base'], ['fr_FR'])
-        self.customers = self.env['res.partner.category'].create({'name': 'Customers'})
+        self.customers = self.env['res.partner.category'].create(
+            {'name': 'Customers'})
         self.env['ir.translation'].create({
             'type': 'model',
             'name': 'res.partner.category,name',
-            'module':'base',
+            'module': 'base',
             'lang': 'fr_FR',
             'res_id': self.customers.id,
             'value': 'Clients',
@@ -198,27 +199,34 @@ class TestTranslation(TransactionCase):
         category = self.customers.with_context({'lang': 'fr_FR'}).copy()
 
         category_no = category.with_context({})
-        self.assertEqual(category_no.name, 'Customers', "Duplication did not set untranslated value")
+        self.assertEqual(category_no.name, 'Customers',
+                         "Duplication did not set untranslated value")
 
         category_fr = category.with_context({'lang': 'fr_FR'})
-        self.assertEqual(category_fr.name, 'Clients', "Did not found translation for initial value")
+        self.assertEqual(category_fr.name, 'Clients',
+                         "Did not found translation for initial value")
 
     def test_103_duplicate_record_fr(self):
-        category = self.customers.with_context({'lang': 'fr_FR'}).copy({'name': 'Clients (copie)'})
+        category = self.customers.with_context(
+            {'lang': 'fr_FR'}).copy({'name': 'Clients (copie)'})
 
         category_no = category.with_context({})
-        self.assertEqual(category_no.name, 'Customers', "Duplication erased original untranslated value")
+        self.assertEqual(category_no.name, 'Customers',
+                         "Duplication erased original untranslated value")
 
         category_fr = category.with_context({'lang': 'fr_FR'})
-        self.assertEqual(category_fr.name, 'Clients (copie)', "Did not used default value for translated value")
+        self.assertEqual(category_fr.name, 'Clients (copie)',
+                         "Did not used default value for translated value")
 
     def test_104_orderby_translated_field(self):
         """ Test search ordered by a translated field. """
         # create a category with a French translation
-        padawans = self.env['res.partner.category'].create({'name': 'Padawans'})
+        padawans = self.env['res.partner.category'].create(
+            {'name': 'Padawans'})
         padawans_fr = padawans.with_context(lang='fr_FR')
         padawans_fr.write({'name': 'Apprentis'})
         # search for categories, and sort them by (translated) name
-        categories = padawans_fr.search([('id', 'in', [self.customers.id, padawans.id])], order='name')
+        categories = padawans_fr.search(
+            [('id', 'in', [self.customers.id, padawans.id])], order='name')
         self.assertEqual(categories.ids, [padawans.id, self.customers.id],
-            "Search ordered by translated name should return Padawans (Apprentis) before Customers (Clients)")
+                         "Search ordered by translated name should return Padawans (Apprentis) before Customers (Clients)")

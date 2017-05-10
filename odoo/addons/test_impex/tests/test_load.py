@@ -7,19 +7,22 @@ import pkgutil
 from odoo.tests import common
 from odoo.tools.misc import mute_logger
 
+
 def message(msg, type='error', from_=0, to_=0, record=0, field='value', **kwargs):
     return dict(kwargs,
                 type=type, rows={'from': from_, 'to': to_}, record=record,
                 field=field, message=msg)
 
+
 def moreaction(**kwargs):
     return dict(kwargs,
-        type='ir.actions.act_window',
-        target='new',
-        view_mode='tree,form',
-        view_type='form',
-        views=[(False, 'tree'), (False, 'form')],
-        help="See all possible values")
+                type='ir.actions.act_window',
+                target='new',
+                view_mode='tree,form',
+                view_type='form',
+                views=[(False, 'tree'), (False, 'form')],
+                help="See all possible values")
+
 
 def values(seq, field='value'):
     return [item[field] for item in seq]
@@ -50,7 +53,8 @@ class ImporterCase(common.TransactionCase):
     def xid(self, record):
         ModelData = self.env['ir.model.data']
 
-        data = ModelData.search([('model', '=', record._name), ('res_id', '=', record.id)])
+        data = ModelData.search(
+            [('model', '=', record._name), ('res_id', '=', record.id)])
         if data:
             d = data.read(['name', 'module'])[0]
             if d['module']:
@@ -114,7 +118,7 @@ class test_ids_stuff(ImporterCase):
         self.assertEqual(len(result['ids']), 1)
         self.assertFalse(result['messages'])
         self.assertEqual(
-            [42], # updated value to imported
+            [42],  # updated value to imported
             values(self.read()))
 
     def test_update_with_xid(self):
@@ -149,14 +153,15 @@ class test_boolean_field(ImporterCase):
                                     ('ru_RU', 'no', 'нет'),
                                     ('nl_BE', 'false', 'vals'),
                                     ('lt_LT', 'false', 'klaidingas')]:
-            self.add_translations('test_import.py', 'code', lang, (source, value))
+            self.add_translations(
+                'test_import.py', 'code', lang, (source, value))
         falses = [['0'], ['no'], ['false'], ['FALSE'], [''],
-                  ['non'], # no, fr
-                  ['nein'], # no, de
-                  ['нет'], # no, ru
-                  ['vals'], # false, nl
-                  ['klaidingas'], # false, lt,
-        ]
+                  ['non'],  # no, fr
+                  ['nein'],  # no, de
+                  ['нет'],  # no, ru
+                  ['vals'],  # false, nl
+                  ['klaidingas'],  # false, lt,
+                  ]
 
         result = self.import_(['value'], falses)
         self.assertFalse(result['messages'])
@@ -165,8 +170,9 @@ class test_boolean_field(ImporterCase):
 
     def test_trues(self):
         trues = [['None'], ['nil'], ['()'], ['f'], ['#f'],
-                  # Problem: OpenOffice (and probably excel) output localized booleans
-                  ['VRAI'], ['ok'], ['true'], ['yes'], ['1'], ]
+                 # Problem: OpenOffice (and probably excel) output localized
+                 # booleans
+                 ['VRAI'], ['ok'], ['true'], ['yes'], ['1'], ]
         result = self.import_(['value'], trues)
         self.assertEqual(len(result['ids']), 10)
         self.assertEqual(result['messages'], [
@@ -212,14 +218,14 @@ class test_integer_field(ImporterCase):
         result = self.import_(['value'], [
             ['1'],
             ['42'],
-            [str(2**31-1)],
+            [str(2**31 - 1)],
             ['12345678']
         ])
         self.assertEqual(len(result['ids']), 4)
         self.assertFalse(result['messages'])
 
         self.assertEqual([
-            1, 42, 2**31-1, 12345678
+            1, 42, 2**31 - 1, 12345678
         ], values(self.read()))
 
     def test_negatives(self):
@@ -299,7 +305,7 @@ class test_float_field(ImporterCase):
         result = self.import_(['value'], [
             ['1'],
             ['42'],
-            [str(2**31-1)],
+            [str(2**31 - 1)],
             ['12345678'],
             [str(2**33)],
             ['0.000001'],
@@ -308,7 +314,7 @@ class test_float_field(ImporterCase):
         self.assertFalse(result['messages'])
 
         self.assertEqual([
-            1, 42, 2**31-1, 12345678, 2.0**33, .000001
+            1, 42, 2**31 - 1, 12345678, 2.0**33, .000001
         ], values(self.read()))
 
     def test_negatives(self):
@@ -534,7 +540,8 @@ class test_selection_function(ImporterCase):
         self.assertEqual(len(result['ids']), 2)
         self.assertEqual(values(self.read()), ['1', '2'])
 
-        result = self.import_(['value'], [['Wheee']], context={'lang': 'fr_FR'})
+        result = self.import_(['value'], [['Wheee']],
+                              context={'lang': 'fr_FR'})
         self.assertFalse(result['messages'])
         self.assertEqual(len(result['ids']), 1)
 
@@ -562,7 +569,7 @@ class test_m2o(ImporterCase):
         self.assertEqual([
             (record1.id, name1),
             (record1.id, name1),
-            (record2.id, name2),],
+            (record2.id, name2), ],
             values(self.read()))
 
     def test_by_xid(self):
@@ -610,10 +617,10 @@ class test_m2o(ImporterCase):
 
         # Because name_search all the things. Fallback schmallback
         result = self.import_(['value'], [
-                # import by id, without specifying it
-                [record1.id],
-                [record2.id],
-                [record1.id],
+            # import by id, without specifying it
+            [record1.id],
+            [record2.id],
+            [record1.id],
         ])
         self.assertEqual(result['messages'], [
             message("No matching record found for name '%s' in field 'Value'" % id,
@@ -629,7 +636,7 @@ class test_m2o(ImporterCase):
         self.assertEqual(result['messages'], [
             message("Invalid database id 'foo' for the field 'Value'",
                     moreinfo=moreaction(res_model='ir.model.data',
-                                        domain=[('model','=','export.integer')]))
+                                        domain=[('model', '=', 'export.integer')]))
         ])
         self.assertIs(result['ids'], False)
 
@@ -655,14 +662,14 @@ class test_m2o(ImporterCase):
         self.assertEqual(result['messages'], [message(
             "No matching record found for external id 'noxidhere' "
             "in field 'Value'", moreinfo=moreaction(
-                res_model='ir.model.data', domain=[('model','=','export.integer')]))])
+                res_model='ir.model.data', domain=[('model', '=', 'export.integer')]))])
         self.assertIs(result['ids'], False)
 
         result = self.import_(['value/.id'], [['66']])
         self.assertEqual(result['messages'], [message(
             "No matching record found for database id '66' "
             "in field 'Value'", moreinfo=moreaction(
-                res_model='ir.model.data', domain=[('model','=','export.integer')]))])
+                res_model='ir.model.data', domain=[('model', '=', 'export.integer')]))])
         self.assertIs(result['ids'], False)
 
     def test_fail_multiple(self):
@@ -682,11 +689,16 @@ class test_m2m(ImporterCase):
     # csv_internal_sep-separated list of ids, xids, or names (depending if
     # m2m/.id, m2m/id or m2m[/anythingelse]
     def test_ids(self):
-        id1 = self.env['export.many2many.other'].create({'value': 3, 'str': 'record0'}).id
-        id2 = self.env['export.many2many.other'].create({'value': 44, 'str': 'record1'}).id
-        id3 = self.env['export.many2many.other'].create({'value': 84, 'str': 'record2'}).id
-        id4 = self.env['export.many2many.other'].create({'value': 9, 'str': 'record3'}).id
-        id5 = self.env['export.many2many.other'].create({'value': 99, 'str': 'record4'}).id
+        id1 = self.env['export.many2many.other'].create(
+            {'value': 3, 'str': 'record0'}).id
+        id2 = self.env['export.many2many.other'].create(
+            {'value': 44, 'str': 'record1'}).id
+        id3 = self.env['export.many2many.other'].create(
+            {'value': 84, 'str': 'record2'}).id
+        id4 = self.env['export.many2many.other'].create(
+            {'value': 9, 'str': 'record3'}).id
+        id5 = self.env['export.many2many.other'].create(
+            {'value': 99, 'str': 'record4'}).id
 
         result = self.import_(['value/.id'], [
             ['%d,%d' % (id1, id2)],
@@ -697,7 +709,7 @@ class test_m2m(ImporterCase):
         self.assertFalse(result['messages'])
         self.assertEqual(len(result['ids']), 4)
 
-        ids = lambda records: [record.id for record in records]
+        def ids(records): return [record.id for record in records]
 
         b = self.browse()
         self.assertEqual(ids(b[0].value), [id1, id2])
@@ -711,14 +723,18 @@ class test_m2m(ImporterCase):
         self.assertEqual(result['messages'], [message(
             "No matching record found for database id '42' in field "
             "'Value'", moreinfo=moreaction(
-                res_model='ir.model.data', domain=[('model','=','export.many2many.other')]))])
+                res_model='ir.model.data', domain=[('model', '=', 'export.many2many.other')]))])
         self.assertIs(result['ids'], False)
 
     def test_xids(self):
-        record0 = self.env['export.many2many.other'].create({'value': 3, 'str': 'record0'})
-        record1 = self.env['export.many2many.other'].create({'value': 44, 'str': 'record1'})
-        record2 = self.env['export.many2many.other'].create({'value': 84, 'str': 'record2'})
-        record3 = self.env['export.many2many.other'].create({'value': 9, 'str': 'record3'})
+        record0 = self.env['export.many2many.other'].create(
+            {'value': 3, 'str': 'record0'})
+        record1 = self.env['export.many2many.other'].create(
+            {'value': 44, 'str': 'record1'})
+        record2 = self.env['export.many2many.other'].create(
+            {'value': 84, 'str': 'record2'})
+        record3 = self.env['export.many2many.other'].create(
+            {'value': 9, 'str': 'record3'})
 
         result = self.import_(['value/id'], [
             ['%s,%s' % (self.xid(record0), self.xid(record1))],
@@ -737,16 +753,20 @@ class test_m2m(ImporterCase):
         self.assertEqual(result['messages'], [message(
             "No matching record found for external id 'noxidforthat' in field"
             " 'Value'", moreinfo=moreaction(
-                res_model='ir.model.data', domain=[('model','=','export.many2many.other')]))])
+                res_model='ir.model.data', domain=[('model', '=', 'export.many2many.other')]))])
         self.assertIs(result['ids'], False)
 
     def test_names(self):
-        record0 = self.env['export.many2many.other'].create({'value': 3, 'str': 'record0'})
-        record1 = self.env['export.many2many.other'].create({'value': 44, 'str': 'record1'})
-        record2 = self.env['export.many2many.other'].create({'value': 84, 'str': 'record2'})
-        record3 = self.env['export.many2many.other'].create({'value': 9, 'str': 'record3'})
+        record0 = self.env['export.many2many.other'].create(
+            {'value': 3, 'str': 'record0'})
+        record1 = self.env['export.many2many.other'].create(
+            {'value': 44, 'str': 'record1'})
+        record2 = self.env['export.many2many.other'].create(
+            {'value': 84, 'str': 'record2'})
+        record3 = self.env['export.many2many.other'].create(
+            {'value': 9, 'str': 'record3'})
 
-        name = lambda record: record.name_get()[0][1]
+        def name(record): return record.name_get()[0][1]
 
         result = self.import_(['value'], [
             ['%s,%s' % (name(record1), name(record2))],
@@ -769,16 +789,22 @@ class test_m2m(ImporterCase):
         self.assertIs(result['ids'], False)
 
     def test_import_to_existing(self):
-        id1 = self.env['export.many2many.other'].create({'value': 3, 'str': 'record0'}).id
-        id2 = self.env['export.many2many.other'].create({'value': 44, 'str': 'record1'}).id
-        id3 = self.env['export.many2many.other'].create({'value': 84, 'str': 'record2'}).id
-        id4 = self.env['export.many2many.other'].create({'value': 9, 'str': 'record3'}).id
+        id1 = self.env['export.many2many.other'].create(
+            {'value': 3, 'str': 'record0'}).id
+        id2 = self.env['export.many2many.other'].create(
+            {'value': 44, 'str': 'record1'}).id
+        id3 = self.env['export.many2many.other'].create(
+            {'value': 84, 'str': 'record2'}).id
+        id4 = self.env['export.many2many.other'].create(
+            {'value': 9, 'str': 'record3'}).id
 
         xid = 'myxid'
-        result = self.import_(['id', 'value/.id'], [[xid, '%d,%d' % (id1, id2)]])
+        result = self.import_(['id', 'value/.id'],
+                              [[xid, '%d,%d' % (id1, id2)]])
         self.assertFalse(result['messages'])
         self.assertEqual(len(result['ids']), 1)
-        result = self.import_(['id', 'value/.id'], [[xid, '%d,%d' % (id3, id4)]])
+        result = self.import_(['id', 'value/.id'],
+                              [[xid, '%d,%d' % (id3, id4)]])
         self.assertFalse(result['messages'])
         self.assertEqual(len(result['ids']), 1)
 
@@ -859,8 +885,10 @@ class test_o2m(ImporterCase):
     def test_link_inline(self):
         """ m2m-style specification for o2ms
         """
-        id1 = self.env['export.one2many.child'].create({'str': 'Bf', 'value': 109}).id
-        id2 = self.env['export.one2many.child'].create({'str': 'Me', 'value': 262}).id
+        id1 = self.env['export.one2many.child'].create(
+            {'str': 'Bf', 'value': 109}).id
+        id2 = self.env['export.one2many.child'].create(
+            {'str': 'Me', 'value': 262}).id
 
         result = self.import_(['const', 'value/.id'], [
             ['42', '%d,%d' % (id1, id2)]
@@ -877,8 +905,10 @@ class test_o2m(ImporterCase):
     def test_link(self):
         """ O2M relating to an existing record (update) force a LINK_TO as well
         """
-        id1 = self.env['export.one2many.child'].create({'str': 'Bf', 'value': 109}).id
-        id2 = self.env['export.one2many.child'].create({'str': 'Me', 'value': 262}).id
+        id1 = self.env['export.one2many.child'].create(
+            {'str': 'Bf', 'value': 109}).id
+        id2 = self.env['export.one2many.child'].create(
+            {'str': 'Me', 'value': 262}).id
 
         result = self.import_(['const', 'value/.id'], [
             ['42', str(id1)],
@@ -894,8 +924,10 @@ class test_o2m(ImporterCase):
         self.assertEqual(values(b.value, field='parent_id'), [b, b])
 
     def test_link_2(self):
-        id1 = self.env['export.one2many.child'].create({'str': 'Bf', 'value': 109}).id
-        id2 = self.env['export.one2many.child'].create({'str': 'Me', 'value': 262}).id
+        id1 = self.env['export.one2many.child'].create(
+            {'str': 'Bf', 'value': 109}).id
+        id2 = self.env['export.one2many.child'].create(
+            {'str': 'Me', 'value': 262}).id
 
         result = self.import_(['const', 'value/.id', 'value/value'], [
             ['42', str(id1), '1'],
@@ -964,8 +996,10 @@ class test_o2m_multiple(ImporterCase):
 
 class test_realworld(common.TransactionCase):
     def test_bigfile(self):
-        data = json.loads(pkgutil.get_data(self.__module__, 'contacts_big.json'))
-        result = self.env['res.partner'].load(['name', 'mobile', 'email', 'image'], data)
+        data = json.loads(pkgutil.get_data(
+            self.__module__, 'contacts_big.json'))
+        result = self.env['res.partner'].load(
+            ['name', 'mobile', 'email', 'image'], data)
         self.assertFalse(result['messages'])
         self.assertEqual(len(result['ids']), len(data))
 

@@ -21,6 +21,7 @@ def nl2br(string):
     """
     return unicodifier(string).replace('\n', '<br>\n')
 
+
 def html_escape(string, options):
     """ Automatically escapes content unless options['html-escape']
     is set to False
@@ -33,6 +34,7 @@ def html_escape(string, options):
 #--------------------------------------------------------------------
 # QWeb Fields converters
 #--------------------------------------------------------------------
+
 
 class FieldConverter(models.AbstractModel):
     """ Used to convert a t-field specification into an output HTML field.
@@ -132,7 +134,8 @@ class FloatConverter(models.AbstractModel):
     @api.model
     def value_to_html(self, value, options):
         if 'decimal_precision' in options:
-            precision = self.env['decimal.precision'].search([('name', '=', options['decimal_precision'])]).digits
+            precision = self.env['decimal.precision'].search(
+                [('name', '=', options['decimal_precision'])]).digits
         else:
             precision = options['precision']
 
@@ -142,7 +145,8 @@ class FloatConverter(models.AbstractModel):
             value = float_utils.float_round(value, precision_digits=precision)
             fmt = '%.{precision}f'.format(precision=precision)
 
-        formatted = self.user_lang().format(fmt, value, grouping=True).replace(r'-', '\u2011')
+        formatted = self.user_lang().format(
+            fmt, value, grouping=True).replace(r'-', '\u2011')
 
         # %f does not strip trailing zeroes. %g does but its precision causes
         # it to switch to scientific notation starting at a million *and* to
@@ -237,7 +241,8 @@ class SelectionConverter(models.AbstractModel):
     @api.model
     def record_to_html(self, record, field_name, options):
         if 'selection' not in options:
-            options = dict(options, selection=dict(record._fields[field_name].get_description(self.env)['selection']))
+            options = dict(options, selection=dict(
+                record._fields[field_name].get_description(self.env)['selection']))
         return super(SelectionConverter, self).record_to_html(record, field_name, options)
 
 
@@ -282,8 +287,9 @@ class ImageConverter(models.AbstractModel):
             image = Image.open(StringIO(value.decode('base64')))
             image.verify()
         except IOError:
-            raise ValueError("Non-image binary fields can not be converted to HTML")
-        except: # image.verify() throws "suitable exceptions", I have no idea what they are
+            raise ValueError(
+                "Non-image binary fields can not be converted to HTML")
+        except:  # image.verify() throws "suitable exceptions", I have no idea what they are
             raise ValueError("Invalid image content")
 
         return unicodifier('<img src="data:%s;base64,%s">' % (Image.MIME[image.format], value))
@@ -322,25 +328,28 @@ class MonetaryConverter(models.AbstractModel):
 
         lang = self.user_lang()
         formatted_amount = lang.format(fmt, display_currency.round(value),
-                                grouping=True, monetary=True).replace(r' ', '\N{NO-BREAK SPACE}').replace(r'-', '\u2011')
+                                       grouping=True, monetary=True).replace(r' ', '\N{NO-BREAK SPACE}').replace(r'-', '\u2011')
 
         pre = post = ''
         if display_currency.position == 'before':
-            pre = '{symbol}\N{NO-BREAK SPACE}'.format(symbol=display_currency.symbol or '')
+            pre = '{symbol}\N{NO-BREAK SPACE}'.format(
+                symbol=display_currency.symbol or '')
         else:
-            post = '\N{NO-BREAK SPACE}{symbol}'.format(symbol=display_currency.symbol or '')
+            post = '\N{NO-BREAK SPACE}{symbol}'.format(
+                symbol=display_currency.symbol or '')
 
         return '{pre}<span class="oe_currency_value">{0}</span>{post}'.format(formatted_amount, pre=pre, post=post)
 
     @api.model
     def record_to_html(self, record, field_name, options):
         options = dict(options)
-        #currency should be specified by monetary field
+        # currency should be specified by monetary field
         field = record._fields[field_name]
         if not options.get('display_currency') and field.type == 'monetary' and field.currency_field:
             options['display_currency'] = record[field.currency_field]
 
         return super(MonetaryConverter, self).record_to_html(record, field_name, options)
+
 
 TIMEDELTA_UNITS = (
     ('year',   3600 * 24 * 365),
@@ -393,7 +402,7 @@ class DurationConverter(models.AbstractModel):
             if not v:
                 continue
             section = babel.dates.format_timedelta(
-                v*secs_per_unit, threshold=1, locale=locale)
+                v * secs_per_unit, threshold=1, locale=locale)
             if section:
                 sections.append(section)
         return ' '.join(sections)
@@ -431,7 +440,8 @@ class Contact(models.AbstractModel):
         if not value.exists():
             return False
 
-        opf = options and options.get('fields') or ["name", "address", "phone", "mobile", "fax", "email"]
+        opf = options and options.get('fields') or [
+            "name", "address", "phone", "mobile", "fax", "email"]
         value = value.sudo().with_context(show_address=True)
         name_get = value.name_get()[0][1]
 
@@ -464,7 +474,8 @@ class QwebView(models.AbstractModel):
         view = getattr(record, field_name)
 
         if view._name != "ir.ui.view":
-            _logger.warning("%s.%s must be a 'ir.ui.view' model." % (record, field_name))
+            _logger.warning("%s.%s must be a 'ir.ui.view' model." %
+                            (record, field_name))
             return None
 
         view = view.with_context(object=record)

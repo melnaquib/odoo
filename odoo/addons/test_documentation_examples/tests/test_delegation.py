@@ -3,6 +3,7 @@
 
 from odoo.tests import common
 
+
 class TestDelegation(common.TransactionCase):
 
     def setUp(self):

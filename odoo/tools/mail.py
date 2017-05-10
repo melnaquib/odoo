@@ -24,11 +24,13 @@ _logger = logging.getLogger(__name__)
 # HTML Sanitizer
 #----------------------------------------------------------
 
-tags_to_kill = ["script", "head", "meta", "title", "link", "style", "frame", "iframe", "base", "object", "embed"]
+tags_to_kill = ["script", "head", "meta", "title", "link",
+                "style", "frame", "iframe", "base", "object", "embed"]
 tags_to_remove = ['html', 'body']
 
 # allow new semantic HTML5 tags
-allowed_tags = clean.defs.tags | frozenset('article section header footer hgroup nav aside figure main'.split() + [etree.Comment])
+allowed_tags = clean.defs.tags | frozenset(
+    'article section header footer hgroup nav aside figure main'.split() + [etree.Comment])
 safe_attrs = clean.defs.safe_attrs | frozenset(
     ['style',
      'data-o-mail-quote',  # quote detection
@@ -88,7 +90,8 @@ class _Cleaner(clean.Cleaner):
             child_node = None
             idx, node_idx = 0, 0
             for item in re.finditer(regex, text):
-                new_node = _create_new_node(tag, text[item.start():item.end()], None, attrs)
+                new_node = _create_new_node(
+                    tag, text[item.start():item.end()], None, attrs)
                 if child_node is None:
                     node.text = text[idx:item.start()]
                     new_node.tail = text[item.end():]
@@ -120,9 +123,11 @@ class _Cleaner(clean.Cleaner):
                 el.getparent().set('data-o-mail-quote-container', '1')
 
         # text-based quotes (>, >>) and signatures (-- Signature)
-        text_complete_regex = re.compile(r"((?:\n[>]+[^\n\r]*)+|(?:(?:^|\n)[-]{2}[\s]?[\r\n]{1,2}[\s\S]+))")
+        text_complete_regex = re.compile(
+            r"((?:\n[>]+[^\n\r]*)+|(?:(?:^|\n)[-]{2}[\s]?[\r\n]{1,2}[\s\S]+))")
         if not el.get('data-o-mail-quote'):
-            _tag_matching_regex_in_text(text_complete_regex, el, 'span', {'data-o-mail-quote': '1'})
+            _tag_matching_regex_in_text(text_complete_regex, el, 'span', {
+                                        'data-o-mail-quote': '1'})
 
         if el.tag == 'blockquote':
             # remove single node
@@ -145,7 +150,8 @@ class _Cleaner(clean.Cleaner):
                 if style[0].lower() in self._style_whitelist:
                     valid_styles[style[0].lower()] = style[1]
             if valid_styles:
-                el.attrib['style'] = '; '.join('%s: %s' % (key, val) for (key, val) in valid_styles.items())
+                el.attrib['style'] = '; '.join('%s: %s' % (
+                    key, val) for (key, val) in valid_styles.items())
             else:
                 del el.attrib['style']
 
@@ -160,17 +166,21 @@ def html_sanitize(src, silent=True, sanitize_tags=True, sanitize_attributes=Fals
         return src
     src = ustr(src, errors='replace')
     # html: remove encoding attribute inside tags
-    doctype = re.compile(r'(<[^>]*\s)(encoding=(["\'][^"\']*?["\']|[^\s\n\r>]+)(\s[^>]*|/)?>)', re.IGNORECASE | re.DOTALL)
+    doctype = re.compile(
+        r'(<[^>]*\s)(encoding=(["\'][^"\']*?["\']|[^\s\n\r>]+)(\s[^>]*|/)?>)', re.IGNORECASE | re.DOTALL)
     src = doctype.sub(r"", src)
 
     logger = logging.getLogger(__name__ + '.html_sanitize')
 
     # html encode email tags
-    part = re.compile(r"(<(([^a<>]|a[^<>\s])[^<>]*)@[^<>]+>)", re.IGNORECASE | re.DOTALL)
+    part = re.compile(
+        r"(<(([^a<>]|a[^<>\s])[^<>]*)@[^<>]+>)", re.IGNORECASE | re.DOTALL)
     # remove results containing cite="mid:email_like@address" (ex: blockquote cite)
     # cite_except = re.compile(r"^((?!cite[\s]*=['\"]).)*$", re.IGNORECASE)
-    src = part.sub(lambda m: ('cite=' not in m.group(1) and 'alt=' not in m.group(1)) and cgi.escape(m.group(1)) or m.group(1), src)
-    # html encode mako tags <% ... %> to decode them later and keep them alive, otherwise they are stripped by the cleaner
+    src = part.sub(lambda m: ('cite=' not in m.group(1) and 'alt=' not in m.group(
+        1)) and cgi.escape(m.group(1)) or m.group(1), src)
+    # html encode mako tags <% ... %> to decode them later and keep them
+    # alive, otherwise they are stripped by the cleaner
     src = src.replace('<%', cgi.escape('<%'))
     src = src.replace('%>', cgi.escape('%>'))
 
@@ -194,7 +204,9 @@ def html_sanitize(src, silent=True, sanitize_tags=True, sanitize_attributes=Fals
         else:
             kwargs['remove_tags'] = tags_to_kill + tags_to_remove
 
-    if sanitize_attributes and etree.LXML_VERSION >= (3, 1, 0):  # lxml < 3.1.0 does not allow to specify safe_attrs. We keep all attributes in order to keep "style"
+    # lxml < 3.1.0 does not allow to specify safe_attrs. We keep all
+    # attributes in order to keep "style"
+    if sanitize_attributes and etree.LXML_VERSION >= (3, 1, 0):
         if strip_classes:
             current_safe_attrs = safe_attrs - frozenset(['class'])
         else:
@@ -206,14 +218,17 @@ def html_sanitize(src, silent=True, sanitize_tags=True, sanitize_attributes=Fals
     else:
         kwargs.update({
             'safe_attrs_only': False,  # keep oe-data attributes + style
-            'strip_classes': strip_classes,  # remove classes, even when keeping other attributes
+            # remove classes, even when keeping other attributes
+            'strip_classes': strip_classes,
         })
 
     try:
-        # some corner cases make the parser crash (such as <SCRIPT/XSS SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT> in test_mail)
+        # some corner cases make the parser crash (such as <SCRIPT/XSS
+        # SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT> in test_mail)
         cleaner = _Cleaner(**kwargs)
         cleaned = cleaner.clean_html(src)
-        # MAKO compatibility: $, { and } inside quotes are escaped, preventing correct mako execution
+        # MAKO compatibility: $, { and } inside quotes are escaped, preventing
+        # correct mako execution
         cleaned = cleaned.replace('%24', '$')
         cleaned = cleaned.replace('%7B', '{')
         cleaned = cleaned.replace('%7D', '}')
@@ -230,15 +245,18 @@ def html_sanitize(src, silent=True, sanitize_tags=True, sanitize_attributes=Fals
             return ""
         if not silent:
             raise
-        logger.warning('ParserError obtained when sanitizing %r', src, exc_info=True)
+        logger.warning('ParserError obtained when sanitizing %r',
+                       src, exc_info=True)
         cleaned = '<p>ParserError when sanitizing</p>'
     except Exception:
         if not silent:
             raise
-        logger.warning('unknown error obtained when sanitizing %r', src, exc_info=True)
+        logger.warning(
+            'unknown error obtained when sanitizing %r', src, exc_info=True)
         cleaned = '<p>Unknown error when sanitizing</p>'
 
-    # this is ugly, but lxml/etree tostring want to put everything in a 'div' that breaks the editor -> remove that
+    # this is ugly, but lxml/etree tostring want to put everything in a 'div'
+    # that breaks the editor -> remove that
     if cleaned.startswith('<div>') and cleaned.endswith('</div>'):
         cleaned = cleaned[5:-6]
 
@@ -248,26 +266,30 @@ def html_sanitize(src, silent=True, sanitize_tags=True, sanitize_attributes=Fals
 # HTML/Text management
 #----------------------------------------------------------
 
+
 def html_keep_url(text):
     """ Transform the url into clickable link with <a/> tag """
     idx = 0
     final = ''
-    link_tags = re.compile(r"""(?<!["'])((ftp|http|https):\/\/(\w+:{0,1}\w*@)?([^\s<"']+)(:[0-9]+)?(\/|\/([^\s<"']))?)(?![^\s<"']*["']|[^\s<"']*</a>)""")
+    link_tags = re.compile(
+        r"""(?<!["'])((ftp|http|https):\/\/(\w+:{0,1}\w*@)?([^\s<"']+)(:[0-9]+)?(\/|\/([^\s<"']))?)(?![^\s<"']*["']|[^\s<"']*</a>)""")
     for item in re.finditer(link_tags, text):
         final += text[idx:item.start()]
-        final += '<a href="%s" target="_blank">%s</a>' % (item.group(0), item.group(0))
+        final += '<a href="%s" target="_blank">%s</a>' % (
+            item.group(0), item.group(0))
         idx = item.end()
     final += text[idx:]
     return final
+
 
 def html2plaintext(html, body_id=None, encoding='utf-8'):
     """ From an HTML text, convert the HTML to plain text.
     If @param body_id is provided then this is the tag where the
     body (not necessarily <body>) starts.
     """
-    ## (c) Fry-IT, www.fry-it.com, 2007
-    ## <peter@fry-it.com>
-    ## download here: http://www.peterbe.com/plog/html2plaintext
+    # (c) Fry-IT, www.fry-it.com, 2007
+    # <peter@fry-it.com>
+    # download here: http://www.peterbe.com/plog/html2plaintext
 
     html = ustr(html)
 
@@ -323,6 +345,7 @@ def html2plaintext(html, body_id=None, encoding='utf-8'):
 
     return html
 
+
 def plaintext2html(text, container_tag=False):
     """ Convert plaintext into html. Content of the text is escaped to manage
         html entities, using cgi.escape().
@@ -357,6 +380,7 @@ def plaintext2html(text, container_tag=False):
         final = '<%s>%s</%s>' % (container_tag, final, container_tag)
     return ustr(final)
 
+
 def append_content_to_html(html, content, plaintext=True, preserve=False, container_tag=False):
     """ Append extra content at the end of an HTML snippet, trying
         to locate the end of the HTML document (</body>, </html>, or
@@ -383,11 +407,12 @@ def append_content_to_html(html, content, plaintext=True, preserve=False, contai
     elif plaintext:
         content = '\n%s\n' % plaintext2html(content, container_tag)
     else:
-        content = re.sub(r'(?i)(</?(?:html|body|head|!\s*DOCTYPE)[^>]*>)', '', content)
+        content = re.sub(
+            r'(?i)(</?(?:html|body|head|!\s*DOCTYPE)[^>]*>)', '', content)
         content = '\n%s\n' % ustr(content)
     # Force all tags to lowercase
     html = re.sub(r'(</?)\W*(\w+)([ >])',
-        lambda m: '%s%s%s' % (m.group(1), m.group(2).lower(), m.group(3)), html)
+                  lambda m: '%s%s%s' % (m.group(1), m.group(2).lower(), m.group(3)), html)
     insert_location = html.find('</body>')
     if insert_location == -1:
         insert_location = html.find('</html>')
@@ -399,20 +424,26 @@ def append_content_to_html(html, content, plaintext=True, preserve=False, contai
 # Emails
 #----------------------------------------------------------
 
+
 # matches any email in a body of text
-email_re = re.compile(r"""([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63})""", re.VERBOSE)
+email_re = re.compile(
+    r"""([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63})""", re.VERBOSE)
 
 # matches a string containing only one email
-single_email_re = re.compile(r"""^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$""", re.VERBOSE)
+single_email_re = re.compile(
+    r"""^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$""", re.VERBOSE)
 
 # update command in emails body
 command_re = re.compile("^Set-([a-z]+) *: *(.+)$", re.I + re.UNICODE)
 
 # Updated in 7.0 to match the model name as well
 # Typical form of references is <timestamp-openerp-record_id-model_name@domain>
-# group(1) = the record ID ; group(2) = the model (if any) ; group(3) = the domain
-reference_re = re.compile("<.*-open(?:object|erp)-(\\d+)(?:-([\w.]+))?[^>]*@([^>]*)>", re.UNICODE)
-discussion_re = re.compile("<.*-open(?:object|erp)-private[^>]*@([^>]*)>", re.UNICODE)
+# group(1) = the record ID ; group(2) = the model (if any) ; group(3) =
+# the domain
+reference_re = re.compile(
+    "<.*-open(?:object|erp)-(\\d+)(?:-([\w.]+))?[^>]*@([^>]*)>", re.UNICODE)
+discussion_re = re.compile(
+    "<.*-open(?:object|erp)-private[^>]*@([^>]*)>", re.UNICODE)
 
 mail_header_msgid_re = re.compile('<[^<>]+>')
 
@@ -429,6 +460,7 @@ def generate_tracking_message_id(res_id):
         rnd = random.random()
     rndstr = ("%.15f" % rnd)[2:]
     return "<%.15f.%s-openerp-%s@%s>" % (time.time(), rndstr, res_id, socket.gethostname())
+
 
 def email_send(email_from, email_to, subject, body, email_cc=None, email_bcc=None, reply_to=False,
                attachments=None, message_id=None, references=None, openobject_id=False, debug=False, subtype='plain', headers=None,
@@ -449,7 +481,8 @@ def email_send(email_from, email_to, subject, body, email_cc=None, email_bcc=Non
         if db_name:
             local_cr = cr = odoo.registry(db_name).cursor()
         else:
-            raise Exception("No database cursor found, please pass one explicitly")
+            raise Exception(
+                "No database cursor found, please pass one explicitly")
 
     # Send Email
     try:
@@ -457,11 +490,11 @@ def email_send(email_from, email_to, subject, body, email_cc=None, email_bcc=Non
         res = False
         # Pack Message into MIME Object
         email_msg = mail_server_pool.build_email(email_from, email_to, subject, body, email_cc, email_bcc, reply_to,
-                   attachments, message_id, references, openobject_id, subtype, headers=headers)
+                                                 attachments, message_id, references, openobject_id, subtype, headers=headers)
 
         res = mail_server_pool.send_email(cr, uid or 1, email_msg, mail_server_id=None,
-                       smtp_server=smtp_server, smtp_port=smtp_port, smtp_user=smtp_user, smtp_password=smtp_password,
-                       smtp_encryption=('ssl' if ssl else None), smtp_debug=debug)
+                                          smtp_server=smtp_server, smtp_port=smtp_port, smtp_user=smtp_user, smtp_password=smtp_password,
+                                          smtp_encryption=('ssl' if ssl else None), smtp_debug=debug)
     except Exception:
         _logger.exception("tools.email_send failed to deliver email")
         return False
@@ -470,16 +503,18 @@ def email_send(email_from, email_to, subject, body, email_cc=None, email_bcc=Non
             cr.close()
     return res
 
+
 def email_split(text):
     """ Return a list of the email addresses found in ``text`` """
     if not text:
         return []
     return [addr[1] for addr in getaddresses([text])
-                # getaddresses() returns '' when email parsing fails, and
-                # sometimes returns emails without at least '@'. The '@'
-                # is strictly required in RFC2822's `addr-spec`.
-                if addr[1]
-                if '@' in addr[1]]
+            # getaddresses() returns '' when email parsing fails, and
+            # sometimes returns emails without at least '@'. The '@'
+            # is strictly required in RFC2822's `addr-spec`.
+            if addr[1]
+            if '@' in addr[1]]
+
 
 def email_split_and_format(text):
     """ Return a list of email addresses found in ``text``, formatted using
@@ -487,11 +522,12 @@ def email_split_and_format(text):
     if not text:
         return []
     return [formataddr((addr[0], addr[1])) for addr in getaddresses([text])
-                # getaddresses() returns '' when email parsing fails, and
-                # sometimes returns emails without at least '@'. The '@'
-                # is strictly required in RFC2822's `addr-spec`.
-                if addr[1]
-                if '@' in addr[1]]
+            # getaddresses() returns '' when email parsing fails, and
+            # sometimes returns emails without at least '@'. The '@'
+            # is strictly required in RFC2822's `addr-spec`.
+            if addr[1]
+            if '@' in addr[1]]
+
 
 def email_references(references):
     ref_match, model, thread_id, hostname, is_private = False, False, False, False, False
@@ -508,6 +544,8 @@ def email_references(references):
     return (ref_match, model, thread_id, hostname, is_private)
 
 # was mail_message.decode()
+
+
 def decode_smtp_header(smtp_header):
     """Returns unicode() string conversion of the given encoded smtp header
     text. email.header decode_header method return a decoded string and its
@@ -521,5 +559,7 @@ def decode_smtp_header(smtp_header):
     return ''
 
 # was mail_thread.decode_header()
+
+
 def decode_message_header(message, header, separator=' '):
     return separator.join(map(decode_smtp_header, [_f for _f in message.get_all(header, []) if _f]))

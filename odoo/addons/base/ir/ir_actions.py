@@ -53,7 +53,8 @@ class IrActions(models.Model):
     def unlink(self):
         """unlink ir.action.todo which are related to actions which will be deleted.
            NOTE: ondelete cascade will not work on ir.actions.actions so we will need to do it manually."""
-        todos = self.env['ir.actions.todo'].search([('action_id', 'in', self.ids)])
+        todos = self.env['ir.actions.todo'].search(
+            [('action_id', 'in', self.ids)])
         todos.unlink()
         res = super(IrActions, self).unlink()
         # ir_values.get_actions() depends on action records
@@ -94,33 +95,40 @@ class IrActionsReportXml(models.Model):
                                    help="HTML will open the report directly in your browser, PDF will use wkhtmltopdf to render the HTML into a PDF file and let you download it, Controller allows you to define the url of a custom controller outputting any kind of report.")
     report_name = fields.Char(string='Template Name', required=True,
                               help="For QWeb reports, name of the template used in the rendering. The method 'render_html' of the model 'report.template_name' will be called (if any) to give the html. For RML reports, this is the LocalService name.")
-    groups_id = fields.Many2many('res.groups', 'res_groups_report_rel', 'uid', 'gid', string='Groups')
+    groups_id = fields.Many2many(
+        'res.groups', 'res_groups_report_rel', 'uid', 'gid', string='Groups')
     ir_values_id = fields.Many2one('ir.values', string='More Menu entry', readonly=True,
                                    help='More menu entry.', copy=False)
 
     # options
-    multi = fields.Boolean(string='On Multiple Doc.', help="If set to true, the action will not be displayed on the right toolbar of a form view.")
-    attachment_use = fields.Boolean(string='Reload from Attachment', help='If you check this, then the second time the user prints with same attachment name, it returns the previous report.')
+    multi = fields.Boolean(string='On Multiple Doc.',
+                           help="If set to true, the action will not be displayed on the right toolbar of a form view.")
+    attachment_use = fields.Boolean(string='Reload from Attachment',
+                                    help='If you check this, then the second time the user prints with same attachment name, it returns the previous report.')
     attachment = fields.Char(string='Save as Attachment Prefix',
                              help='This is the filename of the attachment used to store the printing result. Keep empty to not save the printed reports. You can use a python expression with the object and time variables.')
 
     # Deprecated rml stuff
-    header = fields.Boolean(string='Add RML Header', default=True, help="Add or not the corporate RML header")
+    header = fields.Boolean(string='Add RML Header', default=True,
+                            help="Add or not the corporate RML header")
     parser = fields.Char(string='Parser Class')
     auto = fields.Boolean(string='Custom Python Parser', default=True)
 
     report_xsl = fields.Char(string='XSL Path')
     report_xml = fields.Char(string='XML Path')
 
-    report_rml = fields.Char(string='Main Report File Path/controller', help="The path to the main report file/controller (depending on Report Type) or empty if the content is in another data field")
+    report_rml = fields.Char(string='Main Report File Path/controller',
+                             help="The path to the main report file/controller (depending on Report Type) or empty if the content is in another data field")
     report_file = fields.Char(related='report_rml', string='Report File', required=False, readonly=False, store=True,
                               help="The path to the main report file (depending on Report Type) or empty if the content is in another field")
 
     report_sxw = fields.Char(compute='_compute_report_sxw', string='SXW Path')
     report_sxw_content_data = fields.Binary(string='SXW Content')
     report_rml_content_data = fields.Binary(string='RML Content')
-    report_sxw_content = fields.Binary(compute='_compute_report_sxw_content', inverse='_inverse_report_sxw_content', string='SXW Content')
-    report_rml_content = fields.Binary(compute='_compute_report_rml_content', inverse='_inverse_report_rml_content', string='RML Content')
+    report_sxw_content = fields.Binary(
+        compute='_compute_report_sxw_content', inverse='_inverse_report_sxw_content', string='SXW Content')
+    report_rml_content = fields.Binary(
+        compute='_compute_report_rml_content', inverse='_inverse_report_rml_content', string='RML Content')
 
     @api.depends('report_rml')
     def _compute_report_sxw(self):
@@ -169,7 +177,8 @@ class IrActionsReportXml(models.Model):
         if 'report.' + name in odoo.report.interface.report_int._reports:
             return odoo.report.interface.report_int._reports['report.' + name]
 
-        self._cr.execute("SELECT * FROM ir_act_report_xml WHERE report_name=%s", (name,))
+        self._cr.execute(
+            "SELECT * FROM ir_act_report_xml WHERE report_name=%s", (name,))
         row = self._cr.dictfetchone()
         if not row:
             raise Exception("Required report does not exist: %s" % name)
@@ -180,13 +189,14 @@ class IrActionsReportXml(models.Model):
             kwargs = {}
             if row['parser']:
                 kwargs['parser'] = getattr(odoo.addons, row['parser'])
-            return report_sxw('report.'+row['report_name'], row['model'],
+            return report_sxw('report.' + row['report_name'], row['model'],
                               join('addons', row['report_rml'] or '/'),
                               header=row['header'], register=False, **kwargs)
         elif row['report_xsl'] and row['report_xml']:
-            return report_rml('report.'+row['report_name'], row['model'],
+            return report_rml('report.' + row['report_name'], row['model'],
                               join('addons', row['report_xml']),
-                              row['report_xsl'] and join('addons', row['report_xsl']),
+                              row['report_xsl'] and join(
+                                  'addons', row['report_xsl']),
                               register=False)
         else:
             raise Exception("Unhandled report type: %s" % row)
@@ -226,7 +236,8 @@ class IrActionsReportXml(models.Model):
             # The only case where a QWeb report is rendered with this method occurs when running
             # yml tests originally written for RML reports.
             if tools.config['test_enable'] and not tools.config['test_report_directory']:
-                # Only generate the pdf when a destination folder has been provided.
+                # Only generate the pdf when a destination folder has been
+                # provided.
                 return self.env['report'].get_html(res_ids, report, data=data), 'html'
             else:
                 return self.env['report'].get_pdf(res_ids, report, data=data), 'pdf'
@@ -245,9 +256,11 @@ class IrActionsActWindow(models.Model):
     def _check_model(self):
         for action in self:
             if action.res_model not in self.env:
-                raise ValidationError(_('Invalid model name %r in action definition.') % action.res_model)
+                raise ValidationError(
+                    _('Invalid model name %r in action definition.') % action.res_model)
             if action.src_model and action.src_model not in self.env:
-                raise ValidationError(_('Invalid model name %r in action definition.') % action.src_model)
+                raise ValidationError(
+                    _('Invalid model name %r in action definition.') % action.src_model)
 
     @api.depends('view_ids.view_mode', 'view_mode', 'view_id.type')
     def _compute_views(self):
@@ -260,10 +273,12 @@ class IrActionsActWindow(models.Model):
             can be set on the action.
         """
         for act in self:
-            act.views = [(view.view_id.id, view.view_mode) for view in act.view_ids]
+            act.views = [(view.view_id.id, view.view_mode)
+                         for view in act.view_ids]
             got_modes = [view.view_mode for view in act.view_ids]
             all_modes = act.view_mode.split(',')
-            missing_modes = [mode for mode in all_modes if mode not in got_modes]
+            missing_modes = [
+                mode for mode in all_modes if mode not in got_modes]
             if missing_modes:
                 if act.view_id.type in missing_modes:
                     # reorder missing modes to put view_id first if present
@@ -274,32 +289,37 @@ class IrActionsActWindow(models.Model):
     @api.depends('res_model', 'search_view_id')
     def _compute_search_view(self):
         for act in self:
-            fvg = self.env[act.res_model].fields_view_get(act.search_view_id.id, 'search')
+            fvg = self.env[act.res_model].fields_view_get(
+                act.search_view_id.id, 'search')
             act.search_view = str(fvg)
 
     name = fields.Char(string='Action Name', translate=True)
     type = fields.Char(default="ir.actions.act_window")
-    view_id = fields.Many2one('ir.ui.view', string='View Ref.', ondelete='set null')
+    view_id = fields.Many2one(
+        'ir.ui.view', string='View Ref.', ondelete='set null')
     domain = fields.Char(string='Domain Value',
                          help="Optional domain filtering of the destination data, as a Python expression")
     context = fields.Char(string='Context Value', default={}, required=True,
                           help="Context dictionary as Python expression, empty by default (Default: {})")
-    res_id = fields.Integer(string='Record ID', help="Database ID of record to open in form view, when ``view_mode`` is set to 'form' only")
+    res_id = fields.Integer(
+        string='Record ID', help="Database ID of record to open in form view, when ``view_mode`` is set to 'form' only")
     res_model = fields.Char(string='Destination Model', required=True,
                             help="Model name of the object to open in the view window")
     src_model = fields.Char(string='Source Model',
                             help="Optional model name of the objects on which this action should be visible")
-    target = fields.Selection([('current', 'Current Window'), ('new', 'New Window'), ('inline', 'Inline Edit'), ('fullscreen', 'Full Screen'), ('main', 'Main action of Current Window')], default="current", string='Target Window')
+    target = fields.Selection([('current', 'Current Window'), ('new', 'New Window'), ('inline', 'Inline Edit'), (
+        'fullscreen', 'Full Screen'), ('main', 'Main action of Current Window')], default="current", string='Target Window')
     view_mode = fields.Char(required=True, default='tree,form',
                             help="Comma-separated list of allowed view modes, such as 'form', 'tree', 'calendar', etc. (Default: tree,form)")
     view_type = fields.Selection([('tree', 'Tree'), ('form', 'Form')], default="form", string='View Type', required=True,
                                  help="View type: Tree type to use for the tree view, set to 'tree' for a hierarchical tree view, or 'form' for a regular list view")
     usage = fields.Char(string='Action Usage',
                         help="Used to filter menu and home actions from the user form.")
-    view_ids = fields.One2many('ir.actions.act_window.view', 'act_window_id', string='Views')
+    view_ids = fields.One2many(
+        'ir.actions.act_window.view', 'act_window_id', string='Views')
     views = fields.Binary(compute='_compute_views',
-                          help="This function field computes the ordered list of views that should be enabled " \
-                               "when displaying the result of an action, federating view mode, views and " \
+                          help="This function field computes the ordered list of views that should be enabled "
+                               "when displaying the result of an action, federating view mode, views and "
                                "reference view. The result is returned as an ordered list of pairs (view_id,view_mode).")
     limit = fields.Integer(default=80, help='Default limit for the list view')
     groups_id = fields.Many2many('res.groups', 'ir_act_window_group_rel',
@@ -308,7 +328,8 @@ class IrActionsActWindow(models.Model):
     filter = fields.Boolean()
     auto_search = fields.Boolean(default=True)
     search_view = fields.Text(compute='_compute_search_view')
-    multi = fields.Boolean(string='Restrict to lists', help="If checked and the action is bound to a model, it will only appear in the More menu on list views")
+    multi = fields.Boolean(string='Restrict to lists',
+                           help="If checked and the action is bound to a model, it will only appear in the More menu on list views")
 
     @api.multi
     def read(self, fields=None, load='_classic_read'):
@@ -319,7 +340,8 @@ class IrActionsActWindow(models.Model):
             for values in result:
                 model = values.get('res_model')
                 if model in self.env:
-                    values['help'] = self.env[model].get_empty_list_help(values.get('help', ""))
+                    values['help'] = self.env[model].get_empty_list_help(
+                        values.get('help', ""))
         return result
 
     @api.model
@@ -371,6 +393,7 @@ VIEW_TYPES = [
     ('kanban', 'Kanban'),
 ]
 
+
 class IrActionsActWindowView(models.Model):
     _name = 'ir.actions.act_window.view'
     _table = 'ir_act_window_view'
@@ -380,15 +403,19 @@ class IrActionsActWindowView(models.Model):
     sequence = fields.Integer()
     view_id = fields.Many2one('ir.ui.view', string='View')
     view_mode = fields.Selection(VIEW_TYPES, string='View Type', required=True)
-    act_window_id = fields.Many2one('ir.actions.act_window', string='Action', ondelete='cascade')
-    multi = fields.Boolean(string='On Multiple Doc.', help="If set to true, the action will not be displayed on the right toolbar of a form view.")
+    act_window_id = fields.Many2one(
+        'ir.actions.act_window', string='Action', ondelete='cascade')
+    multi = fields.Boolean(string='On Multiple Doc.',
+                           help="If set to true, the action will not be displayed on the right toolbar of a form view.")
 
     @api.model_cr_context
     def _auto_init(self):
         res = super(IrActionsActWindowView, self)._auto_init()
-        self._cr.execute('SELECT indexname FROM pg_indexes WHERE indexname = \'act_window_view_unique_mode_per_action\'')
+        self._cr.execute(
+            'SELECT indexname FROM pg_indexes WHERE indexname = \'act_window_view_unique_mode_per_action\'')
         if not self._cr.fetchone():
-            self._cr.execute('CREATE UNIQUE INDEX act_window_view_unique_mode_per_action ON ir_act_window_view (act_window_id, view_mode)')
+            self._cr.execute(
+                'CREATE UNIQUE INDEX act_window_view_unique_mode_per_action ON ir_act_window_view (act_window_id, view_mode)')
         return res
 
 
@@ -513,7 +540,8 @@ class IrActionsServer(models.Model):
                                         help="Select the workflow signal to trigger.")
     wkf_model_id = fields.Many2one('ir.model', string='Target Model',
                                    help="The model that will receive the workflow signal. Note that it should have a workflow associated with it.")
-    wkf_model_name = fields.Char(string='Target Model Name', related='wkf_model_id.model', store=True, readonly=True)
+    wkf_model_name = fields.Char(
+        string='Target Model Name', related='wkf_model_id.model', store=True, readonly=True)
     wkf_field_id = fields.Many2one('ir.model.fields', string='Relation Field',
                                    oldname='trigger_obj_id', help="The field on the current object that links to the target object record (must be a many2one, or an integer field with the record ID)")
     # Multi
@@ -527,8 +555,10 @@ class IrActionsServer(models.Model):
                                   string="Creation Policy", default='new', required=True)
     crud_model_id = fields.Many2one('ir.model', string='Create/Write Target Model',
                                     oldname='srcmodel_id', help="Model for record creation / update. Set this field only to specify a different model than the base model.")
-    crud_model_name = fields.Char(string='Create/Write Target Model Name', related='crud_model_id.model', store=True, readonly=True)
-    ref_object = fields.Reference(string='Reference record', selection='_select_objects', oldname='copy_object')
+    crud_model_name = fields.Char(string='Create/Write Target Model Name',
+                                  related='crud_model_id.model', store=True, readonly=True)
+    ref_object = fields.Reference(
+        string='Reference record', selection='_select_objects', oldname='copy_object')
     link_new_record = fields.Boolean(string='Attach the new record',
                                      help="Check this if you want to link the newly-created record "
                                           "to the current record on which the server action runs.")
@@ -540,7 +570,8 @@ class IrActionsServer(models.Model):
                                  string='Update Policy', default='current', required=True)
     write_expression = fields.Char(string='Expression', oldname='write_id',
                                    help="Provide an expression that, applied on the current record, gives the field to update.")
-    fields_lines = fields.One2many('ir.server.object.lines', 'server_id', string='Value Mapping', copy=True)
+    fields_lines = fields.One2many(
+        'ir.server.object.lines', 'server_id', string='Value Mapping', copy=True)
 
     # Fake fields used to implement the placeholder assistant
     model_object_field = fields.Many2one('ir.model.fields', string="Field",
@@ -554,7 +585,8 @@ class IrActionsServer(models.Model):
                                              help="When a relationship field is selected as first field, "
                                                   "this field lets you select the target field within the "
                                                   "destination document model (sub-model).")
-    copyvalue = fields.Char(string='Placeholder Expression', help="Final placeholder expression, to be copy-pasted in the desired template field.")
+    copyvalue = fields.Char(string='Placeholder Expression',
+                            help="Final placeholder expression, to be copy-pasted in the desired template field.")
     # Fake fields used to implement the ID finding assistant
     id_object = fields.Reference(string='Record', selection='_select_objects')
     id_value = fields.Char(string='Record ID')
@@ -572,7 +604,8 @@ class IrActionsServer(models.Model):
             return (False, None, 'Your expression cannot be validated because the Base Model is not set.')
         # fetch current model
         model_name = model.model
-        # transform expression into a path that should look like 'object.many2onefield.many2onefield'
+        # transform expression into a path that should look like
+        # 'object.many2onefield.many2onefield'
         path = expression.split('.')
         initial = path.pop(0)
         if initial not in ['obj', 'object', 'record']:
@@ -603,10 +636,12 @@ class IrActionsServer(models.Model):
     def _check_write_expression(self):
         for record in self:
             if record.write_expression and record.model_id:
-                correct, model_name, message = self._check_expression(record.write_expression, record.model_id)
+                correct, model_name, message = self._check_expression(
+                    record.write_expression, record.model_id)
                 if not correct:
                     _logger.warning('Invalid expression: %s' % message)
-                    raise ValidationError(_('Incorrect Write Record Expression'))
+                    raise ValidationError(
+                        _('Incorrect Write Record Expression'))
 
     @api.constrains('child_ids')
     def _check_recursion(self):
@@ -634,7 +669,8 @@ class IrActionsServer(models.Model):
         """
         if self.use_relational_model == 'relational' and self.wkf_field_id:
             field = self.wkf_field_id
-            self.wkf_model_id = self.env['ir.model'].search([('model', '=', field.relation)])
+            self.wkf_model_id = self.env['ir.model'].search(
+                [('model', '=', field.relation)])
         else:
             self.wkf_model_id = self.model_id
 
@@ -670,7 +706,8 @@ class IrActionsServer(models.Model):
             self.crud_model_id = self.model_id
         elif self.use_create == 'copy_other' and self.ref_object:
             ref_model = self.ref_object._name
-            self.crud_model_id = self.env['ir.model'].search([('model', '=', ref_model)])
+            self.crud_model_id = self.env['ir.model'].search(
+                [('model', '=', ref_model)])
 
         if self.crud_model_id != crud_model_id:
             self.link_field_id = False
@@ -688,7 +725,8 @@ class IrActionsServer(models.Model):
             self.crud_model_id = self.model_id
         elif self.use_write == 'other' and self.ref_object:
             ref_model = self.ref_object._name
-            self.crud_model_id = self.env['ir.model'].search([('model', '=', ref_model)])
+            self.crud_model_id = self.env['ir.model'].search(
+                [('model', '=', ref_model)])
         elif self.use_write == 'expression':
             pass
 
@@ -705,7 +743,8 @@ class IrActionsServer(models.Model):
         """ Check the write_expression and update crud_model_id accordingly """
         values = {}
         if self.write_expression:
-            valid, model_name, message = self._check_expression(self.write_expression, self.model_id)
+            valid, model_name, message = self._check_expression(
+                self.write_expression, self.model_id)
         else:
             valid, model_name, message = True, None, False
             if self.model_id:
@@ -718,7 +757,8 @@ class IrActionsServer(models.Model):
                 }
             }
         if model_name:
-            self.crud_model_id = self.env['ir.model'].search([('model', '=', model_name)])
+            self.crud_model_id = self.env['ir.model'].search(
+                [('model', '=', model_name)])
 
     def _build_expression(self, field_name, sub_field_name):
         """ Returns a placeholder expression for use in a template field,
@@ -746,10 +786,12 @@ class IrActionsServer(models.Model):
 
         if field:
             if field.ttype in ['many2one', 'one2many', 'many2many']:
-                comodel = self.env['ir.model'].search([('model', '=', field.relation)])
+                comodel = self.env['ir.model'].search(
+                    [('model', '=', field.relation)])
                 if comodel:
                     self.sub_object = comodel
-                    self.copyvalue = self._build_expression(field.name, sub_field.name)
+                    self.copyvalue = self._build_expression(
+                        field.name, sub_field.name)
                     self.sub_model_object_field = sub_field
             else:
                 self.copyvalue = self._build_expression(field.name, False)
@@ -792,7 +834,8 @@ class IrActionsServer(models.Model):
 
     @api.model
     def run_action_code_multi(self, action, eval_context=None):
-        safe_eval(action.code.strip(), eval_context, mode="exec", nocopy=True)  # nocopy allows to return 'action'
+        safe_eval(action.code.strip(), eval_context, mode="exec",
+                  nocopy=True)  # nocopy allows to return 'action'
         if 'action' in eval_context:
             return eval_context['action']
 
@@ -805,7 +848,8 @@ class IrActionsServer(models.Model):
            field, then target_model_pool.signal_workflow(cr, uid, target_id, <TRIGGER_NAME>)
         """
         # weird signature and calling -> no self.env, use action param's
-        record = action.env[action.model_id.model].browse(self._context['active_id'])
+        record = action.env[action.model_id.model].browse(
+            self._context['active_id'])
         if action.use_relational_model == 'relational':
             record = getattr(record, action.wkf_field_id.name)
             if not isinstance(record, models.BaseModel):
@@ -835,7 +879,8 @@ class IrActionsServer(models.Model):
         """
         res = {}
         for exp in action.fields_lines:
-            res[exp.col1.name] = exp.eval_value(eval_context=eval_context)[exp.id]
+            res[exp.col1.name] = exp.eval_value(
+                eval_context=eval_context)[exp.id]
 
         if action.use_write == 'current':
             model = action.model_id.model
@@ -868,7 +913,8 @@ class IrActionsServer(models.Model):
         """
         res = {}
         for exp in action.fields_lines:
-            res[exp.col1.name] = exp.eval_value(eval_context=eval_context)[exp.id]
+            res[exp.col1.name] = exp.eval_value(
+                eval_context=eval_context)[exp.id]
 
         if action.use_create in ['new', 'copy_current']:
             model = action.model_id.model
@@ -884,7 +930,8 @@ class IrActionsServer(models.Model):
             res = self.env[model].create(res)
 
         if action.link_new_record and action.link_field_id:
-            record = self.env[action.model_id.model].browse(self._context.get('active_id'))
+            record = self.env[action.model_id.model].browse(
+                self._context.get('active_id'))
             record.write({action.link_field_id.name: res.id})
 
     @api.model
@@ -902,7 +949,8 @@ class IrActionsServer(models.Model):
                     VALUES (NOW() at time zone 'UTC', %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (self.env.uid, 'server', self._cr.dbname, __name__, level, message, "action", action.id, action.name))
 
-        eval_context = super(IrActionsServer, self)._get_eval_context(action=action)
+        eval_context = super(
+            IrActionsServer, self)._get_eval_context(action=action)
         model = self.env[action.model_id.model]
         record = None
         records = None
@@ -975,15 +1023,18 @@ class IrActionsServer(models.Model):
 
             elif hasattr(self, 'run_action_%s' % action.state):
                 active_id = self._context.get('active_id')
-                active_ids = self._context.get('active_ids', [active_id] if active_id else [])
+                active_ids = self._context.get(
+                    'active_ids', [active_id] if active_id else [])
                 for active_id in active_ids:
                     # run context dedicated to a particular active_id
-                    run_self = self.with_context(active_ids=[active_id], active_id=active_id)
+                    run_self = self.with_context(
+                        active_ids=[active_id], active_id=active_id)
                     eval_context["context"] = run_self._context
                     expr = safe_eval(str(condition), eval_context)
                     if not expr:
                         continue
-                    # call the single method related to the action: run_action_<STATE>
+                    # call the single method related to the action:
+                    # run_action_<STATE>
                     func = getattr(run_self, 'run_action_%s' % action.state)
                     res = func(action, eval_context=eval_context)
         return res
@@ -1002,13 +1053,15 @@ class IrServerObjectLines(models.Model):
     _description = 'Server Action value mapping'
     _sequence = 'ir_actions_id_seq'
 
-    server_id = fields.Many2one('ir.actions.server', string='Related Server Action', ondelete='cascade')
+    server_id = fields.Many2one(
+        'ir.actions.server', string='Related Server Action', ondelete='cascade')
     col1 = fields.Many2one('ir.model.fields', string='Field', required=True)
     value = fields.Text(required=True, help="Expression containing a value specification. \n"
                                             "When Formula type is selected, this field may be a Python expression "
                                             " that can use the same values as for the condition field on the server action.\n"
                                             "If Value type is selected, the value will be used directly without evaluation.")
-    type = fields.Selection([('value', 'Value'), ('equation', 'Python expression')], 'Evaluation Type', default='value', required=True, change_default=True)
+    type = fields.Selection([('value', 'Value'), ('equation', 'Python expression')],
+                            'Evaluation Type', default='value', required=True, change_default=True)
 
     @api.multi
     def eval_value(self, eval_context=None):
@@ -1034,9 +1087,11 @@ class IrActionsTodo(models.Model):
     _description = "Configuration Wizards"
     _order = "sequence, id"
 
-    action_id = fields.Many2one('ir.actions.actions', string='Action', required=True, index=True)
+    action_id = fields.Many2one(
+        'ir.actions.actions', string='Action', required=True, index=True)
     sequence = fields.Integer(default=10)
-    state = fields.Selection([('open', 'To Do'), ('done', 'Done')], string='Status', default='open', required=True)
+    state = fields.Selection([('open', 'To Do'), ('done', 'Done')],
+                             string='Status', default='open', required=True)
     name = fields.Char()
     type = fields.Selection([('manual', 'Launch Manually'),
                              ('once', 'Launch Manually Once'),
@@ -1044,7 +1099,8 @@ class IrActionsTodo(models.Model):
                             help="""Manual: Launched manually.
                                     Automatic: Runs whenever the system is reconfigured.
                                     Launch Manually Once: after having been launched manually, it sets automatically to Done.""")
-    groups_id = fields.Many2many('res.groups', 'res_groups_action_rel', 'uid', 'gid', string='Groups')
+    groups_id = fields.Many2many(
+        'res.groups', 'res_groups_action_rel', 'uid', 'gid', string='Groups')
     note = fields.Text(string='Text', translate=True)
 
     @api.multi
@@ -1058,7 +1114,8 @@ class IrActionsTodo(models.Model):
                 todo_open_menu = self.env.ref('base.open_menu')
                 # don't remove base.open_menu todo but set its original action
                 if todo_open_menu in self:
-                    todo_open_menu.action_id = self.env.ref('base.action_client_base_menu').id
+                    todo_open_menu.action_id = self.env.ref(
+                        'base.action_client_base_menu').id
                     self -= todo_open_menu
             except ValueError:
                 pass
@@ -1069,7 +1126,8 @@ class IrActionsTodo(models.Model):
         if args is None:
             args = []
         if name:
-            actions = self.search([('action_id', operator, name)] + args, limit=limit)
+            actions = self.search(
+                [('action_id', operator, name)] + args, limit=limit)
             return actions.name_get()
         return super(IrActionsTodo, self).name_search(name, args=args, operator=operator, limit=limit)
 
@@ -1121,7 +1179,8 @@ class IrActionsTodo(models.Model):
             """ Checks if the todo's groups match those of the current user """
             return not todo.groups_id or bool(todo.groups_id & user_groups)
 
-        done = list(filter(groups_match, self.browse(self.search([('state', '!=', 'open')]))))
+        done = list(filter(groups_match, self.browse(
+            self.search([('state', '!=', 'open')]))))
         total = list(filter(groups_match, self.browse(self.search([]))))
 
         return {
@@ -1145,9 +1204,12 @@ class IrActionsActClient(models.Model):
                       help="An arbitrary string, interpreted by the client"
                            " according to its own needs and wishes. There "
                            "is no central tag repository across clients.")
-    target = fields.Selection([('current', 'Current Window'), ('new', 'New Window'), ('fullscreen', 'Full Screen'), ('main', 'Main action of Current Window')], default="current", string='Target Window')
-    res_model = fields.Char(string='Destination Model', help="Optional model, mostly used for needactions.")
-    context = fields.Char(string='Context Value', default="{}", required=True, help="Context dictionary as Python expression, empty by default (Default: {})")
+    target = fields.Selection([('current', 'Current Window'), ('new', 'New Window'), ('fullscreen', 'Full Screen'),
+                               ('main', 'Main action of Current Window')], default="current", string='Target Window')
+    res_model = fields.Char(string='Destination Model',
+                            help="Optional model, mostly used for needactions.")
+    context = fields.Char(string='Context Value', default="{}", required=True,
+                          help="Context dictionary as Python expression, empty by default (Default: {})")
     params = fields.Binary(compute='_compute_params', inverse='_inverse_params', string='Supplementary arguments',
                            help="Arguments sent to the client along with"
                                 "the view tag")
@@ -1155,11 +1217,14 @@ class IrActionsActClient(models.Model):
 
     @api.depends('params_store')
     def _compute_params(self):
-        self_bin = self.with_context(bin_size=False, bin_size_params_store=False)
+        self_bin = self.with_context(
+            bin_size=False, bin_size_params_store=False)
         for record, record_bin in zip(self, self_bin):
-            record.params = record_bin.params_store and safe_eval(record_bin.params_store, {'uid': self._uid})
+            record.params = record_bin.params_store and safe_eval(
+                record_bin.params_store, {'uid': self._uid})
 
     def _inverse_params(self):
         for record in self:
             params = record.params
-            record.params_store = repr(params) if isinstance(params, dict) else params
+            record.params_store = repr(params) if isinstance(
+                params, dict) else params

@@ -3,15 +3,19 @@
 
 from odoo import api, fields, models
 
+
 def selection_fn(model):
     return [(str(key), val) for key, val in enumerate(["Corge", "Grault", "Wheee", "Moog"])]
+
 
 def compute_fn(records):
     for record in records:
         record.value = 3
 
+
 def inverse_fn(records):
     pass
+
 
 MODELS = [
     ('boolean', fields.Boolean()),
@@ -24,7 +28,8 @@ MODELS = [
     ('date', fields.Date()),
     ('datetime', fields.Datetime()),
     ('text', fields.Text()),
-    ('selection', fields.Selection([(1, "Foo"), (2, "Bar"), (3, "Qux"), (4, '')])),
+    ('selection', fields.Selection(
+        [(1, "Foo"), (2, "Bar"), (3, "Qux"), (4, '')])),
     ('selection.function', fields.Selection(selection_fn)),
     # just relate to an integer
     ('many2one', fields.Many2one('export.integer')),
@@ -48,7 +53,8 @@ for name, field in MODELS:
         @api.model
         def name_search(self, name='', args=None, operator='ilike', limit=100):
             if isinstance(name, str) and name.split(':')[0] == self._name:
-                records = self.search([('value', operator, int(name.split(':')[1]))])
+                records = self.search(
+                    [('value', operator, int(name.split(':')[1]))])
                 return records.name_get()
             else:
                 return []
@@ -70,7 +76,8 @@ class One2ManyChild(models.Model):
     @api.model
     def name_search(self, name='', args=None, operator='ilike', limit=100):
         if isinstance(name, str) and name.split(':')[0] == self._name:
-            records = self.search([('value', operator, int(name.split(':')[1]))])
+            records = self.search(
+                [('value', operator, int(name.split(':')[1]))])
             return records.name_get()
         else:
             return []
@@ -124,7 +131,8 @@ class Many2ManyChild(models.Model):
     @api.model
     def name_search(self, name='', args=None, operator='ilike', limit=100):
         if isinstance(name, str) and name.split(':')[0] == self._name:
-            records = self.search([('value', operator, int(name.split(':')[1]))])
+            records = self.search(
+                [('value', operator, int(name.split(':')[1]))])
             return records.name_get()
         else:
             return []

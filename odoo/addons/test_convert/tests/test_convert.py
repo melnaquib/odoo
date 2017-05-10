@@ -12,6 +12,7 @@ from odoo.tools.convert import _eval_xml
 Field = E.field
 Value = E.value
 
+
 class TestEvalXML(common.TransactionCase):
     def eval_xml(self, node, obj=None):
         return _eval_xml(obj, node, self.env)

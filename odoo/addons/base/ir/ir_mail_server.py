@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from email import Encoders
+from email import encoders as Encoders
 from email.charset import Charset
 from email.header import Header
 from email.mime.base import MIMEBase
@@ -23,12 +23,14 @@ _test_logger = logging.getLogger('odoo.tests')
 
 class MailDeliveryException(except_orm):
     """Specific exception subclass for mail delivery errors"""
+
     def __init__(self, name, value):
         super(MailDeliveryException, self).__init__(name, value)
 
 
 class WriteToLogger(object):
     """debugging helper: behave as a fd and pipe to logger at the given level"""
+
     def __init__(self, logger, level=logging.DEBUG):
         self.logger = logger
         self.level = level
@@ -102,6 +104,7 @@ def encode_header_param(param_text):
 
 address_pattern = re.compile(r'([^ ,<@]+@[^> ,]+)')
 
+
 def extract_rfc2822_addresses(text):
     """Returns a list of valid RFC2822 addresses
        that can be found in ``source``, ignoring
@@ -138,10 +141,14 @@ class IrMailServer(models.Model):
                           "specified for outgoing emails (To/Cc/Bcc)")
 
     name = fields.Char(string='Description', required=True, index=True)
-    smtp_host = fields.Char(string='SMTP Server', required=True, help="Hostname or IP of SMTP server")
-    smtp_port = fields.Integer(string='SMTP Port', size=5, required=True, default=25, help="SMTP Port. Usually 465 for SSL, and 25 or 587 for other cases.")
-    smtp_user = fields.Char(string='Username', size=64, help="Optional username for SMTP authentication")
-    smtp_pass = fields.Char(string='Password', size=64, help="Optional password for SMTP authentication")
+    smtp_host = fields.Char(
+        string='SMTP Server', required=True, help="Hostname or IP of SMTP server")
+    smtp_port = fields.Integer(string='SMTP Port', size=5, required=True, default=25,
+                               help="SMTP Port. Usually 465 for SSL, and 25 or 587 for other cases.")
+    smtp_user = fields.Char(string='Username', size=64,
+                            help="Optional username for SMTP authentication")
+    smtp_pass = fields.Char(string='Password', size=64,
+                            help="Optional password for SMTP authentication")
     smtp_encryption = fields.Selection([('none', 'None'),
                                         ('starttls', 'TLS (STARTTLS)'),
                                         ('ssl', 'SSL/TLS')],
@@ -178,7 +185,8 @@ class IrMailServer(models.Model):
                                     password=server.smtp_pass, encryption=server.smtp_encryption,
                                     smtp_debug=server.smtp_debug)
             except Exception as e:
-                raise UserError(_("Connection Test Failed! Here is what we got instead:\n %s") % ustr(e))
+                raise UserError(
+                    _("Connection Test Failed! Here is what we got instead:\n %s") % ustr(e))
             finally:
                 try:
                     if smtp:
@@ -186,13 +194,14 @@ class IrMailServer(models.Model):
                 except Exception:
                     # ignored, just a consequence of the previous exception
                     pass
-        raise UserError(_("Connection Test Succeeded! Everything seems properly set up!"))
+        raise UserError(
+            _("Connection Test Succeeded! Everything seems properly set up!"))
 
     def connect(self, host, port, user=None, password=None, encryption=False, smtp_debug=False):
         """Returns a new SMTP connection to the give SMTP server, authenticated
            with ``user`` and ``password`` if provided, and encrypted as requested
            by the ``encryption`` parameter.
-        
+
            :param host: host or IP of SMTP server to connect to
            :param int port: SMTP port to connect to
            :param user: optional username to authenticate with
@@ -234,7 +243,7 @@ class IrMailServer(models.Model):
         """Constructs an RFC2822 email.message.Message object based on the keyword arguments passed, and returns it.
 
            :param string email_from: sender email address
-           :param list email_to: list of recipient addresses (to be joined with commas) 
+           :param list email_to: list of recipient addresses (to be joined with commas)
            :param string subject: email subject (no pre-encoding/quoting necessary)
            :param string body: email body, of the type ``subtype`` (by default, plaintext).
                                If html subtype is used, the message will be automatically converted
@@ -265,7 +274,7 @@ class IrMailServer(models.Model):
                            "--email-from startup parameter."
 
         # Note: we must force all strings to to 8-bit utf-8 when crafting message,
-        #       or use encode_header() for headers, which does it automatically.
+        # or use encode_header() for headers, which does it automatically.
 
         headers = headers or {}         # need valid dict later
         email_cc = email_cc or []
@@ -273,7 +282,8 @@ class IrMailServer(models.Model):
         body = body or ''
 
         email_body_utf8 = ustr(body).encode('utf-8')
-        email_text_part = MIMEText(email_body_utf8, _subtype=subtype, _charset='utf-8')
+        email_text_part = MIMEText(
+            email_body_utf8, _subtype=subtype, _charset='utf-8')
         msg = MIMEMultipart()
 
         if not message_id:
@@ -293,9 +303,11 @@ class IrMailServer(models.Model):
             msg['Reply-To'] = msg['From']
         msg['To'] = encode_rfc2822_address_header(COMMASPACE.join(email_to))
         if email_cc:
-            msg['Cc'] = encode_rfc2822_address_header(COMMASPACE.join(email_cc))
+            msg['Cc'] = encode_rfc2822_address_header(
+                COMMASPACE.join(email_cc))
         if email_bcc:
-            msg['Bcc'] = encode_rfc2822_address_header(COMMASPACE.join(email_bcc))
+            msg['Bcc'] = encode_rfc2822_address_header(
+                COMMASPACE.join(email_bcc))
         msg['Date'] = formatdate()
         # Custom headers may override normal headers or provide additional ones
         for key, value in headers.items():
@@ -303,16 +315,20 @@ class IrMailServer(models.Model):
 
         if subtype == 'html' and not body_alternative and html2text:
             # Always provide alternative text body ourselves if possible.
-            text_utf8 = tools.html2text(email_body_utf8.decode('utf-8')).encode('utf-8')
+            text_utf8 = tools.html2text(
+                email_body_utf8.decode('utf-8')).encode('utf-8')
             alternative_part = MIMEMultipart(_subtype="alternative")
-            alternative_part.attach(MIMEText(text_utf8, _charset='utf-8', _subtype='plain'))
+            alternative_part.attach(
+                MIMEText(text_utf8, _charset='utf-8', _subtype='plain'))
             alternative_part.attach(email_text_part)
             msg.attach(alternative_part)
         elif body_alternative:
-            # Include both alternatives, as specified, within a multipart/alternative part
+            # Include both alternatives, as specified, within a
+            # multipart/alternative part
             alternative_part = MIMEMultipart(_subtype="alternative")
             body_alternative_utf8 = ustr(body_alternative).encode('utf-8')
-            alternative_body_part = MIMEText(body_alternative_utf8, _subtype=subtype_alternative, _charset='utf-8')
+            alternative_body_part = MIMEText(
+                body_alternative_utf8, _subtype=subtype_alternative, _charset='utf-8')
             alternative_part.attach(alternative_body_part)
             alternative_part.attach(email_text_part)
             msg.attach(alternative_part)
@@ -325,9 +341,11 @@ class IrMailServer(models.Model):
                 part = MIMEBase('application', "octet-stream")
 
                 # The default RFC2231 encoding of Message.add_header() works in Thunderbird but not GMail
-                # so we fix it by using RFC2047 encoding for the filename instead.
+                # so we fix it by using RFC2047 encoding for the filename
+                # instead.
                 part.set_param('name', filename_rfc2047)
-                part.add_header('Content-Disposition', 'attachment', filename=filename_rfc2047)
+                part.add_header('Content-Disposition',
+                                'attachment', filename=filename_rfc2047)
 
                 part.set_payload(fcontent)
                 Encoders.encode_base64(part)
@@ -388,17 +406,20 @@ class IrMailServer(models.Model):
         smtp_from = message['Return-Path'] or self._get_default_bounce_address() or message['From']
         assert smtp_from, "The Return-Path or From header is required for any outbound email"
 
-        # The email's "Envelope From" (Return-Path), and all recipient addresses must only contain ASCII characters.
+        # The email's "Envelope From" (Return-Path), and all recipient
+        # addresses must only contain ASCII characters.
         from_rfc2822 = extract_rfc2822_addresses(smtp_from)
         assert from_rfc2822, ("Malformed 'Return-Path' or 'From' address: %r - "
                               "It should contain one valid plain ASCII email") % smtp_from
-        # use last extracted email, to support rarities like 'Support@MyComp <support@mycompany.com>'
+        # use last extracted email, to support rarities like 'Support@MyComp
+        # <support@mycompany.com>'
         smtp_from = from_rfc2822[-1]
         email_to = message['To']
         email_cc = message['Cc']
         email_bcc = message['Bcc']
 
-        smtp_to_list = [_f for _f in tools.flatten(list(map(extract_rfc2822_addresses, [email_to, email_cc, email_bcc]))) if _f]
+        smtp_to_list = [_f for _f in tools.flatten(
+            list(map(extract_rfc2822_addresses, [email_to, email_cc, email_bcc]))) if _f]
         assert smtp_to_list, self.NO_VALID_RECIPIENT
 
         x_forge_to = message['X-Forge-To']
@@ -430,14 +451,17 @@ class IrMailServer(models.Model):
         else:
             # we were passed an explicit smtp_server or nothing at all
             smtp_server = smtp_server or tools.config.get('smtp_server')
-            smtp_port = tools.config.get('smtp_port', 25) if smtp_port is None else smtp_port
+            smtp_port = tools.config.get(
+                'smtp_port', 25) if smtp_port is None else smtp_port
             smtp_user = smtp_user or tools.config.get('smtp_user')
             smtp_password = smtp_password or tools.config.get('smtp_password')
             if smtp_encryption is None and tools.config.get('smtp_ssl'):
-                smtp_encryption = 'starttls' # STARTTLS is the new meaning of the smtp_ssl flag as of v7.0
+                # STARTTLS is the new meaning of the smtp_ssl flag as of v7.0
+                smtp_encryption = 'starttls'
 
         if not smtp_server:
-            raise UserError(_("Missing SMTP Server") + "\n" + _("Please define at least one SMTP server, or provide the SMTP parameters explicitly."))
+            raise UserError(_("Missing SMTP Server") + "\n" + _(
+                "Please define at least one SMTP server, or provide the SMTP parameters explicitly."))
 
         try:
             message_id = message['Message-Id']
@@ -452,7 +476,8 @@ class IrMailServer(models.Model):
 
             smtp = None
             try:
-                smtp = self.connect(smtp_server, smtp_port, smtp_user, smtp_password, smtp_encryption or False, smtp_debug)
+                smtp = self.connect(smtp_server, smtp_port, smtp_user,
+                                    smtp_password, smtp_encryption or False, smtp_debug)
                 smtp.sendmail(smtp_from, smtp_to_list, message.as_string())
             finally:
                 if smtp is not None:

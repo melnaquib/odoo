@@ -1,4 +1,4 @@
-#odoo.loggers.handlers. -*- coding: utf-8 -*-
+# odoo.loggers.handlers. -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 import configparser
@@ -11,6 +11,7 @@ import odoo.loglevels as loglevels
 import logging
 import odoo.release as release
 from . import appdirs
+
 
 class MyOption (optparse.Option, object):
     """ optparse Option with two additional attributes.
@@ -25,11 +26,15 @@ class MyOption (optparse.Option, object):
     to create the default values of the configuration file).
 
     """
+
     def __init__(self, *opts, **attrs):
         self.my_default = attrs.pop('my_default', None)
         super(MyOption, self).__init__(*opts, **attrs)
 
+
 DEFAULT_LOG_HANDLER = ':INFO'
+
+
 def _get_default_datadir():
     home = os.path.expanduser('~')
     if os.path.isdir(home):
@@ -39,8 +44,10 @@ def _get_default_datadir():
             func = appdirs.site_data_dir
         else:
             func = lambda **kwarg: "/var/lib/%s" % kwarg['appname'].lower()
-    # No "version" kwarg as session and filestore paths are shared against series
+    # No "version" kwarg as session and filestore paths are shared against
+    # series
     return func(appname=release.product_name, appauthor=release.author)
+
 
 def _deduplicate_loggers(loggers):
     """ Avoid saving multiple logging levels for the same loggers to a save
@@ -80,7 +87,8 @@ class configmanager(object):
             'init', 'save', 'config', 'update', 'stop_after_init', 'dev_mode', 'shell_interface'
         ])
 
-        # dictionary mapping option destination (keys in self.options) to MyOptions.
+        # dictionary mapping option destination (keys in self.options) to
+        # MyOptions.
         self.casts = {}
 
         self.misc = {}
@@ -92,26 +100,31 @@ class configmanager(object):
         ])
 
         version = "%s %s" % (release.description, release.version)
-        self.parser = parser = optparse.OptionParser(version=version, option_class=MyOption)
+        self.parser = parser = optparse.OptionParser(
+            version=version, option_class=MyOption)
 
         # Server startup config
         group = optparse.OptionGroup(parser, "Common options")
-        group.add_option("-c", "--config", dest="config", help="specify alternate config file")
+        group.add_option("-c", "--config", dest="config",
+                         help="specify alternate config file")
         group.add_option("-s", "--save", action="store_true", dest="save", default=False,
-                          help="save configuration to ~/.odoorc (or to ~/.openerp_serverrc if it exists)")
-        group.add_option("-i", "--init", dest="init", help="install one or more modules (comma-separated list, use \"all\" for all modules), requires -d")
+                         help="save configuration to ~/.odoorc (or to ~/.openerp_serverrc if it exists)")
+        group.add_option("-i", "--init", dest="init",
+                         help="install one or more modules (comma-separated list, use \"all\" for all modules), requires -d")
         group.add_option("-u", "--update", dest="update",
-                          help="update one or more modules (comma-separated list, use \"all\" for all modules). Requires -d.")
+                         help="update one or more modules (comma-separated list, use \"all\" for all modules). Requires -d.")
         group.add_option("--without-demo", dest="without_demo",
-                          help="disable loading demo data for modules to be installed (comma-separated, use \"all\" for all modules). Requires -d and -i. Default is %default",
-                          my_default=False)
+                         help="disable loading demo data for modules to be installed (comma-separated, use \"all\" for all modules). Requires -d and -i. Default is %default",
+                         my_default=False)
         group.add_option("-P", "--import-partial", dest="import_partial", my_default='',
-                        help="Use this for big data importation, if it crashes you will be able to continue at the current state. Provide a filename to store intermediate importation states.")
-        group.add_option("--pidfile", dest="pidfile", help="file where the server pid will be stored")
+                         help="Use this for big data importation, if it crashes you will be able to continue at the current state. Provide a filename to store intermediate importation states.")
+        group.add_option("--pidfile", dest="pidfile",
+                         help="file where the server pid will be stored")
         group.add_option("--addons-path", dest="addons_path",
                          help="specify additional addons paths (separated by commas).",
                          action="callback", callback=self._check_addons_path, nargs=1, type="string")
-        group.add_option("--load", dest="server_wide_modules", help="Comma-separated list of server-wide modules.", my_default='web,web_kanban')
+        group.add_option("--load", dest="server_wide_modules",
+                         help="Comma-separated list of server-wide modules.", my_default='web,web_kanban')
 
         group.add_option("-D", "--data-dir", dest="data_dir", my_default=_get_default_datadir(),
                          help="Directory where to store Odoo data")
@@ -151,16 +164,26 @@ class configmanager(object):
 
         # Logging Group
         group = optparse.OptionGroup(parser, "Logging Configuration")
-        group.add_option("--logfile", dest="logfile", help="file where the server log will be stored")
-        group.add_option("--logrotate", dest="logrotate", action="store_true", my_default=False, help="enable logfile rotation")
-        group.add_option("--syslog", action="store_true", dest="syslog", my_default=False, help="Send the log to the syslog server")
-        group.add_option('--log-handler', action="append", default=[], my_default=DEFAULT_LOG_HANDLER, metavar="PREFIX:LEVEL", help='setup a handler at LEVEL for a given PREFIX. An empty PREFIX indicates the root logger. This option can be repeated. Example: "odoo.orm:DEBUG" or "werkzeug:CRITICAL" (default: ":INFO")')
-        group.add_option('--log-request', action="append_const", dest="log_handler", const="odoo.http.rpc.request:DEBUG", help='shortcut for --log-handler=odoo.http.rpc.request:DEBUG')
-        group.add_option('--log-response', action="append_const", dest="log_handler", const="odoo.http.rpc.response:DEBUG", help='shortcut for --log-handler=odoo.http.rpc.response:DEBUG')
-        group.add_option('--log-web', action="append_const", dest="log_handler", const="odoo.http:DEBUG", help='shortcut for --log-handler=odoo.http:DEBUG')
-        group.add_option('--log-sql', action="append_const", dest="log_handler", const="odoo.sql_db:DEBUG", help='shortcut for --log-handler=odoo.sql_db:DEBUG')
-        group.add_option('--log-db', dest='log_db', help="Logging database", my_default=False)
-        group.add_option('--log-db-level', dest='log_db_level', my_default='warning', help="Logging database level")
+        group.add_option("--logfile", dest="logfile",
+                         help="file where the server log will be stored")
+        group.add_option("--logrotate", dest="logrotate", action="store_true",
+                         my_default=False, help="enable logfile rotation")
+        group.add_option("--syslog", action="store_true", dest="syslog",
+                         my_default=False, help="Send the log to the syslog server")
+        group.add_option('--log-handler', action="append", default=[], my_default=DEFAULT_LOG_HANDLER, metavar="PREFIX:LEVEL",
+                         help='setup a handler at LEVEL for a given PREFIX. An empty PREFIX indicates the root logger. This option can be repeated. Example: "odoo.orm:DEBUG" or "werkzeug:CRITICAL" (default: ":INFO")')
+        group.add_option('--log-request', action="append_const", dest="log_handler",
+                         const="odoo.http.rpc.request:DEBUG", help='shortcut for --log-handler=odoo.http.rpc.request:DEBUG')
+        group.add_option('--log-response', action="append_const", dest="log_handler",
+                         const="odoo.http.rpc.response:DEBUG", help='shortcut for --log-handler=odoo.http.rpc.response:DEBUG')
+        group.add_option('--log-web', action="append_const", dest="log_handler",
+                         const="odoo.http:DEBUG", help='shortcut for --log-handler=odoo.http:DEBUG')
+        group.add_option('--log-sql', action="append_const", dest="log_handler",
+                         const="odoo.sql_db:DEBUG", help='shortcut for --log-handler=odoo.sql_db:DEBUG')
+        group.add_option('--log-db', dest='log_db',
+                         help="Logging database", my_default=False)
+        group.add_option('--log-db-level', dest='log_db_level',
+                         my_default='warning', help="Logging database level")
         # For backward-compatibility, map the old log levels to something
         # quite close.
         levels = [
@@ -196,7 +219,8 @@ class configmanager(object):
                          help="specify the database user name")
         group.add_option("-w", "--db_password", dest="db_password", my_default=False,
                          help="specify the database password")
-        group.add_option("--pg_path", dest="pg_path", help="specify the pg executable path")
+        group.add_option("--pg_path", dest="pg_path",
+                         help="specify the pg executable path")
         group.add_option("--db_host", dest="db_host", my_default=False,
                          help="specify the database host")
         group.add_option("--db_port", dest="db_port", my_default=False,
@@ -208,10 +232,10 @@ class configmanager(object):
         parser.add_option_group(group)
 
         group = optparse.OptionGroup(parser, "Internationalisation options",
-            "Use these options to translate Odoo to another language."
-            "See i18n section of the user manual. Option '-d' is mandatory."
-            "Option '-l' is mandatory in case of importation"
-            )
+                                     "Use these options to translate Odoo to another language."
+                                     "See i18n section of the user manual. Option '-d' is mandatory."
+                                     "Option '-l' is mandatory in case of importation"
+                                     )
         group.add_option('--load-language', dest="load_language",
                          help="specifies the languages for the translations you want to be loaded")
         group.add_option('-l', "--language", dest="language",
@@ -240,7 +264,7 @@ class configmanager(object):
                          help="Specify a preferred REPL to use in shell mode. Supported REPLs are: "
                               "[ipython|ptpython|bpython|python]")
         group.add_option("--stop-after-init", action="store_true", dest="stop_after_init", my_default=False,
-                          help="stop the server after its initialization")
+                         help="stop the server after its initialization")
         group.add_option("--osv-memory-count-limit", dest="osv_memory_count_limit", my_default=False,
                          help="Force a limit on the maximum number of records kept in the virtual "
                               "osv_memory tables. The default is False, which means no count-based limit.",
@@ -324,7 +348,8 @@ class configmanager(object):
             if cond:
                 self.parser.error(msg)
 
-        # Ensures no illegitimate argument is silently discarded (avoids insidious "hyphen to dash" problem)
+        # Ensures no illegitimate argument is silently discarded (avoids
+        # insidious "hyphen to dash" problem)
         die(args, "unrecognized parameters: '%s'" % " ".join(args))
 
         die(bool(opt.syslog) and bool(opt.logfile),
@@ -341,8 +366,8 @@ class configmanager(object):
 
         # Check if the config file exists (-c used, but not -s)
         die(not opt.save and opt.config and not os.access(opt.config, os.R_OK),
-            "The config file '%s' selected with -c/--config doesn't exist or is not readable, "\
-            "use -s/--save if you want to generate it"% opt.config)
+            "The config file '%s' selected with -c/--config doesn't exist or is not readable, "
+            "use -s/--save if you want to generate it" % opt.config)
 
         # place/search the config file on Win32 near the server installation
         # (../etc from the server)
@@ -350,13 +375,14 @@ class configmanager(object):
         # else he won't be able to save the configurations, or even to start the server...
         # TODO use appdirs
         if os.name == 'nt':
-            rcfilepath = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), 'odoo.conf')
+            rcfilepath = os.path.join(os.path.abspath(
+                os.path.dirname(sys.argv[0])), 'odoo.conf')
         else:
             rcfilepath = os.path.expanduser('~/.odoorc')
             old_rcfilepath = os.path.expanduser('~/.openerp_serverrc')
 
             die(os.path.isfile(rcfilepath) and os.path.isfile(old_rcfilepath),
-                "Found '.odoorc' and '.openerp_serverrc' in your path. Please keep only one of "\
+                "Found '.odoorc' and '.openerp_serverrc' in your path. Please keep only one of "
                 "them, preferrably '.odoorc'.")
 
             if not os.path.isfile(rcfilepath) and os.path.isfile(old_rcfilepath):
@@ -366,7 +392,8 @@ class configmanager(object):
             self.config_file or opt.config or os.environ.get('ODOO_RC') or os.environ.get('OPENERP_SERVER') or rcfilepath)
         self.load()
 
-        # Verify that we want to log or not, if not the output will go to stdout
+        # Verify that we want to log or not, if not the output will go to
+        # stdout
         if self.options['logfile'] in ('None', 'False'):
             self.options['logfile'] = False
         # the same for the pidfile
@@ -376,7 +403,8 @@ class configmanager(object):
         if self.options['server_wide_modules'] in ('', 'None', 'False'):
             self.options['server_wide_modules'] = 'web,web_kanban'
 
-        # if defined dont take the configfile value even if the defined value is None
+        # if defined dont take the configfile value even if the defined value
+        # is None
         keys = ['xmlrpc_interface', 'xmlrpc_port', 'longpolling_port',
                 'db_name', 'db_user', 'db_password', 'db_host',
                 'db_port', 'db_template', 'logfile', 'pidfile', 'smtp_port',
@@ -385,19 +413,22 @@ class configmanager(object):
                 'xmlrpc', 'syslog', 'without_demo',
                 'dbfilter', 'log_level', 'log_db',
                 'log_db_level', 'geoip_database', 'dev_mode', 'shell_interface'
-        ]
+                ]
 
         for arg in keys:
             # Copy the command-line argument (except the special case for log_handler, due to
-            # action=append requiring a real default, so we cannot use the my_default workaround)
+            # action=append requiring a real default, so we cannot use the
+            # my_default workaround)
             if getattr(opt, arg):
                 self.options[arg] = getattr(opt, arg)
             # ... or keep, but cast, the config file value.
             elif isinstance(self.options[arg], str) and self.casts[arg].type in optparse.Option.TYPE_CHECKER:
-                self.options[arg] = optparse.Option.TYPE_CHECKER[self.casts[arg].type](self.casts[arg], arg, self.options[arg])
+                self.options[arg] = optparse.Option.TYPE_CHECKER[self.casts[arg].type](
+                    self.casts[arg], arg, self.options[arg])
 
         if isinstance(self.options['log_handler'], str):
-            self.options['log_handler'] = self.options['log_handler'].split(',')
+            self.options['log_handler'] = self.options['log_handler'].split(
+                ',')
         self.options['log_handler'].extend(opt.log_handler)
 
         # if defined but None take the configfile value
@@ -429,39 +460,49 @@ class configmanager(object):
                 self.options[arg] = getattr(opt, arg)
             # ... or keep, but cast, the config file value.
             elif isinstance(self.options[arg], str) and self.casts[arg].type in optparse.Option.TYPE_CHECKER:
-                self.options[arg] = optparse.Option.TYPE_CHECKER[self.casts[arg].type](self.casts[arg], arg, self.options[arg])
+                self.options[arg] = optparse.Option.TYPE_CHECKER[self.casts[arg].type](
+                    self.casts[arg], arg, self.options[arg])
 
-        self.options['root_path'] = os.path.abspath(os.path.expanduser(os.path.expandvars(os.path.join(os.path.dirname(__file__), '..'))))
-        if not self.options['addons_path'] or self.options['addons_path']=='None':
+        self.options['root_path'] = os.path.abspath(os.path.expanduser(
+            os.path.expandvars(os.path.join(os.path.dirname(__file__), '..'))))
+        if not self.options['addons_path'] or self.options['addons_path'] == 'None':
             default_addons = []
             base_addons = os.path.join(self.options['root_path'], 'addons')
             if os.path.exists(base_addons):
                 default_addons.append(base_addons)
-            main_addons = os.path.abspath(os.path.join(self.options['root_path'], '../addons'))
+            main_addons = os.path.abspath(os.path.join(
+                self.options['root_path'], '../addons'))
             if os.path.exists(main_addons):
                 default_addons.append(main_addons)
             self.options['addons_path'] = ','.join(default_addons)
         else:
             self.options['addons_path'] = ",".join(
-                    os.path.abspath(os.path.expanduser(os.path.expandvars(x.strip())))
-                      for x in self.options['addons_path'].split(','))
+                os.path.abspath(os.path.expanduser(
+                    os.path.expandvars(x.strip())))
+                for x in self.options['addons_path'].split(','))
 
-        self.options['init'] = opt.init and dict.fromkeys(opt.init.split(','), 1) or {}
+        self.options['init'] = opt.init and dict.fromkeys(
+            opt.init.split(','), 1) or {}
         self.options['demo'] = (dict(self.options['init'])
                                 if not self.options['without_demo'] else {})
-        self.options['update'] = opt.update and dict.fromkeys(opt.update.split(','), 1) or {}
-        self.options['translate_modules'] = opt.translate_modules and [m.strip() for m in opt.translate_modules.split(',')] or ['all']
+        self.options['update'] = opt.update and dict.fromkeys(
+            opt.update.split(','), 1) or {}
+        self.options['translate_modules'] = opt.translate_modules and [
+            m.strip() for m in opt.translate_modules.split(',')] or ['all']
         self.options['translate_modules'].sort()
 
-        dev_split = opt.dev_mode and  list(map(str.strip, opt.dev_mode.split(','))) or []
-        self.options['dev_mode'] = 'all' in dev_split and dev_split + ['pdb', 'reload', 'qweb', 'werkzeug', 'xml'] or dev_split
+        dev_split = opt.dev_mode and list(
+            map(str.strip, opt.dev_mode.split(','))) or []
+        self.options['dev_mode'] = 'all' in dev_split and dev_split + \
+            ['pdb', 'reload', 'qweb', 'werkzeug', 'xml'] or dev_split
 
         if opt.pg_path:
             self.options['pg_path'] = opt.pg_path
 
         if self.options.get('language', False):
             if len(self.options['language']) > 5:
-                raise Exception('ERROR: The Lang name must take max 5 chars, Eg: -lfr_BE')
+                raise Exception(
+                    'ERROR: The Lang name must take max 5 chars, Eg: -lfr_BE')
 
         if opt.save:
             self.save()
@@ -489,9 +530,11 @@ class configmanager(object):
             path = path.strip()
             res = os.path.abspath(os.path.expanduser(path))
             if not os.path.isdir(res):
-                raise optparse.OptionValueError("option %s: no such directory: %r" % (opt, path))
+                raise optparse.OptionValueError(
+                    "option %s: no such directory: %r" % (opt, path))
             if not self._is_addons_path(res):
-                raise optparse.OptionValueError("option %s: The addons-path %r does not seem to a be a valid Addons Directory!" % (opt, path))
+                raise optparse.OptionValueError(
+                    "option %s: The addons-path %r does not seem to a be a valid Addons Directory!" % (opt, path))
             ad_paths.append(res)
 
         setattr(parser.values, option.dest, ",".join(ad_paths))
@@ -500,22 +543,22 @@ class configmanager(object):
         p = configparser.ConfigParser()
         try:
             p.read([self.rcfile])
-            for (name,value) in p.items('options'):
-                if value=='True' or value=='true':
+            for (name, value) in p.items('options'):
+                if value == 'True' or value == 'true':
                     value = True
-                if value=='False' or value=='false':
+                if value == 'False' or value == 'false':
                     value = False
                 self.options[name] = value
-            #parse the other sections, as well
+            # parse the other sections, as well
             for sec in p.sections():
                 if sec == 'options':
                     continue
                 if sec not in self.misc:
-                    self.misc[sec]= {}
+                    self.misc[sec] = {}
                 for (name, value) in p.items(sec):
-                    if value=='True' or value=='true':
+                    if value == 'True' or value == 'true':
                         value = True
-                    if value=='False' or value=='false':
+                    if value == 'False' or value == 'false':
                         value = False
                     self.misc[sec][name] = value
         except IOError:
@@ -525,7 +568,8 @@ class configmanager(object):
 
     def save(self):
         p = configparser.ConfigParser()
-        loglevelnames = dict(list(zip(list(self._LOGLEVELS.values()), list(self._LOGLEVELS.keys()))))
+        loglevelnames = dict(
+            list(zip(list(self._LOGLEVELS.values()), list(self._LOGLEVELS.keys()))))
         p.add_section('options')
         for opt in sorted(self.options.keys()):
             if opt in ('version', 'language', 'translate_out', 'translate_in', 'overwrite_existing_translations', 'init', 'update'):
@@ -533,16 +577,18 @@ class configmanager(object):
             if opt in self.blacklist_for_save:
                 continue
             if opt in ('log_level',):
-                p.set('options', opt, loglevelnames.get(self.options[opt], self.options[opt]))
+                p.set('options', opt, loglevelnames.get(
+                    self.options[opt], self.options[opt]))
             elif opt == 'log_handler':
-                p.set('options', opt, ','.join(_deduplicate_loggers(self.options[opt])))
+                p.set('options', opt, ','.join(
+                    _deduplicate_loggers(self.options[opt])))
             else:
                 p.set('options', opt, self.options[opt])
 
         for sec in sorted(self.misc.keys()):
             p.add_section(sec)
             for opt in sorted(self.misc[sec].keys()):
-                p.set(sec,opt,self.misc[sec][opt])
+                p.set(sec, opt, self.misc[sec][opt])
 
         # try to create the directories and write the file
         try:
@@ -567,13 +613,14 @@ class configmanager(object):
         return self.options.pop(key, default)
 
     def get_misc(self, sect, key, default=None):
-        return self.misc.get(sect,{}).get(key, default)
+        return self.misc.get(sect, {}).get(key, default)
 
     def __setitem__(self, key, value):
         self.options[key] = value
         if key in self.options and isinstance(self.options[key], str) and \
                 key in self.casts and self.casts[key].type in optparse.Option.TYPE_CHECKER:
-            self.options[key] = optparse.Option.TYPE_CHECKER[self.casts[key].type](self.casts[key], key, self.options[key])
+            self.options[key] = optparse.Option.TYPE_CHECKER[self.casts[key].type](
+                self.casts[key], key, self.options[key])
 
     def __getitem__(self, key):
         return self.options[key]
@@ -587,10 +634,12 @@ class configmanager(object):
                 # bootstrap parent dir +rwx
                 if not os.path.exists(add_dir):
                     os.makedirs(add_dir, 0o700)
-                # try to make +rx placeholder dir, will need manual +w to activate it
+                # try to make +rx placeholder dir, will need manual +w to
+                # activate it
                 os.makedirs(d, 0o500)
             except OSError:
-                logging.getLogger(__name__).debug('Failed to create addons data dir %s', d)
+                logging.getLogger(__name__).debug(
+                    'Failed to create addons data dir %s', d)
         return d
 
     @property
@@ -605,5 +654,6 @@ class configmanager(object):
 
     def filestore(self, dbname):
         return os.path.join(self['data_dir'], 'filestore', dbname)
+
 
 config = configmanager()

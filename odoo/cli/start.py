@@ -28,24 +28,25 @@ class Start(Command):
             description=self.__doc__
         )
         parser.add_argument('--path', default=".",
-            help="Directory where your project's modules are stored (will autodetect from current dir)")
+                            help="Directory where your project's modules are stored (will autodetect from current dir)")
         parser.add_argument("-d", "--database", dest="db_name", default=None,
-                         help="Specify the database name (default to project's directory name")
-
+                            help="Specify the database name (default to project's directory name")
 
         args, unknown = parser.parse_known_args(args=cmdargs)
 
         # When in a virtualenv, by default use it's path rather than the cwd
         if args.path == '.' and os.environ.get('VIRTUAL_ENV'):
             args.path = os.environ.get('VIRTUAL_ENV')
-        project_path = os.path.abspath(os.path.expanduser(os.path.expandvars(args.path)))
+        project_path = os.path.abspath(
+            os.path.expanduser(os.path.expandvars(args.path)))
         module_root = get_module_root(project_path)
         db_name = None
         if module_root:
             # started in a module so we choose this module name for database
             db_name = project_path.split(os.path.sep)[-1]
             # go to the parent's directory of the module root
-            project_path = os.path.abspath(os.path.join(project_path, os.pardir))
+            project_path = os.path.abspath(
+                os.path.join(project_path, os.pardir))
 
         # check if one of the subfolders has at least one module
         mods = self.get_module_list(project_path)
@@ -70,11 +71,12 @@ class Start(Command):
         # Remove --path /-p options from the command arguments
         def to_remove(i, l):
             return l[i] == '-p' or l[i].startswith('--path') or \
-                (i > 0 and l[i-1] in ['-p', '--path'])
+                (i > 0 and l[i - 1] in ['-p', '--path'])
         cmdargs = [v for i, v in enumerate(cmdargs)
                    if not to_remove(i, cmdargs)]
 
         main(cmdargs)
+
 
 def die(message, code=1):
     print(message, file=sys.stderr)

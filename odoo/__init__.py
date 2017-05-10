@@ -29,7 +29,7 @@ multi_process = False
 #----------------------------------------------------------
 # Make sure the OpenERP server runs in UTC.
 import os
-os.environ['TZ'] = 'UTC' # Set the timezone
+os.environ['TZ'] = 'UTC'  # Set the timezone
 import time
 if hasattr(time, 'tzset'):
     time.tzset()
@@ -39,6 +39,7 @@ if hasattr(time, 'tzset'):
 #----------------------------------------------------------
 # The hard-coded super-user id (a.k.a. administrator, or root user).
 SUPERUSER_ID = 1
+
 
 def registry(database_name=None):
     """
@@ -50,6 +51,7 @@ def registry(database_name=None):
         import threading
         database_name = threading.currentThread().dbname
     return modules.registry.Registry(database_name)
+
 
 #----------------------------------------------------------
 # Imports

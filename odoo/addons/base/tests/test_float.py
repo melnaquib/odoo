@@ -16,17 +16,21 @@ class TestFloatPrecision(TransactionCase):
 
         def try_round(amount, expected):
             digits = max(0, -int(log10(currency.rounding)))
-            result = float_repr(currency.round(amount), precision_digits=digits)
-            self.assertEqual(result, expected, 'Rounding error: got %s, expected %s' % (result, expected))
+            result = float_repr(currency.round(amount),
+                                precision_digits=digits)
+            self.assertEqual(
+                result, expected, 'Rounding error: got %s, expected %s' % (result, expected))
 
-        try_round(2.674,'2.67')
-        try_round(2.675,'2.68')   # in Python 2.7.2, round(2.675,2) gives 2.67
-        try_round(-2.675,'-2.68') # in Python 2.7.2, round(2.675,2) gives 2.67
-        try_round(0.001,'0.00')
-        try_round(-0.001,'-0.00')
-        try_round(0.0049,'0.00')   # 0.0049 is closer to 0 than to 0.01, so should round down
-        try_round(0.005,'0.01')   # the rule is to round half away from zero
-        try_round(-0.005,'-0.01') # the rule is to round half away from zero
+        try_round(2.674, '2.67')
+        try_round(2.675, '2.68')   # in Python 2.7.2, round(2.675,2) gives 2.67
+        # in Python 2.7.2, round(2.675,2) gives 2.67
+        try_round(-2.675, '-2.68')
+        try_round(0.001, '0.00')
+        try_round(-0.001, '-0.00')
+        # 0.0049 is closer to 0 than to 0.01, so should round down
+        try_round(0.0049, '0.00')
+        try_round(0.005, '0.01')   # the rule is to round half away from zero
+        try_round(-0.005, '-0.01')  # the rule is to round half away from zero
 
         def try_zero(amount, expected):
             self.assertEqual(currency.is_zero(amount), expected,
@@ -38,10 +42,11 @@ class TestFloatPrecision(TransactionCase):
         try_zero(-0.001, True)
         try_zero(0.0046, True)
         try_zero(-0.0046, True)
-        try_zero(2.68-2.675, False) # 2.68 - 2.675 = 0.005 -> rounds to 0.01
-        try_zero(2.68-2.676, True)  # 2.68 - 2.675 = 0.004 -> rounds to 0.0
-        try_zero(2.676-2.68, True)  # 2.675 - 2.68 = -0.004 -> rounds to -0.0
-        try_zero(2.675-2.68, False) # 2.675 - 2.68 = -0.005 -> rounds to -0.01
+        try_zero(2.68 - 2.675, False)  # 2.68 - 2.675 = 0.005 -> rounds to 0.01
+        try_zero(2.68 - 2.676, True)  # 2.68 - 2.675 = 0.004 -> rounds to 0.0
+        try_zero(2.676 - 2.68, True)  # 2.675 - 2.68 = -0.004 -> rounds to -0.0
+        # 2.675 - 2.68 = -0.005 -> rounds to -0.01
+        try_zero(2.675 - 2.68, False)
 
         def try_compare(amount1, amount2, expected):
             self.assertEqual(currency.compare_amounts(amount1, amount2), expected,
@@ -65,9 +70,11 @@ class TestFloatPrecision(TransactionCase):
         """ Test rounding methods with 3 digits. """
 
         def try_round(amount, expected, digits=3, method='HALF-UP'):
-            value = float_round(amount, precision_digits=digits, rounding_method=method)
+            value = float_round(
+                amount, precision_digits=digits, rounding_method=method)
             result = float_repr(value, precision_digits=digits)
-            self.assertEqual(result, expected, 'Rounding error: got %s, expected %s' % (result, expected))
+            self.assertEqual(
+                result, expected, 'Rounding error: got %s, expected %s' % (result, expected))
 
         try_round(2.6745, '2.675')
         try_round(-2.6745, '-2.675')
@@ -92,7 +99,8 @@ class TestFloatPrecision(TransactionCase):
         try_round(1.8, '2', 0, method='UP')
         try_round(-1.8, '-2', 0, method='UP')
 
-        # Extended float range test, inspired by Cloves Almeida's test on bug #882036.
+        # Extended float range test, inspired by Cloves Almeida's test on bug
+        # #882036.
         fractions = [.0, .015, .01499, .675, .67499, .4555, .4555, .45555]
         expecteds = ['.00', '.02', '.01', '.68', '.67', '.46', '.456', '.4556']
         precisions = [2, 2, 2, 2, 2, 2, 3, 4]
@@ -101,11 +109,12 @@ class TestFloatPrecision(TransactionCase):
         for magnitude in range(7):
             for i in range(len(fractions)):
                 frac, exp, prec = fractions[i], expecteds[i], precisions[i]
-                for sign in [-1,1]:
-                    for x in range(0,10000,97):
+                for sign in [-1, 1]:
+                    for x in range(0, 10000, 97):
                         n = x * 10**magnitude
                         f = sign * (n + frac)
-                        f_exp = ('-' if f != 0 and sign == -1 else '') + str(n) + exp 
+                        f_exp = ('-' if f != 0 and sign == -
+                                 1 else '') + str(n) + exp
                         try_round(f, f_exp, digits=prec)
 
         def try_zero(amount, expected):
@@ -139,7 +148,8 @@ class TestFloatPrecision(TransactionCase):
         def try_round(amount, expected, precision_rounding=None):
             value = float_round(amount, precision_rounding=precision_rounding)
             result = float_repr(value, precision_digits=2)
-            self.assertEqual(result, expected, 'Rounding error: got %s, expected %s' % (result, expected))
+            self.assertEqual(
+                result, expected, 'Rounding error: got %s, expected %s' % (result, expected))
 
         try_round(-457.4554, '-457.45', precision_rounding=0.05)
         try_round(457.444, '457.50', precision_rounding=0.5)
@@ -153,7 +163,7 @@ class TestFloatPrecision(TransactionCase):
         currency_rate = self.env['res.currency.rate']
 
         def try_roundtrip(value, expected):
-            rate = currency_rate.create({'name':'2000-01-01',
+            rate = currency_rate.create({'name': '2000-01-01',
                                          'rate': value,
                                          'currency_id': currency.id})
             self.assertEqual(rate.rate, expected,
@@ -171,7 +181,8 @@ class TestFloatPrecision(TransactionCase):
             float_is_zero(0.01, precision_digits=3, precision_rounding=0.01)
 
         with self.assertRaises(AssertionError):
-            float_compare(0.01, 0.02, precision_digits=3, precision_rounding=0.01)
+            float_compare(0.01, 0.02, precision_digits=3,
+                          precision_rounding=0.01)
 
         with self.assertRaises(AssertionError):
             float_round(0.01, precision_digits=3, precision_rounding=0.01)

@@ -61,7 +61,6 @@ class TestGroupBooleans(common.TransactionCase):
             },
         ], groups)
 
-
     def test_agg_or(self):
         # or(true, true)
         self.Model.create({

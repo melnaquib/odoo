@@ -3,13 +3,15 @@
 
 import math
 
+
 def _float_check_precision(precision_digits=None, precision_rounding=None):
     assert (precision_digits is not None or precision_rounding is not None) and \
         not (precision_digits and precision_rounding),\
-         "exactly one of precision_digits and precision_rounding must be specified"
+        "exactly one of precision_digits and precision_rounding must be specified"
     if precision_digits is not None:
         return 10 ** -precision_digits
     return precision_rounding
+
 
 def float_round(value, precision_digits=None, precision_rounding=None, rounding_method='HALF-UP'):
     """Return ``value`` rounded to ``precision_digits`` decimal digits,
@@ -31,7 +33,8 @@ def float_round(value, precision_digits=None, precision_rounding=None, rounding_
     """
     rounding_factor = _float_check_precision(precision_digits=precision_digits,
                                              precision_rounding=precision_rounding)
-    if rounding_factor == 0 or value == 0: return 0.0
+    if rounding_factor == 0 or value == 0:
+        return 0.0
 
     # NORMALIZE - ROUND - DENORMALIZE
     # In order to easily support rounding to arbitrary 'steps' (e.g. coin values),
@@ -49,12 +52,12 @@ def float_round(value, precision_digits=None, precision_rounding=None, rounding_
     # direction.
     # Credit: discussion with OpenERP community members on bug 882036
 
-    normalized_value = value / rounding_factor # normalize
+    normalized_value = value / rounding_factor  # normalize
     epsilon_magnitude = math.log(abs(normalized_value), 2)
-    epsilon = 2**(epsilon_magnitude-53)
+    epsilon = 2**(epsilon_magnitude - 53)
     if rounding_method == 'HALF-UP':
-        normalized_value += cmp(normalized_value,0) * epsilon
-        rounded_value = round(normalized_value) # round to integer
+        normalized_value += cmp(normalized_value, 0) * epsilon
+        rounded_value = round(normalized_value)  # round to integer
 
     # TIE-BREAKING: UP (for ceiling operations)
     # When rounding the value up, we instead subtract the epsilon value
@@ -66,11 +69,13 @@ def float_round(value, precision_digits=None, precision_rounding=None, rounding_
 
     elif rounding_method == 'UP':
         sign = cmp(normalized_value, 0)
-        normalized_value -= sign*epsilon
-        rounded_value = math.ceil(abs(normalized_value))*sign # ceil to integer
+        normalized_value -= sign * epsilon
+        rounded_value = math.ceil(
+            abs(normalized_value)) * sign  # ceil to integer
 
-    result = rounded_value * rounding_factor # de-normalize
+    result = rounded_value * rounding_factor  # de-normalize
     return result
+
 
 def float_is_zero(value, precision_digits=None, precision_rounding=None):
     """Returns true if ``value`` is small enough to be treated as
@@ -94,8 +99,9 @@ def float_is_zero(value, precision_digits=None, precision_rounding=None):
        :return: True if ``value`` is considered zero
     """
     epsilon = _float_check_precision(precision_digits=precision_digits,
-                                             precision_rounding=precision_rounding)
+                                     precision_rounding=precision_rounding)
     return abs(float_round(value, precision_rounding=epsilon)) < epsilon
+
 
 def float_compare(value1, value2, precision_digits=None, precision_rounding=None):
     """Compare ``value1`` and ``value2`` after rounding them according to the
@@ -130,8 +136,10 @@ def float_compare(value1, value2, precision_digits=None, precision_rounding=None
     value1 = float_round(value1, precision_rounding=rounding_factor)
     value2 = float_round(value2, precision_rounding=rounding_factor)
     delta = value1 - value2
-    if float_is_zero(delta, precision_rounding=rounding_factor): return 0
+    if float_is_zero(delta, precision_rounding=rounding_factor):
+        return 0
     return -1 if delta < 0.0 else 1
+
 
 def float_repr(value, precision_digits):
     """Returns a string representation of a float with the
@@ -148,7 +156,9 @@ def float_repr(value, precision_digits):
     # precision. e.g. str(123456789.1234) == str(123456789.123)!!
     return ("%%.%sf" % precision_digits) % value
 
+
 _float_repr = float_repr
+
 
 class float_precision(float):
     """ A class for float values that carry precision digits. This is a thin
@@ -176,25 +186,29 @@ if __name__ == "__main__":
     errors = 0
 
     def try_round(amount, expected, precision_digits=3):
-        global count, errors; count += 1
+        global count, errors
+        count += 1
         result = float_repr(float_round(amount, precision_digits=precision_digits),
                             precision_digits=precision_digits)
         if result != expected:
             errors += 1
-            print('###!!! Rounding error: got %s , expected %s' % (result, expected))
+            print('###!!! Rounding error: got %s , expected %s' %
+                  (result, expected))
 
-    # Extended float range test, inspired by Cloves Almeida's test on bug #882036.
+    # Extended float range test, inspired by Cloves Almeida's test on bug
+    # #882036.
     fractions = [.0, .015, .01499, .675, .67499, .4555, .4555, .45555]
     expecteds = ['.00', '.02', '.01', '.68', '.67', '.46', '.456', '.4556']
     precisions = [2, 2, 2, 2, 2, 2, 3, 4]
     for magnitude in range(7):
         for i in range(len(fractions)):
             frac, exp, prec = fractions[i], expecteds[i], precisions[i]
-            for sign in [-1,1]:
-                for x in range(0,10000,97):
+            for sign in [-1, 1]:
+                for x in range(0, 10000, 97):
                     n = x * 10**magnitude
                     f = sign * (n + frac)
-                    f_exp = ('-' if f != 0 and sign == -1 else '') + str(n) + exp 
+                    f_exp = ('-' if f != 0 and sign == -
+                             1 else '') + str(n) + exp
                     try_round(f, f_exp, precision_digits=prec)
 
     stop = time.time()
@@ -202,5 +216,7 @@ if __name__ == "__main__":
     # Micro-bench results:
     # 47130 round calls in 0.422306060791 secs, with Python 2.6.7 on Core i3 x64
     # with decimal:
-    # 47130 round calls in 6.612248100021 secs, with Python 2.6.7 on Core i3 x64
-    print(count, " round calls, ", errors, "errors, done in ", (stop-start), 'secs')
+    # 47130 round calls in 6.612248100021 secs, with Python 2.6.7 on Core i3
+    # x64
+    print(count, " round calls, ", errors,
+          "errors, done in ", (stop - start), 'secs')

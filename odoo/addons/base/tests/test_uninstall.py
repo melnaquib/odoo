@@ -25,6 +25,7 @@ def environment():
 MODULE = 'test_uninstall'
 MODEL = 'test_uninstall.model'
 
+
 class TestUninstall(unittest.TestCase):
     """
     Test the install/uninstall of a test module. The module is available in
@@ -41,8 +42,10 @@ class TestUninstall(unittest.TestCase):
 
         with environment() as env:
             self.assertIn('test_uninstall.model', env.registry)
-            self.assertTrue(env['ir.model.data'].search([('module', '=', MODULE)]))
-            self.assertTrue(env['ir.model.fields'].search([('model', '=', MODEL)]))
+            self.assertTrue(env['ir.model.data'].search(
+                [('module', '=', MODULE)]))
+            self.assertTrue(env['ir.model.fields'].search(
+                [('model', '=', MODEL)]))
 
     def test_02_uninstall(self):
         """ Check a few things showing the module is uninstalled. """
@@ -54,8 +57,10 @@ class TestUninstall(unittest.TestCase):
 
         with environment() as env:
             self.assertNotIn('test_uninstall.model', env.registry)
-            self.assertFalse(env['ir.model.data'].search([('module', '=', MODULE)]))
-            self.assertFalse(env['ir.model.fields'].search([('model', '=', MODEL)]))
+            self.assertFalse(env['ir.model.data'].search(
+                [('module', '=', MODULE)]))
+            self.assertFalse(env['ir.model.fields'].search(
+                [('model', '=', MODEL)]))
 
 
 if __name__ == '__main__':

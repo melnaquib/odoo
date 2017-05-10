@@ -6,6 +6,7 @@ import odoo.osv.osv
 from odoo import models, api
 from odoo.tools.safe_eval import safe_eval
 
+
 class m(models.Model):
     """ This model exposes a few methods that will raise the different
         exceptions that must be handled by the server (and its RPC layer)
@@ -30,7 +31,8 @@ class m(models.Model):
     @api.multi
     def generate_redirect_warning(self):
         action = self.env.ref('test_exceptions.action_test_exceptions')
-        raise odoo.exceptions.RedirectWarning('description', action.id, 'Go to the redirection')
+        raise odoo.exceptions.RedirectWarning(
+            'description', action.id, 'Go to the redirection')
 
     @api.multi
     def generate_access_denied(self):
@@ -106,5 +108,5 @@ class m(models.Model):
 
     @api.multi
     def generate_safe_eval(self, f):
-        globals_dict = { 'generate': f }
+        globals_dict = {'generate': f}
         safe_eval("generate()", mode='exec', globals_dict=globals_dict)

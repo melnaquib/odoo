@@ -3,13 +3,15 @@
 
 from odoo.tests import common
 
+
 class test_inherits(common.TransactionCase):
 
     def test_00_inherits(self):
         """ Check that a many2one field with delegate=True adds an entry in _inherits """
         daughter = self.env['test.inherit.daughter']
 
-        self.assertEqual(daughter._inherits, {'test.inherit.mother': 'template_id'})
+        self.assertEqual(daughter._inherits, {
+                         'test.inherit.mother': 'template_id'})
 
     def test_10_access_from_child_to_parent_model(self):
         """ check whether added field in model is accessible from children models (_inherits) """
@@ -72,18 +74,23 @@ class test_inherits(common.TransactionCase):
         """ check search on one2many field based on inherited many2one field. """
         # create a daughter record attached to partner Demo
         partner_demo = self.env.ref('base.partner_demo')
-        daughter = self.env['test.inherit.daughter'].create({'partner_id': partner_demo.id})
+        daughter = self.env['test.inherit.daughter'].create(
+            {'partner_id': partner_demo.id})
         self.assertEqual(daughter.partner_id, partner_demo)
         self.assertIn(daughter, partner_demo.daughter_ids)
 
         # search the partner from the daughter record
-        partners = self.env['res.partner'].search([('daughter_ids', 'like', 'not existing daugther')])
+        partners = self.env['res.partner'].search(
+            [('daughter_ids', 'like', 'not existing daugther')])
         self.assertFalse(partners)
-        partners = self.env['res.partner'].search([('daughter_ids', 'not like', 'not existing daugther')])
+        partners = self.env['res.partner'].search(
+            [('daughter_ids', 'not like', 'not existing daugther')])
         self.assertIn(partner_demo, partners)
-        partners = self.env['res.partner'].search([('daughter_ids', '!=', False)])
+        partners = self.env['res.partner'].search(
+            [('daughter_ids', '!=', False)])
         self.assertIn(partner_demo, partners)
-        partners = self.env['res.partner'].search([('daughter_ids', 'in', daughter.ids)])
+        partners = self.env['res.partner'].search(
+            [('daughter_ids', 'in', daughter.ids)])
         self.assertIn(partner_demo, partners)
 
 

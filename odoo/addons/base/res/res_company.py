@@ -37,7 +37,8 @@ class Company(models.Model):
 </pageTemplate>
 </header>"""
 
-    _header2 = _header % (539, 772, "1.0cm", "28.3cm", "11.1cm", "28.3cm", "1.0cm 28.1cm 20.1cm 28.1cm")
+    _header2 = _header % (539, 772, "1.0cm", "28.3cm",
+                          "11.1cm", "28.3cm", "1.0cm 28.1cm 20.1cm 28.1cm")
     _header3 = _header % (786, 525, 25, 555, 440, 555, "25 550 818 550")
 
     _header_main = """
@@ -88,8 +89,10 @@ class Company(models.Model):
     </pageTemplate>
 </header>"""
 
-    _header_a4 = _header_main % ('21.7cm', '27.7cm', '27.7cm', '27.7cm', '27.8cm', '27.3cm', '25.3cm', '25.0cm', '25.0cm', '24.6cm', '24.6cm', '24.5cm', '24.5cm')
-    _header_letter = _header_main % ('20cm', '26.0cm', '26.0cm', '26.0cm', '26.1cm', '25.6cm', '23.6cm', '23.3cm', '23.3cm', '22.9cm', '22.9cm', '22.8cm', '22.8cm')
+    _header_a4 = _header_main % ('21.7cm', '27.7cm', '27.7cm', '27.7cm', '27.8cm',
+                                 '27.3cm', '25.3cm', '25.0cm', '25.0cm', '24.6cm', '24.6cm', '24.5cm', '24.5cm')
+    _header_letter = _header_main % ('20cm', '26.0cm', '26.0cm', '26.0cm', '26.1cm',
+                                     '25.6cm', '23.6cm', '23.3cm', '23.3cm', '22.9cm', '22.9cm', '22.8cm', '22.8cm')
 
     def _get_header(self):
         try:
@@ -114,45 +117,66 @@ class Company(models.Model):
 
     @api.model
     def _get_user_currency(self):
-        currency_id = self.env['res.users'].browse(self._uid).company_id.currency_id
+        currency_id = self.env['res.users'].browse(
+            self._uid).company_id.currency_id
         return currency_id or self._get_euro()
 
-    name = fields.Char(related='partner_id.name', string='Company Name', required=True, store=True)
-    parent_id = fields.Many2one('res.company', string='Parent Company', index=True)
-    child_ids = fields.One2many('res.company', 'parent_id', string='Child Companies')
-    partner_id = fields.Many2one('res.partner', string='Partner', required=True)
+    name = fields.Char(related='partner_id.name',
+                       string='Company Name', required=True, store=True)
+    parent_id = fields.Many2one(
+        'res.company', string='Parent Company', index=True)
+    child_ids = fields.One2many(
+        'res.company', 'parent_id', string='Child Companies')
+    partner_id = fields.Many2one(
+        'res.partner', string='Partner', required=True)
     rml_header = fields.Text(required=True, default=_get_header)
-    rml_header1 = fields.Char(string='Company Tagline', help="Appears by default on the top right corner of your printed documents (report header).")
-    rml_header2 = fields.Text(string='RML Internal Header', required=True, default=_header2)
-    rml_header3 = fields.Text(string='RML Internal Header for Landscape Reports', required=True, default=_header3)
-    rml_footer = fields.Text(string='Custom Report Footer', translate=True, help="Footer text displayed at the bottom of all reports.")
-    rml_footer_readonly = fields.Text(related='rml_footer', string='Report Footer', readonly=True)
-    custom_footer = fields.Boolean(help="Check this to define the report footer manually. Otherwise it will be filled in automatically.")
+    rml_header1 = fields.Char(
+        string='Company Tagline', help="Appears by default on the top right corner of your printed documents (report header).")
+    rml_header2 = fields.Text(
+        string='RML Internal Header', required=True, default=_header2)
+    rml_header3 = fields.Text(
+        string='RML Internal Header for Landscape Reports', required=True, default=_header3)
+    rml_footer = fields.Text(string='Custom Report Footer', translate=True,
+                             help="Footer text displayed at the bottom of all reports.")
+    rml_footer_readonly = fields.Text(
+        related='rml_footer', string='Report Footer', readonly=True)
+    custom_footer = fields.Boolean(
+        help="Check this to define the report footer manually. Otherwise it will be filled in automatically.")
     font = fields.Many2one('res.font', string="Font", default=lambda self: self._get_font(),
-                           domain=[('mode', 'in', ('Normal', 'Regular', 'all', 'Book'))],
+                           domain=[
+                               ('mode', 'in', ('Normal', 'Regular', 'all', 'Book'))],
                            help="Set the font into the report header, it will be used as default font in the RML reports of the user company")
     logo = fields.Binary(related='partner_id.image', default=_get_logo)
     # logo_web: do not store in attachments, since the image is retrieved in SQL for
-    # performance reasons (see addons/web/controllers/main.py, Binary.company_logo)
+    # performance reasons (see addons/web/controllers/main.py,
+    # Binary.company_logo)
     logo_web = fields.Binary(compute='_compute_logo_web', store=True)
-    currency_id = fields.Many2one('res.currency', string='Currency', required=True, default=lambda self: self._get_user_currency())
-    user_ids = fields.Many2many('res.users', 'res_company_users_rel', 'cid', 'user_id', string='Accepted Users')
+    currency_id = fields.Many2one('res.currency', string='Currency',
+                                  required=True, default=lambda self: self._get_user_currency())
+    user_ids = fields.Many2many(
+        'res.users', 'res_company_users_rel', 'cid', 'user_id', string='Accepted Users')
     account_no = fields.Char(string='Account No.')
     street = fields.Char(compute='_compute_address', inverse='_inverse_street')
-    street2 = fields.Char(compute='_compute_address', inverse='_inverse_street2')
+    street2 = fields.Char(compute='_compute_address',
+                          inverse='_inverse_street2')
     zip = fields.Char(compute='_compute_address', inverse='_inverse_zip')
     city = fields.Char(compute='_compute_address', inverse='_inverse_city')
-    state_id = fields.Many2one('res.country.state', compute='_compute_address', inverse='_inverse_state', string="Fed. State")
-    bank_ids = fields.One2many('res.partner.bank', 'company_id', string='Bank Accounts', help='Bank accounts related to this company')
-    country_id = fields.Many2one('res.country', compute='_compute_address', inverse='_inverse_country', string="Country")
+    state_id = fields.Many2one('res.country.state', compute='_compute_address',
+                               inverse='_inverse_state', string="Fed. State")
+    bank_ids = fields.One2many('res.partner.bank', 'company_id',
+                               string='Bank Accounts', help='Bank accounts related to this company')
+    country_id = fields.Many2one(
+        'res.country', compute='_compute_address', inverse='_inverse_country', string="Country")
     email = fields.Char(related='partner_id.email', store=True)
     phone = fields.Char(related='partner_id.phone', store=True)
     fax = fields.Char(compute='_compute_address', inverse='_inverse_fax')
     website = fields.Char(related='partner_id.website')
     vat = fields.Char(related='partner_id.vat', string="Tax ID")
     company_registry = fields.Char()
-    rml_paper_format = fields.Selection([('a4', 'A4'), ('us_letter', 'US Letter')], string="Paper Format", required=True, default='a4', oldname='paper_format')
-    sequence = fields.Integer(help='Used to order Companies in the company switcher', default=10)
+    rml_paper_format = fields.Selection([('a4', 'A4'), ('us_letter', 'US Letter')],
+                                        string="Paper Format", required=True, default='a4', oldname='paper_format')
+    sequence = fields.Integer(
+        help='Used to order Companies in the company switcher', default=10)
 
     _sql_constraints = [
         ('name_uniq', 'unique (name)', 'The company name must be unique !')
@@ -162,9 +186,11 @@ class Company(models.Model):
     # partner's contact address
     def _compute_address(self):
         for company in self.filtered(lambda company: company.partner_id):
-            address_data = company.partner_id.sudo().address_get(adr_pref=['contact'])
+            address_data = company.partner_id.sudo(
+            ).address_get(adr_pref=['contact'])
             if address_data['contact']:
-                partner = company.partner_id.browse(address_data['contact']).sudo()
+                partner = company.partner_id.browse(
+                    address_data['contact']).sudo()
                 company.street = partner.street
                 company.street2 = partner.street2
                 company.city = partner.city
@@ -204,19 +230,22 @@ class Company(models.Model):
     @api.depends('partner_id', 'partner_id.image')
     def _compute_logo_web(self):
         for company in self:
-            company.logo_web = tools.image_resize_image(company.partner_id.image, (180, None))
+            company.logo_web = tools.image_resize_image(
+                company.partner_id.image, (180, None))
 
     @api.onchange('custom_footer', 'phone', 'fax', 'email', 'website', 'vat', 'company_registry')
     def onchange_footer(self):
         if not self.custom_footer:
-            # first line (notice that missing elements are filtered out before the join)
+            # first line (notice that missing elements are filtered out before
+            # the join)
             res = ' | '.join(filter(bool, [
-                self.phone            and '%s: %s' % (_('Phone'), self.phone),
-                self.fax              and '%s: %s' % (_('Fax'), self.fax),
-                self.email            and '%s: %s' % (_('Email'), self.email),
-                self.website          and '%s: %s' % (_('Website'), self.website),
-                self.vat              and '%s: %s' % (_('TIN'), self.vat),
-                self.company_registry and '%s: %s' % (_('Reg'), self.company_registry),
+                self.phone and '%s: %s' % (_('Phone'), self.phone),
+                self.fax and '%s: %s' % (_('Fax'), self.fax),
+                self.email and '%s: %s' % (_('Email'), self.email),
+                self.website and '%s: %s' % (_('Website'), self.website),
+                self.vat and '%s: %s' % (_('TIN'), self.vat),
+                self.company_registry and '%s: %s' % (
+                    _('Reg'), self.company_registry),
             ]))
             self.rml_footer_readonly = res
             self.rml_footer = res
@@ -230,7 +259,8 @@ class Company(models.Model):
         """ To change default header style of all <para> and drawstring. """
         def _change_header(header, font):
             """ Replace default fontname use in header and setfont tag """
-            default_para = re.sub(r'fontName.?=.?".*"', 'fontName="%s"' % font, header)
+            default_para = re.sub(r'fontName.?=.?".*"',
+                                  'fontName="%s"' % font, header)
             return re.sub(r'(<setFont.?name.?=.?)(".*?")(.)', '\g<1>"%s"\g<3>' % font, default_para)
 
         if self.font:
@@ -241,18 +271,21 @@ class Company(models.Model):
 
     @api.multi
     def on_change_country(self, country_id):
-        # This function is called from account/models/chart_template.py, hence decorated with `multi`.
+        # This function is called from account/models/chart_template.py, hence
+        # decorated with `multi`.
         self.ensure_one()
         currency_id = self._get_user_currency()
         if country_id:
-            currency_id = self.env['res.country'].browse(country_id).currency_id.id
+            currency_id = self.env['res.country'].browse(
+                country_id).currency_id.id
         return {'value': {'currency_id': currency_id}}
 
     @api.onchange('country_id')
     def _onchange_country_id_wrapper(self):
         res = {'domain': {'state_id': []}}
         if self.country_id:
-            res['domain']['state_id'] = [('country_id', '=', self.country_id.id)]
+            res['domain']['state_id'] = [
+                ('country_id', '=', self.country_id.id)]
         values = self.on_change_country(self.country_id.id)['value']
         for fname, value in values.items():
             setattr(self, fname, value)
@@ -303,7 +336,8 @@ class Company(models.Model):
         descendance.append(self.partner_id.id)
         for child_id in self._get_company_children(self.id):
             if child_id != self.id:
-                descendance = self.browse(child_id)._get_partner_descendance(descendance)
+                descendance = self.browse(
+                    child_id)._get_partner_descendance(descendance)
         return descendance
 
     # deprecated, use clear_caches() instead
@@ -351,4 +385,5 @@ class Company(models.Model):
     @api.constrains('parent_id')
     def _check_parent_id(self):
         if not self._check_recursion():
-            raise ValidationError(_('Error ! You cannot create recursive companies.'))
+            raise ValidationError(
+                _('Error ! You cannot create recursive companies.'))

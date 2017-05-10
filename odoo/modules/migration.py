@@ -18,6 +18,7 @@ from odoo.tools.parse_version import parse_version
 
 _logger = logging.getLogger(__name__)
 
+
 class MigrationManager(object):
     """
         This class manage the migration of modules
@@ -76,7 +77,8 @@ class MigrationManager(object):
             'post': '[%s>]',
             'end': '[$%s]',
         }
-        state = pkg.state if stage in ('pre', 'post') else getattr(pkg, 'load_state', None)
+        state = pkg.state if stage in (
+            'pre', 'post') else getattr(pkg, 'load_state', None)
 
         if not (hasattr(pkg, 'update') or state == 'to upgrade') or state == 'to install':
             return
@@ -116,7 +118,8 @@ class MigrationManager(object):
             lst.sort()
             return lst
 
-        parsed_installed_version = parse_version(getattr(pkg, 'load_version', pkg.installed_version) or '')
+        parsed_installed_version = parse_version(
+            getattr(pkg, 'load_version', pkg.installed_version) or '')
         current_version = parse_version(convert_version(pkg.data['version']))
 
         versions = _get_migration_versions(pkg)
@@ -139,19 +142,23 @@ class MigrationManager(object):
 
                         if not isinstance(fp, file):
                             # imp.load_source need a real file object, so we create
-                            # one from the file-like object we get from file_open
+                            # one from the file-like object we get from
+                            # file_open
                             fp2 = os.tmpfile()
                             fp2.write(fp.read())
                             fp2.seek(0)
                         try:
                             mod = imp.load_source(name, fname, fp2 or fp)
-                            _logger.info('module %(addon)s: Running migration %(version)s %(name)s' % dict(strfmt, name=mod.__name__))
+                            _logger.info('module %(addon)s: Running migration %(version)s %(name)s' % dict(
+                                strfmt, name=mod.__name__))
                             migrate = mod.migrate
                         except ImportError:
-                            _logger.exception('module %(addon)s: Unable to load %(stage)s-migration file %(file)s' % dict(strfmt, file=pyfile))
+                            _logger.exception(
+                                'module %(addon)s: Unable to load %(stage)s-migration file %(file)s' % dict(strfmt, file=pyfile))
                             raise
                         except AttributeError:
-                            _logger.error('module %(addon)s: Each %(stage)s-migration file must have a "migrate(cr, installed_version)" function' % strfmt)
+                            _logger.error(
+                                'module %(addon)s: Each %(stage)s-migration file must have a "migrate(cr, installed_version)" function' % strfmt)
                         else:
                             migrate(self.cr, pkg.installed_version)
                     finally:

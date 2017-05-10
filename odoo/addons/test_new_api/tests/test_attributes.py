@@ -3,6 +3,7 @@ from odoo.tests import common
 
 ANSWER_TO_ULTIMATE_QUESTION = 42
 
+
 class TestAttributes(common.TransactionCase):
 
     def test_we_can_add_attributes(self):
@@ -22,4 +23,5 @@ class TestAttributes(common.TransactionCase):
         self.assertEqual(instance.unknown, ANSWER_TO_ULTIMATE_QUESTION)
 
         # We are paranoiac !
-        self.assertEqual(getattr(instance, 'unknown'), ANSWER_TO_ULTIMATE_QUESTION)
+        self.assertEqual(getattr(instance, 'unknown'),
+                         ANSWER_TO_ULTIMATE_QUESTION)

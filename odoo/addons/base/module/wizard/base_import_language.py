@@ -40,6 +40,8 @@ class BaseLanguageImport(models.TransientModel):
                 tools.trans_load_data(this._cr, buf, fileformat, this.code,
                                       lang_name=this.name, context=this._context)
             except Exception as e:
-                _logger.exception('File unsuccessfully imported, due to format mismatch.')
-                raise UserError(_('File not imported due to format mismatch or a malformed file. (Valid formats are .csv, .po, .pot)\n\nTechnical Details:\n%s') % tools.ustr(e))
+                _logger.exception(
+                    'File unsuccessfully imported, due to format mismatch.')
+                raise UserError(
+                    _('File not imported due to format mismatch or a malformed file. (Valid formats are .csv, .po, .pot)\n\nTechnical Details:\n%s') % tools.ustr(e))
         return True

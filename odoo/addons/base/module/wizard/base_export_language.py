@@ -9,6 +9,7 @@ from odoo import api, fields, models, tools, _
 
 NEW_LANG_KEY = '__new__'
 
+
 class BaseLanguageExport(models.TransientModel):
     _name = "base.language.export"
 
@@ -17,15 +18,16 @@ class BaseLanguageExport(models.TransientModel):
         langs = self.env['res.lang'].search([('translatable', '=', True)])
         return [(NEW_LANG_KEY, _('New Language (Empty translation template)'))] + \
                [(lang.code, lang.name) for lang in langs]
-   
+
     name = fields.Char('File Name', readonly=True)
-    lang = fields.Selection(_get_languages, string='Language', required=True, default=NEW_LANG_KEY)
-    format = fields.Selection([('csv','CSV File'), ('po','PO File'), ('tgz', 'TGZ Archive')],
+    lang = fields.Selection(_get_languages, string='Language',
+                            required=True, default=NEW_LANG_KEY)
+    format = fields.Selection([('csv', 'CSV File'), ('po', 'PO File'), ('tgz', 'TGZ Archive')],
                               string='File Format', required=True, default='csv')
     modules = fields.Many2many('ir.module.module', 'rel_modules_langexport', 'wiz_id', 'module_id',
-                               string='Apps To Export', domain=[('state','=','installed')])
+                               string='Apps To Export', domain=[('state', '=', 'installed')])
     data = fields.Binary('File', readonly=True)
-    state = fields.Selection([('choose', 'choose'), ('get', 'get')], # choose language or get the file
+    state = fields.Selection([('choose', 'choose'), ('get', 'get')],  # choose language or get the file
                              default='choose')
 
     @api.multi

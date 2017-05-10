@@ -26,9 +26,10 @@ def listdir(dir, recursive=False):
 
     res = []
     for root, dirs, files in walksymlinks(dir):
-        root = root[len(dir)+1:]
+        root = root[len(dir) + 1:]
         res.extend([opj(root, f) for f in files])
     return res
+
 
 def walksymlinks(top, topdown=True, onerror=None):
     """
@@ -39,13 +40,15 @@ def walksymlinks(top, topdown=True, onerror=None):
         if topdown:
             yield dirpath, dirnames, filenames
 
-        symlinks = [dirname for dirname in dirnames if os.path.islink(os.path.join(dirpath, dirname))]
+        symlinks = [dirname for dirname in dirnames if os.path.islink(
+            os.path.join(dirpath, dirname))]
         for s in symlinks:
             for x in walksymlinks(os.path.join(dirpath, s), topdown, onerror):
                 yield x
 
         if not topdown:
             yield dirpath, dirnames, filenames
+
 
 @contextmanager
 def tempdir():
@@ -54,6 +57,7 @@ def tempdir():
         yield tmpdir
     finally:
         shutil.rmtree(tmpdir)
+
 
 def zip_dir(path, stream, include_dir=True, fnct_sort=None):      # TODO add ignore list
     """
@@ -80,10 +84,13 @@ def zip_dir(path, stream, include_dir=True, fnct_sort=None):      # TODO add ign
 
 if os.name != 'nt':
     getppid = os.getppid
-    is_running_as_nt_service = lambda: False
+
+    def is_running_as_nt_service(): return False
 else:
-    # based on http://mail.python.org/pipermail/python-win32/2007-June/006174.html
+    # based on
+    # http://mail.python.org/pipermail/python-win32/2007-June/006174.html
     _TH32CS_SNAPPROCESS = 0x00000002
+
     class _PROCESSENTRY32(ctypes.Structure):
         _fields_ = [("dwSize", ctypes.c_ulong),
                     ("cntUsage", ctypes.c_ulong),

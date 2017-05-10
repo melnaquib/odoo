@@ -103,7 +103,8 @@ web: <a class="moz-txt-link-freetext" href="https://opener.am">https://opener.am
   </body>
 </html>"""
 
-QUOTE_BLOCKQUOTE_IN = ["""<blockquote cite="mid:CAEJSRZvWvud8c6Qp=wfNG6O1+wK3i_jb33qVrF7XyrgPNjnyUA@mail.gmail.com" type="cite" data-o-mail-quote-node="1" data-o-mail-quote="1">"""]
+QUOTE_BLOCKQUOTE_IN = [
+    """<blockquote cite="mid:CAEJSRZvWvud8c6Qp=wfNG6O1+wK3i_jb33qVrF7XyrgPNjnyUA@mail.gmail.com" type="cite" data-o-mail-quote-node="1" data-o-mail-quote="1">"""]
 QUOTE_BLOCKQUOTE_OUT = ["""-- 
 Opener B.V. - Business solutions driven by open source collaboration
 
@@ -137,7 +138,8 @@ Raoul Poilvache
 </html>"""
 
 
-QUOTE_THUNDERBIRD_HTML_IN = ["""<blockquote cite="mid:CAP76m_WWFH2KVrbjOxbaozvkmbzZYLWJnQ0n0sy9XpGaCWRf1g@mail.gmail.com" type="cite" data-o-mail-quote-node="1" data-o-mail-quote="1">"""]
+QUOTE_THUNDERBIRD_HTML_IN = [
+    """<blockquote cite="mid:CAP76m_WWFH2KVrbjOxbaozvkmbzZYLWJnQ0n0sy9XpGaCWRf1g@mail.gmail.com" type="cite" data-o-mail-quote-node="1" data-o-mail-quote="1">"""]
 QUOTE_THUNDERBIRD_HTML_OUT = ["""<pre class="moz-signature" cols="72"><span data-o-mail-quote="1">-- 
 Raoul Poilvache
 </span></pre>"""]
@@ -256,7 +258,7 @@ bert.tartopoils@miam.miam
 TEXT_2_IN = ["Salut Raoul!", "Of course. This seems viable."]
 TEXT_2_OUT = ["""
 > I contact you about our meeting tomorrow. Here is the schedule I propose: (quote)""",
-"""
+              """
 > 2012/10/27 Bert Tartopoils :
 >> blahblahblah (quote)?
 >> 
@@ -279,7 +281,8 @@ GMAIL_1 = """Hello,<div><br></div><div>Ok for me. I am replying directly in gmai
 <div><p>Log in our portal at: <a href="http://localhost:8069#action=login&amp;db=mail_1&amp;login=demo">http://localhost:8069#action=login&amp;db=mail_1&amp;login=demo</a></p></div>
 </blockquote></div><br></div>"""
 
-GMAIL_1_IN = ['Ok for me. I am replying directly in gmail, without signature.', '<blockquote data-o-mail-quote-node="1" data-o-mail-quote="1">']
+GMAIL_1_IN = ['Ok for me. I am replying directly in gmail, without signature.',
+              '<blockquote data-o-mail-quote-node="1" data-o-mail-quote="1">']
 GMAIL_1_OUT = []
 
 HOTMAIL_1 = """<div>
@@ -423,8 +426,10 @@ MSOFFICE_1 = """
     </div>
 </div>"""
 
-MSOFFICE_1_IN = ['Our requirements are simple. Just looking to replace some spreadsheets for tracking quotes and possibly using the timecard module.']
-MSOFFICE_1_OUT = ['I noticed you recently downloaded OpenERP.', 'Uou mentioned you wish to use OpenERP in your own company.', 'Belgium: +32.81.81.37.00']
+MSOFFICE_1_IN = [
+    'Our requirements are simple. Just looking to replace some spreadsheets for tracking quotes and possibly using the timecard module.']
+MSOFFICE_1_OUT = ['I noticed you recently downloaded OpenERP.',
+                  'Uou mentioned you wish to use OpenERP in your own company.', 'Belgium: +32.81.81.37.00']
 
 
 # ------------------------------------------------------------

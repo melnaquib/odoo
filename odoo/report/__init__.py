@@ -11,6 +11,7 @@ from . import printscreen
 from . import render
 from . import report_sxw
 
+
 def render_report(cr, uid, ids, name, data, context=None):
     """
     Helper to call ``ir.actions.report.xml.render_report()``.

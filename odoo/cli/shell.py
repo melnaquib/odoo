@@ -65,7 +65,8 @@ class Shell(Command):
             exec(sys.stdin, local_vars)
         else:
             if 'env' not in local_vars:
-                print('No environment set, use `%s shell -d dbname` to get one.' % sys.argv[0])
+                print(
+                    'No environment set, use `%s shell -d dbname` to get one.' % sys.argv[0])
             for i in sorted(local_vars):
                 print('%s: %s' % (i, local_vars[i]))
 
@@ -109,7 +110,8 @@ class Shell(Command):
                 registry = odoo.registry(dbname)
                 with registry.cursor() as cr:
                     uid = odoo.SUPERUSER_ID
-                    ctx = odoo.api.Environment(cr, uid, {})['res.users'].context_get()
+                    ctx = odoo.api.Environment(cr, uid, {})[
+                        'res.users'].context_get()
                     env = odoo.api.Environment(cr, uid, ctx)
                     local_vars['env'] = env
                     local_vars['self'] = env.user

@@ -45,9 +45,11 @@ class IrQWeb(models.AbstractModel, QWeb):
         """
         for method in dir(self):
             if method.startswith('render_'):
-                _logger.warning("Unused method '%s' is found in ir.qweb." % method)
+                _logger.warning(
+                    "Unused method '%s' is found in ir.qweb." % method)
 
-        context = dict(self.env.context, dev_mode='qweb' in tools.config['dev_mode'])
+        context = dict(self.env.context,
+                       dev_mode='qweb' in tools.config['dev_mode'])
         context.update(options)
 
         return super(IrQWeb, self).render(id_or_xml_id, values=values, **context)
@@ -56,7 +58,9 @@ class IrQWeb(models.AbstractModel, QWeb):
         """ attributes add to the values for each computed template
         """
         default = super(IrQWeb, self).default_values()
-        default.update(request=request, cache_assets=round(time()/180), true=True, false=False) # true and false added for backward compatibility to remove after v10
+        # true and false added for backward compatibility to remove after v10
+        default.update(request=request, cache_assets=round(
+            time() / 180), true=True, false=False)
         return default
 
     # assume cache will be invalidated by third party on write to ir.ui.view
@@ -67,7 +71,8 @@ class IrQWeb(models.AbstractModel, QWeb):
     # apply ormcache_context decorator unless in dev mode...
     @tools.conditional(
         'xml' not in tools.config['dev_mode'],
-        tools.ormcache('id_or_xml_id', 'tuple(map(options.get, self._get_template_cache_keys()))'),
+        tools.ormcache(
+            'id_or_xml_id', 'tuple(map(options.get, self._get_template_cache_keys()))'),
     )
     def compile(self, id_or_xml_id, options):
         return super(IrQWeb, self).compile(id_or_xml_id, options=options)
@@ -83,7 +88,8 @@ class IrQWeb(models.AbstractModel, QWeb):
         # QWeb's `read_template` will check if one of the first children of
         # what we send to it has a "t-name" attribute having `name` as value
         # to consider it has found it. As it'll never be the case when working
-        # with view ids or children view or children primary views, force it here.
+        # with view ids or children view or children primary views, force it
+        # here.
         def is_child_view(view_name):
             view_id = self.env['ir.ui.view'].get_view_id(view_name)
             view = self.env['ir.ui.view'].browse(view_id)
@@ -111,7 +117,8 @@ class IrQWeb(models.AbstractModel, QWeb):
     def _compile_directive_lang(self, el, options):
         lang = el.attrib.pop('t-lang', 'en_US')
         if el.get('t-call-options'):
-            el.set('t-call-options', el.get('t-call-options')[0:-1] + ', "lang": %s}' % lang)
+            el.set('t-call-options', el.get('t-call-options')
+                   [0:-1] + ', "lang": %s}' % lang)
         else:
             el.set('t-call-options', '{"lang": %s}' % lang)
         return self._compile_node(el, options)
@@ -134,8 +141,10 @@ class IrQWeb(models.AbstractModel, QWeb):
                     ast.Name(id='options', ctx=ast.Load()),
                 ],
                 keywords=[
-                    ast.keyword('css', self._get_attr_bool(el.get('t-css', True))),
-                    ast.keyword('js', self._get_attr_bool(el.get('t-js', True))),
+                    ast.keyword('css', self._get_attr_bool(
+                        el.get('t-css', True))),
+                    ast.keyword('js', self._get_attr_bool(
+                        el.get('t-js', True))),
                     ast.keyword('debug', ast.Call(
                         func=ast.Attribute(
                             value=ast.Name(id='values', ctx=ast.Load()),
@@ -145,8 +154,10 @@ class IrQWeb(models.AbstractModel, QWeb):
                         args=[ast.Str('debug')],
                         keywords=[], starargs=None, kwargs=None
                     )),
-                    ast.keyword('async', self._get_attr_bool(el.get('async', False))),
-                    ast.keyword('values', ast.Name(id='values', ctx=ast.Load())),
+                    ast.keyword('async', self._get_attr_bool(
+                        el.get('async', False))),
+                    ast.keyword('values', ast.Name(
+                        id='values', ctx=ast.Load())),
                 ],
                 starargs=None, kwargs=None
             ))
@@ -154,11 +165,13 @@ class IrQWeb(models.AbstractModel, QWeb):
 
     # for backward compatibility to remove after v10
     def _compile_widget_options(self, el, directive_type):
-        field_options = super(IrQWeb, self)._compile_widget_options(el, directive_type)
+        field_options = super(IrQWeb, self)._compile_widget_options(
+            el, directive_type)
 
         if ('t-%s-options' % directive_type) in el.attrib:
             if tools.config['dev_mode']:
-                _logger.warning("Use new syntax t-options instead of t-%s-options" % directive_type)
+                _logger.warning(
+                    "Use new syntax t-options instead of t-%s-options" % directive_type)
             if not field_options:
                 field_options = el.attrib.pop('t-%s-options' % directive_type)
 
@@ -173,7 +186,8 @@ class IrQWeb(models.AbstractModel, QWeb):
                         options = "%s, '%s': '%s'" % (options, k, v)
                 options = "%s}" % options
                 field_options = options
-                _logger.warning("Use new syntax for '%s' monetary widget t-options (python dict instead of deprecated JSON syntax)." % etree.tostring(el))
+                _logger.warning(
+                    "Use new syntax for '%s' monetary widget t-options (python dict instead of deprecated JSON syntax)." % etree.tostring(el))
             except ValueError:
                 pass
 
@@ -184,9 +198,11 @@ class IrQWeb(models.AbstractModel, QWeb):
 
     @tools.conditional(
         # in non-xml-debug mode we want assets to be cached forever, and the admin can force a cache clear
-        # by restarting the server after updating the source code (or using the "Clear server cache" in debug tools)
+        # by restarting the server after updating the source code (or using the
+        # "Clear server cache" in debug tools)
         'xml' not in tools.config['dev_mode'],
-        tools.ormcache('xmlid', 'options.get("lang", "en_US")', 'css', 'js', 'debug', 'async'),
+        tools.ormcache('xmlid', 'options.get("lang", "en_US")',
+                       'css', 'js', 'debug', 'async'),
     )
     def _get_asset(self, xmlid, options, css=True, js=True, debug=False, async=False, values=None):
         files, remains = self._get_asset_content(xmlid, options)
@@ -196,9 +212,9 @@ class IrQWeb(models.AbstractModel, QWeb):
     @tools.ormcache('xmlid', 'options.get("lang", "en_US")')
     def _get_asset_content(self, xmlid, options):
         options = dict(options,
-            inherit_branding=False, inherit_branding_auto=False,
-            edit_translations=False, translatable=False,
-            rendering_bundle=True)
+                       inherit_branding=False, inherit_branding_auto=False,
+                       edit_translations=False, translatable=False,
+                       rendering_bundle=True)
 
         env = self.env(context=options)
 
@@ -210,7 +226,8 @@ class IrQWeb(models.AbstractModel, QWeb):
                 from odoo.addons.web.controllers.main import module_boot
                 return json.dumps(module_boot())
             return '[]'
-        template = env['ir.qweb'].render(xmlid, {"get_modules_order": get_modules_order})
+        template = env['ir.qweb'].render(
+            xmlid, {"get_modules_order": get_modules_order})
 
         files = []
         remains = []
@@ -223,7 +240,8 @@ class IrQWeb(models.AbstractModel, QWeb):
                 atype = el.get('type')
                 media = el.get('media')
 
-                can_aggregate = not urlparse(href).netloc and not href.startswith('/web/content')
+                can_aggregate = not urlparse(
+                    href).netloc and not href.startswith('/web/content')
                 if el.tag == 'style' or (el.tag == 'link' and el.get('rel') == 'stylesheet' and can_aggregate):
                     if href.endswith('.sass'):
                         atype = 'text/sass'
@@ -233,12 +251,14 @@ class IrQWeb(models.AbstractModel, QWeb):
                         atype = 'text/css'
                     path = [_f for _f in href.split('/') if _f]
                     filename = get_resource_path(*path) if path else None
-                    files.append({'atype': atype, 'url': href, 'filename': filename, 'content': el.text, 'media': media})
+                    files.append(
+                        {'atype': atype, 'url': href, 'filename': filename, 'content': el.text, 'media': media})
                 elif el.tag == 'script':
                     atype = 'text/javascript'
                     path = [_f for _f in src.split('/') if _f]
                     filename = get_resource_path(*path) if path else None
-                    files.append({'atype': atype, 'url': src, 'filename': filename, 'content': el.text, 'media': media})
+                    files.append(
+                        {'atype': atype, 'url': src, 'filename': filename, 'content': el.text, 'media': media})
                 else:
                     remains.append(html.tostring(el))
             else:
@@ -256,9 +276,11 @@ class IrQWeb(models.AbstractModel, QWeb):
         field_options['tagName'] = tagName
         field_options['expression'] = expression
         field_options['type'] = field_options.get('widget', field.type)
-        inherit_branding = options.get('inherit_branding', options.get('inherit_branding_auto') and record.check_access_rights('write', False))
+        inherit_branding = options.get('inherit_branding', options.get(
+            'inherit_branding_auto') and record.check_access_rights('write', False))
         field_options['inherit_branding'] = inherit_branding
-        translate = options.get('edit_translations') and options.get('translatable') and field.translate
+        translate = options.get('edit_translations') and options.get(
+            'translatable') and field.translate
         field_options['translate'] = translate
 
         # field converter
@@ -267,7 +289,8 @@ class IrQWeb(models.AbstractModel, QWeb):
 
         # get content
         content = converter.record_to_html(record, field_name, field_options)
-        attributes = converter.attributes(record, field_name, field_options, values)
+        attributes = converter.attributes(
+            record, field_name, field_options, values)
 
         return (attributes, content, inherit_branding or translate)
 
@@ -300,7 +323,8 @@ class IrQWeb(models.AbstractModel, QWeb):
         st = ast.parse(expr.strip(), mode='eval')
         assert_valid_codeobj(
             _SAFE_OPCODES,
-            compile(st, '<>', 'eval'), # could be expr, but eval *should* be fine
+            # could be expr, but eval *should* be fine
+            compile(st, '<>', 'eval'),
             expr
         )
 

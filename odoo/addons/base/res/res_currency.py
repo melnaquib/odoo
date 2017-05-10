@@ -16,17 +16,22 @@ class Currency(models.Model):
     _description = "Currency"
     _order = "name"
 
-    # Note: 'code' column was removed as of v6.0, the 'name' should now hold the ISO code.
-    name = fields.Char(string='Currency', size=3, required=True, help="Currency Code (ISO 4217)")
-    symbol = fields.Char(help="Currency sign, to be used when printing amounts.", required=True)
+    # Note: 'code' column was removed as of v6.0, the 'name' should now hold
+    # the ISO code.
+    name = fields.Char(string='Currency', size=3,
+                       required=True, help="Currency Code (ISO 4217)")
+    symbol = fields.Char(
+        help="Currency sign, to be used when printing amounts.", required=True)
     rate = fields.Float(compute='_compute_current_rate', string='Current Rate', digits=(12, 6),
                         help='The rate of the currency to the currency of rate 1.')
-    rate_ids = fields.One2many('res.currency.rate', 'currency_id', string='Rates')
-    rounding = fields.Float(string='Rounding Factor', digits=(12, 6), default=0.01)
+    rate_ids = fields.One2many(
+        'res.currency.rate', 'currency_id', string='Rates')
+    rounding = fields.Float(string='Rounding Factor',
+                            digits=(12, 6), default=0.01)
     decimal_places = fields.Integer(compute='_compute_decimal_places')
     active = fields.Boolean(default=True)
     position = fields.Selection([('after', 'After Amount'), ('before', 'Before Amount')], default='after',
-        string='Symbol Position', help="Determines where the currency symbol should be placed after or before the amount.")
+                                string='Symbol Position', help="Determines where the currency symbol should be placed after or before the amount.")
     date = fields.Date(compute='_compute_date')
 
     _sql_constraints = [
@@ -36,8 +41,10 @@ class Currency(models.Model):
     @api.multi
     def _compute_current_rate(self):
         date = self._context.get('date') or fields.Datetime.now()
-        company_id = self._context.get('company_id') or self.env['res.users']._get_company().id
-        # the subquery selects the last rate before 'date' for the given currency/company
+        company_id = self._context.get(
+            'company_id') or self.env['res.users']._get_company().id
+        # the subquery selects the last rate before 'date' for the given
+        # currency/company
         query = """SELECT c.id, (SELECT r.rate FROM res_currency_rate r
                                   WHERE r.currency_id = c.id AND r.name <= %s
                                     AND (r.company_id IS NULL OR r.company_id = %s)
@@ -55,7 +62,8 @@ class Currency(models.Model):
     def _compute_decimal_places(self):
         for currency in self:
             if 0 < currency.rounding < 1:
-                currency.decimal_places = int(math.ceil(math.log10(1/currency.rounding)))
+                currency.decimal_places = int(
+                    math.ceil(math.log10(1 / currency.rounding)))
             else:
                 currency.decimal_places = 0
 
@@ -67,11 +75,13 @@ class Currency(models.Model):
 
     @api.model
     def name_search(self, name='', args=None, operator='ilike', limit=100):
-        results = super(Currency, self).name_search(name, args, operator=operator, limit=limit)
+        results = super(Currency, self).name_search(
+            name, args, operator=operator, limit=limit)
         if not results:
             name_match = CURRENCY_DISPLAY_PATTERN.match(name)
             if name_match:
-                results = super(Currency, self).name_search(name_match.group(1), args, operator=operator, limit=limit)
+                results = super(Currency, self).name_search(
+                    name_match.group(1), args, operator=operator, limit=limit)
         return results
 
     @api.multi
@@ -89,7 +99,7 @@ class Currency(models.Model):
         # https://github.com/odoo/odoo/commit/36ee1ad813204dcb91e9f5f20d746dff6f080ac2
         # https://github.com/odoo/odoo/commit/0b6058c585d7d9a57bd7581b8211f20fca3ec3f7
         # Removing self.ensure_one() will make few test cases to break of modules event_sale, sale_mrp and stock_dropshipping.
-        #self.ensure_one()
+        # self.ensure_one()
         return tools.float_round(amount, precision_rounding=self.rounding)
 
     @api.multi
@@ -142,7 +152,8 @@ class Currency(models.Model):
             amount = to_currency.round(from_amount) if round else from_amount
         else:
             rate = self._get_conversion_rate(from_currency, to_currency)
-            amount = to_currency.round(from_amount * rate) if round else from_amount * rate
+            amount = to_currency.round(
+                from_amount * rate) if round else from_amount * rate
         return amount
 
     @api.multi
@@ -155,7 +166,8 @@ class Currency(models.Model):
         if self == to_currency:
             to_amount = from_amount
         else:
-            to_amount = from_amount * self._get_conversion_rate(self, to_currency)
+            to_amount = from_amount * \
+                self._get_conversion_rate(self, to_currency)
         # apply rounding
         return to_currency.round(to_amount) if round else to_amount
 
@@ -165,19 +177,24 @@ class Currency(models.Model):
             That function expects the number as first parameter and the currency id as second parameter.
             If the currency id parameter is false or undefined, the company currency is used.
         """
-        company_currency = self.env.user.with_env(self.env).company_id.currency_id
+        company_currency = self.env.user.with_env(
+            self.env).company_id.currency_id
         function = ""
         for currency in self.search([]):
             symbol = currency.symbol or currency.name
             format_number_str = "openerp.web.format_value(arguments[0], {type: 'float', digits: [69,%s]}, 0.00)" % currency.decimal_places
             if currency.position == 'after':
-                return_str = "return %s + '\\xA0' + %s;" % (format_number_str, json.dumps(symbol))
+                return_str = "return %s + '\\xA0' + %s;" % (
+                    format_number_str, json.dumps(symbol))
             else:
-                return_str = "return %s + '\\xA0' + %s;" % (json.dumps(symbol), format_number_str)
-            function += "if (arguments[1] === %s) { %s }" % (currency.id, return_str)
+                return_str = "return %s + '\\xA0' + %s;" % (
+                    json.dumps(symbol), format_number_str)
+            function += "if (arguments[1] === %s) { %s }" % (
+                currency.id, return_str)
             if (currency == company_currency):
                 company_currency_format = return_str
-                function = "if (arguments[1] === false || arguments[1] === undefined) {" + company_currency_format + " }" + function
+                function = "if (arguments[1] === false || arguments[1] === undefined) {" + \
+                    company_currency_format + " }" + function
         return function
 
     def _select_companies_rates(self):
@@ -205,8 +222,10 @@ class CurrencyRate(models.Model):
 
     name = fields.Datetime(string='Date', required=True, index=True,
                            default=lambda self: fields.Date.today() + ' 00:00:00')
-    rate = fields.Float(digits=(12, 6), help='The rate of the currency to the currency of rate 1')
-    currency_id = fields.Many2one('res.currency', string='Currency', readonly=True)
+    rate = fields.Float(
+        digits=(12, 6), help='The rate of the currency to the currency of rate 1')
+    currency_id = fields.Many2one(
+        'res.currency', string='Currency', readonly=True)
     company_id = fields.Many2one('res.company', string='Company',
                                  default=lambda self: self.env.user._get_company())
 
@@ -216,10 +235,12 @@ class CurrencyRate(models.Model):
             try:
                 date_format = '%Y-%m-%d'
                 if self._context.get('lang'):
-                    langs = self.env['res.lang'].search([('code', '=', self._context['lang'])])
+                    langs = self.env['res.lang'].search(
+                        [('code', '=', self._context['lang'])])
                     if langs:
                         date_format = langs.date_format
-                name = time.strftime('%Y-%m-%d', time.strptime(name, date_format))
+                name = time.strftime(
+                    '%Y-%m-%d', time.strptime(name, date_format))
             except ValueError:
                 try:
                     args.append(('rate', operator, float(name)))

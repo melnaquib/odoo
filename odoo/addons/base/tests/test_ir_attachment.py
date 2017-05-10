@@ -27,7 +27,8 @@ class TestIrAttachment(TransactionCase):
 
     def test_01_store_in_db(self):
         # force storing in database
-        self.env['ir.config_parameter'].set_param('ir_attachment.location', 'db')
+        self.env['ir.config_parameter'].set_param(
+            'ir_attachment.location', 'db')
 
         # 'ir_attachment.location' is undefined test database storage
         a1 = self.Attachment.create({'name': 'a1', 'datas': self.blob1_b64})
@@ -39,7 +40,8 @@ class TestIrAttachment(TransactionCase):
     def test_02_store_on_disk(self):
         a2 = self.Attachment.create({'name': 'a2', 'datas': self.blob1_b64})
         self.assertEqual(a2.store_fname, self.blob1_fname)
-        self.assertTrue(os.path.isfile(os.path.join(self.filestore, a2.store_fname)))
+        self.assertTrue(os.path.isfile(
+            os.path.join(self.filestore, a2.store_fname)))
 
     def test_03_no_duplication(self):
         a2 = self.Attachment.create({'name': 'a2', 'datas': self.blob1_b64})

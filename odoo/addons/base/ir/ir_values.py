@@ -65,7 +65,7 @@ class IrValues(models.Model):
        should be executed.
 
        .. rubric:: Usage: default values
-       
+
        The ``'default'`` entries are usually defined manually by the
        users, and set by their UI clients calling :meth:`~.set_default`.
        These default values are then automatically used by the
@@ -97,7 +97,8 @@ class IrValues(models.Model):
                                      "helper field for binding an action, will "
                                      "automatically set the correct reference")
 
-    value = fields.Text(help="Default value (pickled) or reference to an action")
+    value = fields.Text(
+        help="Default value (pickled) or reference to an action")
     value_unpickle = fields.Text(string='Default value or action reference',
                                  compute='_value_unpickle', inverse='_value_pickle')
     key = fields.Selection([('action', 'Action'), ('default', 'Default')],
@@ -157,9 +158,11 @@ class IrValues(models.Model):
     @api.model_cr_context
     def _auto_init(self):
         res = super(IrValues, self)._auto_init()
-        self._cr.execute("SELECT indexname FROM pg_indexes WHERE indexname = 'ir_values_key_model_key2_res_id_user_id_idx'")
+        self._cr.execute(
+            "SELECT indexname FROM pg_indexes WHERE indexname = 'ir_values_key_model_key2_res_id_user_id_idx'")
         if not self._cr.fetchone():
-            self._cr.execute("CREATE INDEX ir_values_key_model_key2_res_id_user_id_idx ON ir_values (key, model, key2, res_id, user_id)")
+            self._cr.execute(
+                "CREATE INDEX ir_values_key_model_key2_res_id_user_id_idx ON ir_values (key, model, key2, res_id, user_id)")
         return res
 
     @api.model
@@ -341,9 +344,9 @@ class IrValues(models.Model):
            :return: the newly created ir.values entry
         """
         assert isinstance(action, str) and ',' in action, \
-               'Action definition must be an action reference, e.g. "ir.actions.act_window,42"'
+            'Action definition must be an action reference, e.g. "ir.actions.act_window,42"'
         assert action_slot in ACTION_SLOTS, \
-               'Action slot (%s) must be one of: %r' % (action_slot, ACTION_SLOTS)
+            'Action slot (%s) must be one of: %r' % (action_slot, ACTION_SLOTS)
 
         # remove existing action definition of same slot and value
         search_criteria = [
@@ -407,7 +410,8 @@ class IrValues(models.Model):
         # process values and their action
         results = {}
         for id, name, action in actions:
-            fields = [field for field in action._fields if field not in EXCLUDED_FIELDS]
+            fields = [
+                field for field in action._fields if field not in EXCLUDED_FIELDS]
             # FIXME: needs cleanup
             try:
                 action_def = {
@@ -417,7 +421,8 @@ class IrValues(models.Model):
                 if action._name in ('ir.actions.report.xml', 'ir.actions.act_window'):
                     if action.groups_id and not action.groups_id & self.env.user.groups_id:
                         if name == 'Menuitem':
-                            raise AccessError(_('You do not have the permission to perform this operation!!!'))
+                            raise AccessError(
+                                _('You do not have the permission to perform this operation!!!'))
                         continue
                 # keep only the last action registered for each action name
                 results[name] = (id, name, action_def)

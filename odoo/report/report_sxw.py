@@ -28,13 +28,13 @@ from odoo.tools.translate import _
 _logger = logging.getLogger(__name__)
 
 rml_parents = {
-    'tr':1,
-    'li':1,
+    'tr': 1,
+    'li': 1,
     'story': 0,
     'section': 0
 }
 
-rml_tag="para"
+rml_tag = "para"
 
 sxw_parents = {
     'table-row': 1,
@@ -44,15 +44,16 @@ sxw_parents = {
 }
 
 html_parents = {
-    'tr' : 1,
-    'body' : 0,
-    'div' : 0
-    }
+    'tr': 1,
+    'body': 0,
+    'div': 0
+}
 sxw_tag = "p"
 
 rml2sxw = {
     'para': 'p',
 }
+
 
 def get_date_length(date_format=DEFAULT_SERVER_DATE_FORMAT):
     return len((datetime.now()).strftime(date_format))
@@ -75,11 +76,11 @@ class rml_parse(object):
             'removeParentNode': self.removeParentNode,
             'format': self.format,
             'formatLang': self.formatLang,
-            'lang' : user.company_id.partner_id.lang,
-            'translate' : self._translate,
-            'setHtmlImage' : self.set_html_image,
-            'strip_name' : self._strip_name,
-            'time' : time,
+            'lang': user.company_id.partner_id.lang,
+            'translate': self._translate,
+            'setHtmlImage': self.set_html_image,
+            'strip_name': self._strip_name,
+            'time': time,
             'display_address': self.display_address,
             # more context members are setup in setCompany() below:
             #  - company_id
@@ -105,7 +106,7 @@ class rml_parse(object):
             return ''
         if len(char) <= size:
             return char
-        return char[:size-len(truncation_str)] + truncation_str
+        return char[:size - len(truncation_str)] + truncation_str
 
     def setCompany(self, company_id):
         if company_id:
@@ -135,7 +136,7 @@ class rml_parse(object):
             res = env[model].browse(int(id)).read()[0]
             if field:
                 return res[field]
-            elif model =='ir.attachment':
+            elif model == 'ir.attachment':
                 return res['datas']
             else:
                 return ''
@@ -154,10 +155,10 @@ class rml_parse(object):
         Lang = env['res.lang']
         lang = self.localcontext.get('lang', 'en_US') or 'en_US'
         lang_obj = Lang.search([('code', '=', lang)], limit=1) or \
-                   Lang.search([('code', '=', 'en_US')])
+            Lang.search([('code', '=', 'en_US')])
         self.lang_dict.update({'lang_obj': lang_obj,
                                'date_format': lang_obj.date_format,
-                               'time_format':lang_obj.time_format})
+                               'time_format': lang_obj.time_format})
         self.default_lang[lang] = self.lang_dict.copy()
         return True
 
@@ -171,17 +172,18 @@ class rml_parse(object):
             env = odoo.api.Environment(self.cr, self.uid, {})
             d = env['decimal.precision'].precision_get(dp)
         elif obj and f:
-            res_digits = getattr(obj._fields[f], 'digits', lambda x: ((16, DEFAULT_DIGITS)))
+            res_digits = getattr(
+                obj._fields[f], 'digits', lambda x: ((16, DEFAULT_DIGITS)))
             if isinstance(res_digits, tuple):
                 d = res_digits[1]
             else:
                 d = res_digits(self.cr)[1]
-        elif (hasattr(obj, '_field') and\
-                obj._field.type == 'float' and\
+        elif (hasattr(obj, '_field') and
+                obj._field.type == 'float' and
                 obj._field.digits):
-                d = obj._field.digits[1]
-                if not d and d is not 0:
-                    d = DEFAULT_DIGITS
+            d = obj._field.digits[1]
+            if not d and d is not 0:
+                d = DEFAULT_DIGITS
         return d
 
     def formatLang(self, value, digits=None, date=False, date_time=False, grouping=True, monetary=False, dp=False, currency_obj=False):
@@ -213,18 +215,21 @@ class rml_parse(object):
             if isinstance(value, str):
                 # FIXME: the trimming is probably unreliable if format includes day/month names
                 #        and those would need to be translated anyway.
-                date = datetime.strptime(value[:get_date_length(parse_format)], parse_format)
+                date = datetime.strptime(
+                    value[:get_date_length(parse_format)], parse_format)
             elif isinstance(value, time.struct_time):
                 date = datetime(*value[:6])
             else:
                 date = datetime(*value.timetuple()[:6])
             if date_time:
-                # Convert datetime values to the expected client/context timezone
+                # Convert datetime values to the expected client/context
+                # timezone
                 record = self.env['base'].with_context(self.localcontext)
                 date = fields.Datetime.context_timestamp(record, date)
             return date.strftime(date_format.encode('utf-8'))
 
-        res = self.lang_dict['lang_obj'].format('%.' + str(digits) + 'f', value, grouping=grouping, monetary=monetary)
+        res = self.lang_dict['lang_obj'].format(
+            '%.' + str(digits) + 'f', value, grouping=grouping, monetary=monetary)
         if currency_obj and currency_obj.symbol:
             if currency_obj.position == 'after':
                 res = '%s\N{NO-BREAK SPACE}%s' % (res, currency_obj.symbol)
@@ -236,13 +241,13 @@ class rml_parse(object):
         # FIXME handle `without_company`
         return address_record.contact_address
 
-    def repeatIn(self, lst, name,nodes_parent=False):
+    def repeatIn(self, lst, name, nodes_parent=False):
         ret_lst = []
         for id in lst:
-            ret_lst.append({name:id})
+            ret_lst.append({name: id})
         return ret_lst
 
-    def _translate(self,text):
+    def _translate(self, text):
         lang = self.localcontext['lang']
         if lang and text and not text.isspace():
             env = odoo.api.Environment(self.cr, self.uid, {})
@@ -252,28 +257,30 @@ class rml_parse(object):
                 if not self._transl_regex.match(piece_list[pn]):
                     source_string = piece_list[pn].replace('\n', ' ').strip()
                     if len(source_string):
-                        translated_string = Translation._get_source(self.name, ('report', 'rml'), lang, source_string)
+                        translated_string = Translation._get_source(
+                            self.name, ('report', 'rml'), lang, source_string)
                         if translated_string:
-                            piece_list[pn] = piece_list[pn].replace(source_string, translated_string)
+                            piece_list[pn] = piece_list[pn].replace(
+                                source_string, translated_string)
             text = ''.join(piece_list)
         return text
 
     def _add_header(self, rml_dom, header='external'):
-        if header=='internal':
-            rml_head =  self.rml_header2
-        elif header=='internal landscape':
-            rml_head =  self.rml_header3
+        if header == 'internal':
+            rml_head = self.rml_header2
+        elif header == 'internal landscape':
+            rml_head = self.rml_header3
         else:
-            rml_head =  self.rml_header
+            rml_head = self.rml_header
 
         head_dom = etree.XML(rml_head)
         for tag in head_dom:
-            found = rml_dom.find('.//'+tag.tag)
+            found = rml_dom.find('.//' + tag.tag)
             if found is not None and len(found):
                 if tag.get('position'):
                     found.append(tag)
-                else :
-                    found.getparent().replace(found,tag)
+                else:
+                    found.getparent().replace(found, tag)
         return True
 
     def set_context(self, objects, data, ids, report_type=None):
@@ -285,15 +292,16 @@ class rml_parse(object):
         self.ids = ids
         self.objects = objects
         if report_type:
-            if report_type=='odt' :
-                self.localcontext.update({'name_space' :common.odt_namespace})
+            if report_type == 'odt':
+                self.localcontext.update({'name_space': common.odt_namespace})
             else:
-                self.localcontext.update({'name_space' :common.sxw_namespace})
+                self.localcontext.update({'name_space': common.sxw_namespace})
 
         # WARNING: the object[0].exists() call below is slow but necessary because
-        # some broken reporting wizards pass incorrect IDs (e.g. ir.ui.menu ids)
+        # some broken reporting wizards pass incorrect IDs (e.g. ir.ui.menu
+        # ids)
         if objects and len(objects) == 1 and \
-            objects[0].exists() and 'company_id' in objects[0] and objects[0].company_id:
+                objects[0].exists() and 'company_id' in objects[0] and objects[0].company_id:
             # When we print only one record, we can auto-set the correct
             # company in the localcontext. For other cases the report
             # will have to call setCompany() inside the main repeatIn loop.
@@ -312,15 +320,16 @@ class report_sxw(report_rml, preprocess.report):
     instanciate-without-register a report. In the future, no report
     should be registered in the above dictionary and it will be dropped.
     """
+
     def __init__(self, name, table, rml=False, parser=rml_parse, header='external', store=False, register=True):
         report_rml.__init__(self, name, table, rml, '', register=register)
         self.name = name
         self.parser = parser
         self.header = header
         self.store = store
-        self.internal_header=False
-        if header=='internal' or header=='internal landscape':
-            self.internal_header=True
+        self.internal_header = False
+        if header == 'internal' or header == 'internal landscape':
+            self.internal_header = True
 
     def getObjects(self, cr, uid, ids, context):
         env = odoo.api.Environment(cr, uid, context or {})
@@ -336,18 +345,21 @@ class report_sxw(report_rml, preprocess.report):
         env['res.font'].sudo().font_scan(lazy=True)
         ir_obj = env['ir.actions.report.xml']
 
-        report_xml = ir_obj.search([('report_name', '=', self.name[7:])], limit=1)
+        report_xml = ir_obj.search(
+            [('report_name', '=', self.name[7:])], limit=1)
         if not report_xml:
             title = ''
             report_file = tools.file_open(self.tmpl, subdir=None)
             try:
                 rml = report_file.read()
-                report_type= data.get('report_type', 'pdf')
+                report_type = data.get('report_type', 'pdf')
+
                 class a(object):
                     def __init__(self, *args, **argv):
-                        for key,arg in list(argv.items()):
+                        for key, arg in list(argv.items()):
                             setattr(self, key, arg)
-                report_xml = a(title=title, report_type=report_type, report_rml_content=rml, name=title, attachment=False, header=self.header)
+                report_xml = a(title=title, report_type=report_type, report_rml_content=rml,
+                               name=title, attachment=False, header=self.header)
             finally:
                 report_file.close()
 
@@ -355,19 +367,21 @@ class report_sxw(report_rml, preprocess.report):
         # This attribute 'use_global_header' will be used by
         # the create_single_XXX function of the report engine.
         # This change has been done to avoid a big change of the API.
-        setattr(report_xml, 'use_global_header', self.header if report_xml.header else False)
+        setattr(report_xml, 'use_global_header',
+                self.header if report_xml.header else False)
 
         report_type = report_xml.report_type
-        if report_type in ['sxw','odt']:
+        if report_type in ['sxw', 'odt']:
             fnct = self.create_source_odt
-        elif report_type in ['pdf','raw','txt','html']:
+        elif report_type in ['pdf', 'raw', 'txt', 'html']:
             fnct = self.create_source_pdf
-        elif report_type=='html2html':
+        elif report_type == 'html2html':
             fnct = self.create_source_html2html
-        elif report_type=='mako2html':
+        elif report_type == 'mako2html':
             fnct = self.create_source_mako2html
         else:
-            raise NotImplementedError(_('Unknown report type: %s') % report_type)
+            raise NotImplementedError(
+                _('Unknown report type: %s') % report_type)
         fnct_ret = fnct(cr, uid, ids, data, report_xml, context)
         if not fnct_ret:
             return False, False
@@ -391,22 +405,24 @@ class report_sxw(report_rml, preprocess.report):
             objs = self.getObjects(cr, uid, ids, context)
             results = []
             for obj in objs:
-                aname = safe_eval(attach, {'object':obj, 'time':time})
+                aname = safe_eval(attach, {'object': obj, 'time': time})
                 result = False
                 if report_xml.attachment_use and aname and context.get('attachment_use', True):
-                    att = env['ir.attachment'].search([('datas_fname','=',aname+'.pdf'),('res_model','=',self.table),('res_id','=',obj.id)], limit=1)
+                    att = env['ir.attachment'].search(
+                        [('datas_fname', '=', aname + '.pdf'), ('res_model', '=', self.table), ('res_id', '=', obj.id)], limit=1)
                     if att:
                         if not att.datas:
                             continue
                         d = base64.decodestring(att.datas)
-                        results.append((d,'pdf'))
+                        results.append((d, 'pdf'))
                         continue
-                result = self.create_single_pdf(cr, uid, [obj.id], data, report_xml, context)
+                result = self.create_single_pdf(
+                    cr, uid, [obj.id], data, report_xml, context)
                 if not result:
                     return False
                 if aname:
                     try:
-                        name = aname+'.'+result[1]
+                        name = aname + '.' + result[1]
                         # Remove the default_type entry from the context: this
                         # is for instance used on the account.account_invoices
                         # and is thus not intended for the ir.attachment type
@@ -421,11 +437,13 @@ class report_sxw(report_rml, preprocess.report):
                             'res_id': obj.id,
                         })
                     except AccessError:
-                        #TODO: should probably raise a proper osv_except instead, shouldn't we? see LP bug #325632
-                        _logger.info('Could not create saved report attachment', exc_info=True)
+                        # TODO: should probably raise a proper osv_except
+                        # instead, shouldn't we? see LP bug #325632
+                        _logger.info(
+                            'Could not create saved report attachment', exc_info=True)
                 results.append(result)
             if results:
-                if results[0][1]=='pdf':
+                if results[0][1] == 'pdf':
                     from pyPdf import PdfFileWriter, PdfFileReader
                     output = PdfFileWriter()
                     for r in results:
@@ -439,7 +457,7 @@ class report_sxw(report_rml, preprocess.report):
 
     def create_single_pdf(self, cr, uid, ids, data, report_xml, context=None):
         if not context:
-            context={}
+            context = {}
         logo = None
         context = context.copy()
         title = report_xml.name
@@ -453,11 +471,13 @@ class report_sxw(report_rml, preprocess.report):
         processed_rml = etree.XML(rml)
         if report_xml.use_global_header:
             rml_parser._add_header(processed_rml, self.header)
-        processed_rml = self.preprocess_rml(processed_rml,report_xml.report_type)
+        processed_rml = self.preprocess_rml(
+            processed_rml, report_xml.report_type)
         if rml_parser.logo:
             logo = base64.decodestring(rml_parser.logo)
         create_doc = self.generators[report_xml.report_type]
-        pdf = create_doc(etree.tostring(processed_rml),rml_parser.localcontext,logo,title.encode('utf8'))
+        pdf = create_doc(etree.tostring(processed_rml),
+                         rml_parser.localcontext, logo, title.encode('utf8'))
         return pdf, report_xml.report_type
 
     def create_single_odt(self, cr, uid, ids, data, report_xml, context=None):
@@ -469,7 +489,8 @@ class report_sxw(report_rml, preprocess.report):
             # if binary content was passed as unicode, we must
             # re-encode it as a 8-bit string using the pass-through
             # 'latin1' encoding, to restore the original byte values.
-            binary_report_content = report_xml.report_sxw_content.encode("latin1")
+            binary_report_content = report_xml.report_sxw_content.encode(
+                "latin1")
 
         sxw_io = io.StringIO(binary_report_content)
         sxw_z = zipfile.ZipFile(sxw_io, mode='r')
@@ -478,7 +499,7 @@ class report_sxw(report_rml, preprocess.report):
         mime_type = sxw_z.read('mimetype')
         if mime_type == 'application/vnd.sun.xml.writer':
             mime_type = 'sxw'
-        else :
+        else:
             mime_type = 'odt'
         sxw_z.close()
 
@@ -489,20 +510,21 @@ class report_sxw(report_rml, preprocess.report):
         rml_parser.set_context(objs, data, ids, mime_type)
 
         rml_dom_meta = node = etree.XML(meta)
-        elements = node.findall(rml_parser.localcontext['name_space']["meta"]+"user-defined")
+        elements = node.findall(
+            rml_parser.localcontext['name_space']["meta"] + "user-defined")
         for pe in elements:
-            if pe.get(rml_parser.localcontext['name_space']["meta"]+"name"):
-                if pe.get(rml_parser.localcontext['name_space']["meta"]+"name") == "Info 3":
-                    pe[0].text=data['id']
-                if pe.get(rml_parser.localcontext['name_space']["meta"]+"name") == "Info 4":
-                    pe[0].text=data['model']
+            if pe.get(rml_parser.localcontext['name_space']["meta"] + "name"):
+                if pe.get(rml_parser.localcontext['name_space']["meta"] + "name") == "Info 3":
+                    pe[0].text = data['id']
+                if pe.get(rml_parser.localcontext['name_space']["meta"] + "name") == "Info 4":
+                    pe[0].text = data['model']
         meta = etree.tostring(rml_dom_meta, encoding='utf-8',
                               xml_declaration=True)
 
-        rml_dom =  etree.XML(rml)
+        rml_dom = etree.XML(rml)
         elements = []
-        key1 = rml_parser.localcontext['name_space']["text"]+"p"
-        key2 = rml_parser.localcontext['name_space']["text"]+"drop-down"
+        key1 = rml_parser.localcontext['name_space']["text"] + "p"
+        key2 = rml_parser.localcontext['name_space']["text"] + "drop-down"
         for n in rml_dom.iterdescendants():
             if n.tag == key1:
                 elements.append(n)
@@ -510,15 +532,15 @@ class report_sxw(report_rml, preprocess.report):
             for pe in elements:
                 e = pe.findall(key2)
                 for de in e:
-                    pp=de.getparent()
+                    pp = de.getparent()
                     if de.text or de.tail:
                         pe.text = de.text or de.tail
                     for cnd in de:
                         if cnd.text or cnd.tail:
                             if pe.text:
-                                pe.text +=  cnd.text or cnd.tail
+                                pe.text += cnd.text or cnd.tail
                             else:
-                                pe.text =  cnd.text or cnd.tail
+                                pe.text = cnd.text or cnd.tail
                             pp.remove(de)
         else:
             for pe in elements:
@@ -528,12 +550,13 @@ class report_sxw(report_rml, preprocess.report):
                     if de.text or de.tail:
                         pe.text = de.text or de.tail
                     for cnd in de:
-                        text = cnd.get("{http://openoffice.org/2000/text}value",False)
+                        text = cnd.get(
+                            "{http://openoffice.org/2000/text}value", False)
                         if text:
                             if pe.text and text.startswith('[['):
-                                pe.text +=  text
+                                pe.text += text
                             elif text.startswith('[['):
-                                pe.text =  text
+                                pe.text = text
                             if de.getparent():
                                 pp.remove(de)
 
@@ -541,11 +564,12 @@ class report_sxw(report_rml, preprocess.report):
         create_doc = self.generators[mime_type]
         odt = etree.tostring(create_doc(rml_dom, rml_parser.localcontext),
                              encoding='utf-8', xml_declaration=True)
-        sxw_contents = {'content.xml':odt, 'meta.xml':meta}
+        sxw_contents = {'content.xml': odt, 'meta.xml': meta}
 
         if report_xml.use_global_header:
-            #Add corporate header/footer
-            rml_file = tools.file_open(os.path.join('base', 'report', 'corporate_%s_header.xml' % report_type))
+            # Add corporate header/footer
+            rml_file = tools.file_open(os.path.join(
+                'base', 'report', 'corporate_%s_header.xml' % report_type))
             try:
                 rml = rml_file.read()
                 rml_parser = self.parser(cr, uid, self.name2, context=context)
@@ -553,9 +577,9 @@ class report_sxw(report_rml, preprocess.report):
                 rml_parser.tag = sxw_tag
                 objs = self.getObjects(cr, uid, ids, context)
                 rml_parser.set_context(objs, data, ids, report_xml.report_type)
-                rml_dom = self.preprocess_rml(etree.XML(rml),report_type)
+                rml_dom = self.preprocess_rml(etree.XML(rml), report_type)
                 create_doc = self.generators[report_type]
-                odt = create_doc(rml_dom,rml_parser.localcontext)
+                odt = create_doc(rml_dom, rml_parser.localcontext)
                 if report_xml.use_global_header:
                     rml_parser._add_header(odt)
                 odt = etree.tostring(odt, encoding='utf-8',
@@ -564,10 +588,10 @@ class report_sxw(report_rml, preprocess.report):
             finally:
                 rml_file.close()
 
-        #created empty zip writing sxw contents to avoid duplication
+        # created empty zip writing sxw contents to avoid duplication
         sxw_out = io.StringIO()
         sxw_out_zip = zipfile.ZipFile(sxw_out, mode='w')
-        sxw_template_zip = zipfile.ZipFile (sxw_io, 'r')
+        sxw_template_zip = zipfile.ZipFile(sxw_io, 'r')
         for item in sxw_template_zip.infolist():
             if item.filename not in sxw_contents:
                 buffer = sxw_template_zip.read(item.filename)
@@ -593,13 +617,13 @@ class report_sxw(report_rml, preprocess.report):
         objs = self.getObjects(cr, uid, ids, context)
         html_parser.set_context(objs, data, ids, report_type)
 
-        html_dom =  etree.HTML(html)
-        html_dom = self.preprocess_rml(html_dom,'html2html')
+        html_dom = etree.HTML(html)
+        html_dom = self.preprocess_rml(html_dom, 'html2html')
 
         create_doc = self.generators['html2html']
         html = etree.tostring(create_doc(html_dom, html_parser.localcontext))
 
-        return html.replace('&amp;','&').replace('&lt;', '<').replace('&gt;', '>').replace('</br>',''), report_type
+        return html.replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>').replace('</br>', ''), report_type
 
     def create_single_mako2html(self, cr, uid, ids, data, report_xml, context=None):
         mako_html = report_xml.report_rml_content
@@ -607,5 +631,5 @@ class report_sxw(report_rml, preprocess.report):
         objs = self.getObjects(cr, uid, ids, context)
         html_parser.set_context(objs, data, ids, 'html')
         create_doc = self.generators['makohtml2html']
-        html = create_doc(mako_html,html_parser.localcontext)
-        return html,'html'
+        html = create_doc(mako_html, html_parser.localcontext)
+        return html, 'html'

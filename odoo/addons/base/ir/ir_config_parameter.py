@@ -30,7 +30,8 @@ class IrConfigParameter(models.Model):
 
     key = fields.Char(required=True, index=True)
     value = fields.Text(required=True)
-    group_ids = fields.Many2many('res.groups', 'ir_config_parameter_groups_rel', 'icp_id', 'group_id', string='Groups')
+    group_ids = fields.Many2many(
+        'res.groups', 'ir_config_parameter_groups_rel', 'icp_id', 'group_id', string='Groups')
 
     _sql_constraints = [
         ('key_uniq', 'unique (key)', 'Key must be unique.')
@@ -44,7 +45,8 @@ class IrConfigParameter(models.Model):
         It overrides existing parameters if force is ``True``.
         """
         for key, func in _default_parameters.items():
-            # force=True skips search and always performs the 'if' body (because ids=False)
+            # force=True skips search and always performs the 'if' body
+            # (because ids=False)
             params = self.sudo().search([('key', '=', key)])
             if force or not params:
                 value, groups = func()
@@ -64,7 +66,8 @@ class IrConfigParameter(models.Model):
     @api.model
     @ormcache('self._uid', 'key')
     def _get_param(self, key):
-        params = self.search_read([('key', '=', key)], fields=['value'], limit=1)
+        params = self.search_read(
+            [('key', '=', key)], fields=['value'], limit=1)
         return params[0]['value'] if params else None
 
     @api.model
@@ -87,7 +90,8 @@ class IrConfigParameter(models.Model):
             if group:
                 gids.append((4, group.id))
             else:
-                _logger.warning('Potential Security Issue: Group [%s] is not found.' % group_xml)
+                _logger.warning(
+                    'Potential Security Issue: Group [%s] is not found.' % group_xml)
 
         vals = {'value': value}
         if gids:

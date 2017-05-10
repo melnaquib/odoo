@@ -14,11 +14,13 @@ class Workflow(models.Model):
     name = fields.Char('Name', required=True)
     osv = fields.Char('Resource Object', required=True, index=True)
     on_create = fields.Boolean('On Create', default=True, index=True)
-    activities = fields.One2many('workflow.activity', 'wkf_id', string='Activities')
+    activities = fields.One2many(
+        'workflow.activity', 'wkf_id', string='Activities')
 
     @api.multi
     def copy(self, values):
-        raise UserError(_("Duplicating workflows is not possible, please create a new workflow"))
+        raise UserError(
+            _("Duplicating workflows is not possible, please create a new workflow"))
 
     @api.multi
     def write(self, vals):
@@ -58,7 +60,7 @@ class WorkflowActivity(models.Model):
     name = fields.Char('Name', required=True)
     wkf_id = fields.Many2one('workflow', string='Workflow', ondelete='cascade',
                              required=True, index=True)
-    split_mode = fields.Selection([('XOR', 'Xor'), ('OR','Or'), ('AND','And')],
+    split_mode = fields.Selection([('XOR', 'Xor'), ('OR', 'Or'), ('AND', 'And')],
                                   string='Split Mode', size=3, required=True, default='XOR')
     join_mode = fields.Selection([('XOR', 'Xor'), ('AND', 'And')],
                                  string='Join Mode', size=3, required=True, default='XOR')
@@ -66,19 +68,23 @@ class WorkflowActivity(models.Model):
                              ('subflow', 'Subflow'), ('stopall', 'Stop All')],
                             string='Kind', required=True, default='dummy')
     action = fields.Text('Python Action')
-    action_id = fields.Many2one('ir.actions.server', string='Server Action', ondelete='set null')
+    action_id = fields.Many2one(
+        'ir.actions.server', string='Server Action', ondelete='set null')
     flow_start = fields.Boolean('Flow Start')
     flow_stop = fields.Boolean('Flow Stop')
     subflow_id = fields.Many2one('workflow', string='Subflow')
     signal_send = fields.Char('Signal (subflow.*)')
-    out_transitions = fields.One2many('workflow.transition', 'act_from', string='Outgoing Transitions')
-    in_transitions = fields.One2many('workflow.transition', 'act_to', string='Incoming Transitions')
+    out_transitions = fields.One2many(
+        'workflow.transition', 'act_from', string='Outgoing Transitions')
+    in_transitions = fields.One2many(
+        'workflow.transition', 'act_to', string='Incoming Transitions')
 
     @api.multi
     def unlink(self):
         if not self._context.get('_force_unlink') and \
                 self.env['workflow.workitem'].search([('act_id', 'in', self.ids)]):
-            raise UserError(_('Please make sure no workitems refer to an activity before deleting it!'))
+            raise UserError(
+                _('Please make sure no workitems refer to an activity before deleting it!'))
         super(WorkflowActivity, self).unlink()
 
 
@@ -104,19 +110,22 @@ class WorkflowTransition(models.Model):
     act_to = fields.Many2one('workflow.activity', string='Destination Activity',
                              ondelete='cascade', required=True, index=True,
                              help="The destination activity.")
-    wkf_id = fields.Many2one('workflow', related='act_from.wkf_id', string='Workflow')
+    wkf_id = fields.Many2one(
+        'workflow', related='act_from.wkf_id', string='Workflow')
 
     @api.multi
     def name_get(self):
         return [
-            (line.id, line.signal or "%s+%s" % (line.act_from.name, line.act_to.name))
+            (line.id, line.signal or "%s+%s" %
+             (line.act_from.name, line.act_to.name))
             for line in self
         ]
 
     @api.model
     def name_search(self, name, args=None, operator='ilike', limit=100):
         if name:
-            domain = ['|', ('act_from', operator, name), ('act_to', operator, name)] + (args or [])
+            domain = ['|', ('act_from', operator, name),
+                      ('act_to', operator, name)] + (args or [])
             return self.search(domain, limit=limit).name_get()
         return super(WorkflowTransition, self).name_search(name, args, operator, limit=limit)
 
@@ -128,22 +137,28 @@ class WorkflowInstance(models.Model):
     _log_access = False
 
     uid = fields.Integer('User')        # FIXME no constraint??
-    wkf_id = fields.Many2one('workflow', string='Workflow', ondelete='cascade', index=True)
+    wkf_id = fields.Many2one(
+        'workflow', string='Workflow', ondelete='cascade', index=True)
     res_id = fields.Integer('Resource ID')
     res_type = fields.Char('Resource Object')
     state = fields.Char('Status')
-    transition_ids = fields.Many2many('workflow.transition', 'wkf_witm_trans', 'inst_id', 'trans_id')
+    transition_ids = fields.Many2many(
+        'workflow.transition', 'wkf_witm_trans', 'inst_id', 'trans_id')
 
     @api.model_cr_context
     def _auto_init(self):
         res = super(WorkflowInstance, self)._auto_init()
         cr = self._cr
-        cr.execute('SELECT indexname FROM pg_indexes WHERE indexname=%s', ['wkf_instance_res_type_res_id_state_index'])
+        cr.execute('SELECT indexname FROM pg_indexes WHERE indexname=%s', [
+                   'wkf_instance_res_type_res_id_state_index'])
         if not cr.fetchone():
-            cr.execute('CREATE INDEX wkf_instance_res_type_res_id_state_index ON wkf_instance (res_type, res_id, state)')
-        cr.execute('SELECT indexname FROM pg_indexes WHERE indexname=%s', ['wkf_instance_res_id_wkf_id_index'])
+            cr.execute(
+                'CREATE INDEX wkf_instance_res_type_res_id_state_index ON wkf_instance (res_type, res_id, state)')
+        cr.execute('SELECT indexname FROM pg_indexes WHERE indexname=%s', [
+                   'wkf_instance_res_id_wkf_id_index'])
         if not cr.fetchone():
-            cr.execute('CREATE INDEX wkf_instance_res_id_wkf_id_index ON wkf_instance (res_id, wkf_id)')
+            cr.execute(
+                'CREATE INDEX wkf_instance_res_id_wkf_id_index ON wkf_instance (res_id, wkf_id)')
         return res
 
 
@@ -155,7 +170,8 @@ class WorkflowWorkitem(models.Model):
 
     act_id = fields.Many2one('workflow.activity', string='Activity',
                              ondelete="cascade", required=True, index=True)
-    wkf_id = fields.Many2one('workflow', related='act_id.wkf_id', string='Workflow')
+    wkf_id = fields.Many2one(
+        'workflow', related='act_id.wkf_id', string='Workflow')
     subflow_id = fields.Many2one('workflow.instance', string='Subflow',
                                  ondelete="set null", index=True)
     inst_id = fields.Many2one('workflow.instance', string='Instance',
@@ -179,7 +195,9 @@ class WorkflowTriggers(models.Model):
     def _auto_init(self):
         res = super(WorkflowTriggers, self)._auto_init()
         cr = self._cr
-        cr.execute('SELECT indexname FROM pg_indexes WHERE indexname=%s', ['wkf_triggers_res_id_model_index'])
+        cr.execute('SELECT indexname FROM pg_indexes WHERE indexname=%s', [
+                   'wkf_triggers_res_id_model_index'])
         if not cr.fetchone():
-            cr.execute('CREATE INDEX wkf_triggers_res_id_model_index ON wkf_triggers (res_id, model)')
+            cr.execute(
+                'CREATE INDEX wkf_triggers_res_id_model_index ON wkf_triggers (res_id, model)')
         return res

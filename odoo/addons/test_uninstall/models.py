@@ -3,6 +3,7 @@
 
 from odoo import models, fields
 
+
 class test_uninstall_model(models.Model):
     """
     This model uses different types of columns to make it possible to test

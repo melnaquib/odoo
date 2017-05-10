@@ -81,6 +81,7 @@ class Params(object):
     def __init__(self, args, kwargs):
         self.args = args
         self.kwargs = kwargs
+
     def __str__(self):
         params = []
         for arg in self.args:
@@ -97,7 +98,8 @@ class Meta(type):
     """
 
     def __new__(meta, name, bases, attrs):
-        # dummy parent class to catch overridden methods decorated with 'returns'
+        # dummy parent class to catch overridden methods decorated with
+        # 'returns'
         parent = type.__new__(meta, name, bases, {})
 
         for key, value in list(attrs.items()):
@@ -113,7 +115,8 @@ class Meta(type):
                         pass
 
                 if (getattr(value, '_api', None) or '').startswith('cr'):
-                    _logger.warning("Deprecated method %s.%s in module %s", name, key, attrs.get('__module__'))
+                    _logger.warning(
+                        "Deprecated method %s.%s in module %s", name, key, attrs.get('__module__'))
 
                 attrs[key] = value
 
@@ -123,6 +126,7 @@ class Meta(type):
 def attrsetter(attr, value):
     """ Return a function that sets ``attr`` on its argument and returns it. """
     return lambda method: setattr(method, attr, value) or method
+
 
 def propagate(method1, method2):
     """ Propagate decorators from ``method1`` to ``method2``, and return the
@@ -211,7 +215,8 @@ def depends(*args):
     if args and callable(args[0]):
         args = args[0]
     elif any('id' in arg.split('.') for arg in args):
-        raise NotImplementedError("Compute method cannot depend on field 'id'.")
+        raise NotImplementedError(
+            "Compute method cannot depend on field 'id'.")
     return attrsetter('_depends', args)
 
 
@@ -656,21 +661,24 @@ def expected(decorator, func):
     return decorator(func) if not hasattr(func, '_api') else func
 
 
-
 def call_kw_model(method, self, args, kwargs):
     context, args, kwargs = split_context(method, args, kwargs)
     recs = self.with_context(context or {})
-    _logger.debug("call %s.%s(%s)", recs, method.__name__, Params(args, kwargs))
+    _logger.debug("call %s.%s(%s)", recs,
+                  method.__name__, Params(args, kwargs))
     result = method(recs, *args, **kwargs)
     return downgrade(method, result, recs, args, kwargs)
+
 
 def call_kw_multi(method, self, args, kwargs):
     ids, args = args[0], args[1:]
     context, args, kwargs = split_context(method, args, kwargs)
     recs = self.with_context(context or {}).browse(ids)
-    _logger.debug("call %s.%s(%s)", recs, method.__name__, Params(args, kwargs))
+    _logger.debug("call %s.%s(%s)", recs,
+                  method.__name__, Params(args, kwargs))
     result = method(recs, *args, **kwargs)
     return downgrade(method, result, recs, args, kwargs)
+
 
 def call_kw(model, name, args, kwargs):
     """ Invoke the given method ``name`` on the recordset ``model``. """
@@ -730,11 +738,14 @@ class Environment(Mapping):
 
         # otherwise create environment, and add it in the set
         self = object.__new__(cls)
-        self.cr, self.uid, self.context = self.args = (cr, uid, frozendict(context))
+        self.cr, self.uid, self.context = self.args = (
+            cr, uid, frozendict(context))
         self.registry = Registry(cr.dbname)
-        self.cache = defaultdict(dict)              # {field: {id: value, ...}, ...}
+        # {field: {id: value, ...}, ...}
+        self.cache = defaultdict(dict)
         self._protected = defaultdict(frozenset)    # {field: ids, ...}
-        self.dirty = defaultdict(set)               # {record: set(field_name), ...}
+        # {record: set(field_name), ...}
+        self.dirty = defaultdict(set)
         self.all = envs
         envs.add(self)
         return self
@@ -892,7 +903,8 @@ class Environment(Mapping):
 
     def field_todo(self, field):
         """ Return a recordset with all records to recompute for ``field``. """
-        ids = {rid for recs in self.all.todo.get(field, ()) for rid in recs.ids}
+        ids = {rid for recs in self.all.todo.get(
+            field, ()) for rid in recs.ids}
         return self[field.model_name].browse(ids)
 
     def check_todo(self, field, record):
@@ -978,6 +990,7 @@ class Environment(Mapping):
 
 class Environments(object):
     """ A common object for all environments in a request. """
+
     def __init__(self):
         self.envs = WeakSet()           # weak set of environments
         self.todo = {}                  # recomputations {field: [records]}

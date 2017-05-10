@@ -6,6 +6,7 @@ class TestEmptyDate(common.TransactionCase):
     """ Test what happens when grouping on date fields and getting a "false"
     grouping value
     """
+
     def setUp(self):
         super(TestEmptyDate, self).setUp()
         self.Model = self.env['test_read_group.on_date']
@@ -29,7 +30,8 @@ class TestEmptyDate(common.TransactionCase):
         self.Model.create({'value': 2})
         self.Model.create({'value': 3})
 
-        gb = self.Model.read_group([], ['date', 'value'], ['date:quarter'], lazy=False)
+        gb = self.Model.read_group([], ['date', 'value'], [
+                                   'date:quarter'], lazy=False)
 
         self.assertEqual(gb, [{
             '__count': 3,

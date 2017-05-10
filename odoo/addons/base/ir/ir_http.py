@@ -10,7 +10,9 @@ import mimetypes
 import os
 import re
 import sys
-import urllib.request, urllib.error, urllib.parse
+import urllib.request
+import urllib.error
+import urllib.parse
 
 import werkzeug
 import werkzeug.exceptions
@@ -50,7 +52,8 @@ class ModelsConverter(werkzeug.routing.BaseConverter):
     def __init__(self, url_map, model=False):
         super(ModelsConverter, self).__init__(url_map)
         self.model = model
-        # TODO add support for slug in the form [A-Za-z0-9-] bla-bla-89 -> id 89
+        # TODO add support for slug in the form [A-Za-z0-9-] bla-bla-89 -> id
+        # 89
         self.regex = r'([0-9,]+)'
 
     def to_python(self, value):
@@ -113,14 +116,16 @@ class IrHttp(models.AbstractModel):
         except (AccessDenied, http.SessionExpiredException, werkzeug.exceptions.HTTPException):
             raise
         except Exception:
-            _logger.info("Exception during request Authentication.", exc_info=True)
+            _logger.info(
+                "Exception during request Authentication.", exc_info=True)
             raise AccessDenied()
         return auth_method
 
     @classmethod
     def _serve_attachment(cls):
         env = api.Environment(request.cr, SUPERUSER_ID, request.context)
-        domain = [('type', '=', 'binary'), ('url', '=', request.httprequest.path)]
+        domain = [('type', '=', 'binary'),
+                  ('url', '=', request.httprequest.path)]
         fields = ['__last_update', 'datas', 'name', 'mimetype', 'checksum']
         attach = env['ir.attachment'].search_read(domain, fields)
         if attach:
@@ -136,10 +141,12 @@ class IrHttp(models.AbstractModel):
             response = werkzeug.wrappers.Response()
             server_format = tools.DEFAULT_SERVER_DATETIME_FORMAT
             try:
-                response.last_modified = datetime.datetime.strptime(wdate, server_format + '.%f')
+                response.last_modified = datetime.datetime.strptime(
+                    wdate, server_format + '.%f')
             except ValueError:
                 # just in case we have a timestamp without microseconds
-                response.last_modified = datetime.datetime.strptime(wdate, server_format)
+                response.last_modified = datetime.datetime.strptime(
+                    wdate, server_format)
 
             response.set_etag(checksum)
             response.make_conditional(request.httprequest)
@@ -153,7 +160,8 @@ class IrHttp(models.AbstractModel):
 
     @classmethod
     def _handle_exception(cls, exception):
-        # If handle_exception returns something different than None, it will be used as a response
+        # If handle_exception returns something different than None, it will be
+        # used as a response
 
         # This is done first as the attachment path may
         # not match any HTTP controller
@@ -162,7 +170,8 @@ class IrHttp(models.AbstractModel):
             if attach:
                 return attach
 
-        # Don't handle exception but use werkeug debugger if server in --dev mode
+        # Don't handle exception but use werkeug debugger if server in --dev
+        # mode
         if 'werkzeug' in tools.config['dev_mode']:
             raise
         try:
@@ -221,7 +230,8 @@ class IrHttp(models.AbstractModel):
             # to make it available for all instance. Since `env` create an new instance
             # of the model, each instance will regenared its own routing map and thus
             # regenerate its EndPoint. The routing map should be static.
-            cls._routing_map = http.routing_map(mods, False, converters=cls._get_converters())
+            cls._routing_map = http.routing_map(
+                mods, False, converters=cls._get_converters())
         return cls._routing_map
 
     @classmethod
@@ -281,14 +291,19 @@ class IrHttp(models.AbstractModel):
             if url_match:
                 module = url_match.group(1)
                 module_path = get_module_path(module)
-                module_resource_path = get_resource_path(module, url_match.group(2))
+                module_resource_path = get_resource_path(
+                    module, url_match.group(2))
                 if module_path and module_resource_path:
-                    module_path = os.path.join(os.path.normpath(module_path), '')  # join ensures the path ends with '/'
-                    module_resource_path = os.path.normpath(module_resource_path)
+                    # join ensures the path ends with '/'
+                    module_path = os.path.join(
+                        os.path.normpath(module_path), '')
+                    module_resource_path = os.path.normpath(
+                        module_resource_path)
                     if module_resource_path.startswith(module_path):
                         with open(module_resource_path, 'rb') as f:
                             content = base64.b64encode(f.read())
-                        last_update = str(os.path.getmtime(module_resource_path))
+                        last_update = str(
+                            os.path.getmtime(module_resource_path))
 
             if not module_resource_path:
                 module_resource_path = obj.url
@@ -314,24 +329,31 @@ class IrHttp(models.AbstractModel):
             if filename:
                 mimetype = mimetypes.guess_type(filename)[0]
             if not mimetype and getattr(env[model]._fields[field], 'attachment', False):
-                # for binary fields, fetch the ir_attachement for mimetype check
-                attach_mimetype = env['ir.attachment'].search_read(domain=[('res_model', '=', model), ('res_id', '=', id), ('res_field', '=', field)], fields=['mimetype'], limit=1)
+                # for binary fields, fetch the ir_attachement for mimetype
+                # check
+                attach_mimetype = env['ir.attachment'].search_read(domain=[('res_model', '=', model), (
+                    'res_id', '=', id), ('res_field', '=', field)], fields=['mimetype'], limit=1)
                 mimetype = attach_mimetype and attach_mimetype[0]['mimetype']
             if not mimetype:
-                mimetype = guess_mimetype(base64.b64decode(content), default=default_mimetype)
+                mimetype = guess_mimetype(base64.b64decode(
+                    content), default=default_mimetype)
 
-        headers += [('Content-Type', mimetype), ('X-Content-Type-Options', 'nosniff')]
+        headers += [('Content-Type', mimetype),
+                    ('X-Content-Type-Options', 'nosniff')]
 
         # cache
-        etag = hasattr(request, 'httprequest') and request.httprequest.headers.get('If-None-Match')
+        etag = hasattr(request, 'httprequest') and request.httprequest.headers.get(
+            'If-None-Match')
         retag = '"%s"' % hashlib.md5(last_update).hexdigest()
         status = status or (304 if etag == retag else 200)
         headers.append(('ETag', retag))
-        headers.append(('Cache-Control', 'max-age=%s' % (STATIC_CACHE if unique else 0)))
+        headers.append(('Cache-Control', 'max-age=%s' %
+                        (STATIC_CACHE if unique else 0)))
 
         # content-disposition default name
         if download:
-            headers.append(('Content-Disposition', cls.content_disposition(filename)))
+            headers.append(
+                ('Content-Disposition', cls.content_disposition(filename)))
         return (status, headers, content)
 
 

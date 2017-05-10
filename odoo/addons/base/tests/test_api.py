@@ -114,7 +114,8 @@ class TestAPI(common.TransactionCase):
     def test_07_null(self):
         """ Check behavior of null instances. """
         # select a partner without a parent
-        partner = self.env['res.partner'].search([('parent_id', '=', False)])[0]
+        partner = self.env['res.partner'].search(
+            [('parent_id', '=', False)])[0]
 
         # check partner and related null instances
         self.assertTrue(partner)
@@ -131,7 +132,8 @@ class TestAPI(common.TransactionCase):
         self.assertIs(partner.parent_id.user_id.name, False)
 
         self.assertFalse(partner.parent_id.user_id.groups_id)
-        self.assertIsRecordset(partner.parent_id.user_id.groups_id, 'res.groups')
+        self.assertIsRecordset(
+            partner.parent_id.user_id.groups_id, 'res.groups')
 
     @mute_logger('odoo.models')
     def test_40_new_new(self):
@@ -269,7 +271,8 @@ class TestAPI(common.TransactionCase):
         self.env.check_cache()
 
         # check recordsets
-        self.assertEqual(set(partner1.child_ids), set(children1) - set([child]))
+        self.assertEqual(set(partner1.child_ids),
+                         set(children1) - set([child]))
         self.assertEqual(set(partner2.child_ids), set(children2))
         self.env.check_cache()
 
@@ -283,7 +286,8 @@ class TestAPI(common.TransactionCase):
     @mute_logger('odoo.models')
     def test_60_prefetch(self):
         """ Check the record cache prefetching """
-        partners = self.env['res.partner'].search([], limit=models.PREFETCH_MAX)
+        partners = self.env['res.partner'].search(
+            [], limit=models.PREFETCH_MAX)
         self.assertTrue(len(partners) > 1)
 
         # all the records in partners are ready for prefetching
@@ -296,7 +300,8 @@ class TestAPI(common.TransactionCase):
         self.assertItemsEqual(partners.ids, country_id_cache)
 
         # partners' countries are ready for prefetching
-        country_ids = set(cid for cids in country_id_cache.values() for cid in cids)
+        country_ids = set(cid for cids in country_id_cache.values()
+                          for cid in cids)
         self.assertTrue(len(country_ids) > 1)
         self.assertItemsEqual(country_ids, partners._prefetch['res.country'])
 
@@ -309,11 +314,13 @@ class TestAPI(common.TransactionCase):
     @mute_logger('odoo.models')
     def test_60_prefetch_object(self):
         """ Check the prefetching model. """
-        partners = self.env['res.partner'].search([], limit=models.PREFETCH_MAX)
+        partners = self.env['res.partner'].search(
+            [], limit=models.PREFETCH_MAX)
         self.assertTrue(partners)
 
         def same_prefetch(a, b):
             self.assertIs(a._prefetch, b._prefetch)
+
         def diff_prefetch(a, b):
             self.assertIsNot(a._prefetch, b._prefetch)
 
@@ -326,9 +333,11 @@ class TestAPI(common.TransactionCase):
         # the recordset operations below should pass the prefetch object
         same_prefetch(partners, partners.sudo(self.env.ref('base.user_demo')))
         same_prefetch(partners, partners.with_context(active_test=False))
-        same_prefetch(partners, partners[:10].with_prefetch(partners._prefetch))
+        same_prefetch(
+            partners, partners[:10].with_prefetch(partners._prefetch))
 
-        # iterating and reading relational fields should pass the prefetch object
+        # iterating and reading relational fields should pass the prefetch
+        # object
         self.assertEqual(type(partners).country_id.type, 'many2one')
         self.assertEqual(type(partners).bank_ids.type, 'one2many')
         self.assertEqual(type(partners).category_id.type, 'many2many')
@@ -379,7 +388,8 @@ class TestAPI(common.TransactionCase):
     @mute_logger('odoo.models')
     def test_80_contains(self):
         """ Test membership on recordset. """
-        p1 = self.env['res.partner'].search([('name', 'ilike', 'a')], limit=1).ensure_one()
+        p1 = self.env['res.partner'].search(
+            [('name', 'ilike', 'a')], limit=1).ensure_one()
         ps = self.env['res.partner'].search([('name', 'ilike', 'a')])
         self.assertTrue(p1 in ps)
 
@@ -457,7 +467,8 @@ class TestAPI(common.TransactionCase):
         """ Check map on recordsets. """
         ps = self.env['res.partner'].search([])
         parents = ps.browse()
-        for p in ps: parents |= p.parent_id
+        for p in ps:
+            parents |= p.parent_id
 
         # map a single field
         self.assertEqual(ps.mapped(lambda p: p.parent_id), parents)

@@ -8,6 +8,7 @@ from odoo.workflow import trg_trigger
 
 _logger = logging.getLogger(__name__)
 
+
 class m(models.Model):
     """ A model for which we will define a workflow (see data.xml). """
     _name = 'test.workflow.model'

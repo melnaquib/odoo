@@ -16,7 +16,9 @@ import threading
 import time
 import itertools
 import unittest
-import urllib.request, urllib.error, urllib.parse
+import urllib.request
+import urllib.error
+import urllib.parse
 import xmlrpc.client
 from contextlib import contextmanager
 from datetime import datetime, timedelta
@@ -65,6 +67,7 @@ def at_install(flag):
         return obj
     return decorator
 
+
 def post_install(flag):
     """ Sets the post-install state of a test. The flag is a boolean
     specifying whether the test should or should not run after a set of
@@ -77,6 +80,7 @@ def post_install(flag):
         obj.post_install = flag
         return obj
     return decorator
+
 
 class BaseCase(unittest.TestCase):
     """
@@ -189,6 +193,8 @@ class SingleTransactionCase(BaseCase):
 
 
 savepoint_seq = itertools.count()
+
+
 class SavepointCase(SingleTransactionCase):
     """ Similar to :class:`SingleTransactionCase` in that all test methods
     are run in a single transaction *but* each test case is run inside a
@@ -200,9 +206,11 @@ class SavepointCase(SingleTransactionCase):
     same data without influencing one another but without having to recreate
     the test data either.
     """
+
     def setUp(self):
         self._savepoint_id = next(savepoint_seq)
         self.cr.execute('SAVEPOINT test_%d' % self._savepoint_id)
+
     def tearDown(self):
         self.cr.execute('ROLLBACK TO SAVEPOINT test_%d' % self._savepoint_id)
         self.env.clear()
@@ -228,6 +236,7 @@ class RedirectHandler(urllib.request.HTTPRedirectHandler):
         return response
 
     https_response = http_response
+
 
 class HttpCase(TransactionCase):
     """ Transactional HTTP TestCase with url_open and phantomjs helpers.
@@ -256,7 +265,8 @@ class HttpCase(TransactionCase):
         self.opener.add_handler(urllib.request.HTTPSHandler())
         self.opener.add_handler(urllib.request.HTTPCookieProcessor())
         self.opener.add_handler(RedirectHandler())
-        self.opener.addheaders.append(('Cookie', 'session_id=%s' % self.session_id))
+        self.opener.addheaders.append(
+            ('Cookie', 'session_id=%s' % self.session_id))
 
     def tearDown(self):
         self.registry.leave_test_mode()
@@ -308,7 +318,7 @@ class HttpCase(TransactionCase):
         while True:
             # timeout
             self.assertLess(datetime.now() - t0, td,
-                "PhantomJS tests should take less than %s seconds" % timeout)
+                            "PhantomJS tests should take less than %s seconds" % timeout)
 
             # read a byte
             try:
@@ -340,15 +350,18 @@ class HttpCase(TransactionCase):
                 lline = line.lower()
                 if lline.startswith(("error", "server application error")):
                     try:
-                        # when errors occur the execution stack may be sent as a JSON
+                        # when errors occur the execution stack may be sent as
+                        # a JSON
                         prefix = lline.index('error') + 6
-                        _logger.error("phantomjs: %s", pformat(json.loads(line[prefix:])))
+                        _logger.error("phantomjs: %s", pformat(
+                            json.loads(line[prefix:])))
                     except ValueError:
                         line_ = line.split('\n\n')
                         _logger.error("phantomjs: %s", line_[0])
                         # The second part of the log is for debugging
                         if len(line_) > 1:
-                            _logger.info("phantomjs: \n%s", line.split('\n\n', 1)[1])
+                            _logger.info("phantomjs: \n%s",
+                                         line.split('\n\n', 1)[1])
                         pass
                     break
                 elif lline.startswith("warning"):
@@ -362,13 +375,16 @@ class HttpCase(TransactionCase):
     def phantom_run(self, cmd, timeout):
         _logger.info('phantom_run executing %s', ' '.join(cmd))
 
-        ls_glob = os.path.expanduser('~/.qws/share/data/Ofi Labs/PhantomJS/http_%s_%s.*' % (HOST, PORT))
-        ls_glob2 = os.path.expanduser('~/.local/share/Ofi Labs/PhantomJS/http_%s_%s.*' % (HOST, PORT))
+        ls_glob = os.path.expanduser(
+            '~/.qws/share/data/Ofi Labs/PhantomJS/http_%s_%s.*' % (HOST, PORT))
+        ls_glob2 = os.path.expanduser(
+            '~/.local/share/Ofi Labs/PhantomJS/http_%s_%s.*' % (HOST, PORT))
         for i in (glob.glob(ls_glob) + glob.glob(ls_glob2)):
             _logger.info('phantomjs unlink localstorage %s', i)
             os.unlink(i)
         try:
-            phantom = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=None)
+            phantom = subprocess.Popen(
+                cmd, stdout=subprocess.PIPE, stderr=None)
         except OSError:
             raise unittest.SkipTest("PhantomJS not found")
         result = False
@@ -380,7 +396,8 @@ class HttpCase(TransactionCase):
                 phantom.terminate()
                 phantom.wait()
             self._wait_remaining_requests()
-            # we ignore phantomjs return code as we kill it as soon as we have ok
+            # we ignore phantomjs return code as we kill it as soon as we have
+            # ok
             _logger.info("phantom_run execution finished")
             self.assertTrue(
                 result,
@@ -423,7 +440,7 @@ class HttpCase(TransactionCase):
             'url_path': url_path,
             'code': code,
             'ready': ready,
-            'timeout' : timeout,
+            'timeout': timeout,
             'session_id': self.session_id,
         }
         options.update(kw)
@@ -433,6 +450,7 @@ class HttpCase(TransactionCase):
         phantomtest = os.path.join(os.path.dirname(__file__), 'phantomtest.js')
         cmd = ['phantomjs', phantomtest, json.dumps(options)]
         self.phantom_run(cmd, timeout)
+
 
 def can_import(module):
     """ Checks if <module> can be imported, returns ``True`` if it can be,

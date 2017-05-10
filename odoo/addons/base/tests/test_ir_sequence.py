@@ -12,6 +12,7 @@ from odoo.tests import common
 
 ADMIN_USER_ID = common.ADMIN_USER_ID
 
+
 @contextmanager
 def environment():
     """ Return an environment with a new cursor for the current database; the
@@ -92,12 +93,15 @@ class TestIrSequenceNoGap(unittest.TestCase):
         """
         with environment() as env0:
             with environment() as env1:
-                env1.cr._default_log_exceptions = False # Prevent logging a traceback
+                env1.cr._default_log_exceptions = False  # Prevent logging a traceback
                 with self.assertRaises(psycopg2.OperationalError) as e:
-                    n0 = env0['ir.sequence'].next_by_code('test_sequence_type_2')
+                    n0 = env0['ir.sequence'].next_by_code(
+                        'test_sequence_type_2')
                     self.assertTrue(n0)
-                    n1 = env1['ir.sequence'].next_by_code('test_sequence_type_2')
-                self.assertEqual(e.exception.pgcode, psycopg2.errorcodes.LOCK_NOT_AVAILABLE, msg="postgresql returned an incorrect errcode")
+                    n1 = env1['ir.sequence'].next_by_code(
+                        'test_sequence_type_2')
+                self.assertEqual(e.exception.pgcode, psycopg2.errorcodes.LOCK_NOT_AVAILABLE,
+                                 msg="postgresql returned an incorrect errcode")
 
     @classmethod
     def tearDownClass(cls):
@@ -124,14 +128,16 @@ class TestIrSequenceChangeImplementation(unittest.TestCase):
 
     def test_ir_sequence_2_write(self):
         with environment() as env:
-            domain = [('code', 'in', ['test_sequence_type_3', 'test_sequence_type_4'])]
+            domain = [
+                ('code', 'in', ['test_sequence_type_3', 'test_sequence_type_4'])]
             seqs = env['ir.sequence'].search(domain)
             seqs.write({'implementation': 'standard'})
             seqs.write({'implementation': 'no_gap'})
 
     def test_ir_sequence_3_unlink(self):
         with environment() as env:
-            domain = [('code', 'in', ['test_sequence_type_3', 'test_sequence_type_4'])]
+            domain = [
+                ('code', 'in', ['test_sequence_type_3', 'test_sequence_type_4'])]
             seqs = env['ir.sequence'].search(domain)
             seqs.unlink()
 
@@ -199,9 +205,11 @@ class TestIrSequenceInit(common.TransactionCase):
         seq.next_by_id()
         seq.next_by_id()
         n = seq.next_by_id()
-        self.assertEqual(n, "0004", 'The actual sequence value must be 4. reading : %s' % n)
+        self.assertEqual(
+            n, "0004", 'The actual sequence value must be 4. reading : %s' % n)
         # reset sequence to 1 by write()
         seq.write({'number_next': 1})
         # Read the value of the current sequence
         n = seq.next_by_id()
-        self.assertEqual(n, "0001", 'The actual sequence value must be 1. reading : %s' % n)
+        self.assertEqual(
+            n, "0001", 'The actual sequence value must be 1. reading : %s' % n)

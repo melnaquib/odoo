@@ -18,12 +18,14 @@ from . import tools
 
 _logger = logging.getLogger(__name__)
 
+
 def log(logger, level, prefix, msg, depth=None):
-    indent=''
-    indent_after=' '*len(prefix)
+    indent = ''
+    indent_after = ' ' * len(prefix)
     for line in (prefix + pprint.pformat(msg, depth=depth)).split('\n'):
-        logger.log(level, indent+line)
-        indent=indent_after
+        logger.log(level, indent + line)
+        indent = indent_after
+
 
 def LocalService(name):
     """
@@ -35,7 +37,8 @@ def LocalService(name):
     be provided too in the future).
     """
     assert odoo.conf.deprecation.allow_local_service
-    _logger.warning("LocalService() is deprecated since march 2013 (it was called with '%s')." % name)
+    _logger.warning(
+        "LocalService() is deprecated since march 2013 (it was called with '%s')." % name)
 
     if name == 'workflow':
         return odoo.workflow
@@ -51,12 +54,15 @@ def LocalService(name):
                 with registry.cursor() as cr:
                     return registry['ir.actions.report.xml']._lookup_report(cr, name[len('report.'):])
 
+
 path_prefix = os.path.realpath(os.path.dirname(os.path.dirname(__file__)))
+
 
 class PostgreSQLHandler(logging.Handler):
     """ PostgreSQL Loggin Handler will store logs in the database, by default
     the current database, can be set using --log-db=DBNAME
     """
+
     def emit(self, record):
         ct = threading.current_thread()
         ct_db = getattr(ct, 'dbname', None)
@@ -71,18 +77,22 @@ class PostgreSQLHandler(logging.Handler):
             traceback = getattr(record, 'exc_text', '')
             if traceback:
                 msg = "%s\n%s" % (msg, traceback)
-            # we do not use record.levelname because it may have been changed by ColoredFormatter.
+            # we do not use record.levelname because it may have been changed
+            # by ColoredFormatter.
             levelname = logging.getLevelName(record.levelno)
 
-            val = ('server', ct_db, record.name, levelname, msg, record.pathname[len(path_prefix)+1:], record.lineno, record.funcName)
+            val = ('server', ct_db, record.name, levelname, msg, record.pathname[len(
+                path_prefix) + 1:], record.lineno, record.funcName)
             cr.execute("""
                 INSERT INTO ir_logging(create_date, type, dbname, name, level, message, path, line, func)
                 VALUES (NOW() at time zone 'UTC', %s, %s, %s, %s, %s, %s, %s, %s)
             """, val)
 
-BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, _NOTHING, DEFAULT = list(range(10))
-#The background is set with 40 plus the number of the color, and the foreground with 30
-#These are the sequences need to get colored ouput
+
+BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, _NOTHING, DEFAULT = list(
+    range(10))
+# The background is set with 40 plus the number of the color, and the foreground with 30
+# These are the sequences need to get colored ouput
 RESET_SEQ = "\033[0m"
 COLOR_SEQ = "\033[1;%dm"
 BOLD_SEQ = "\033[1m"
@@ -95,19 +105,26 @@ LEVEL_COLOR_MAPPING = {
     logging.CRITICAL: (WHITE, RED),
 }
 
+
 class DBFormatter(logging.Formatter):
     def format(self, record):
         record.pid = os.getpid()
         record.dbname = getattr(threading.currentThread(), 'dbname', '?')
         return logging.Formatter.format(self, record)
 
+
 class ColoredFormatter(DBFormatter):
     def format(self, record):
-        fg_color, bg_color = LEVEL_COLOR_MAPPING.get(record.levelno, (GREEN, DEFAULT))
-        record.levelname = COLOR_PATTERN % (30 + fg_color, 40 + bg_color, record.levelname)
+        fg_color, bg_color = LEVEL_COLOR_MAPPING.get(
+            record.levelno, (GREEN, DEFAULT))
+        record.levelname = COLOR_PATTERN % (
+            30 + fg_color, 40 + bg_color, record.levelname)
         return DBFormatter.format(self, record)
 
+
 _logger_init = False
+
+
 def init_logger():
     global _logger_init
     if _logger_init:
@@ -127,13 +144,14 @@ def init_logger():
     if tools.config['syslog']:
         # SysLog Handler
         if os.name == 'nt':
-            handler = logging.handlers.NTEventLogHandler("%s %s" % (release.description, release.version))
+            handler = logging.handlers.NTEventLogHandler(
+                "%s %s" % (release.description, release.version))
         elif platform.system() == 'Darwin':
             handler = logging.handlers.SysLogHandler('/var/run/log')
         else:
             handler = logging.handlers.SysLogHandler('/dev/log')
         format = '%s %s' % (release.description, release.version) \
-                + ':%(dbname)s:%(levelname)s:%(name)s:%(message)s'
+            + ':%(dbname)s:%(levelname)s:%(name)s:%(message)s'
 
     elif tools.config['logfile']:
         # LogFile Handler
@@ -144,13 +162,15 @@ def init_logger():
             if dirname and not os.path.isdir(dirname):
                 os.makedirs(dirname)
             if tools.config['logrotate'] is not False:
-                handler = logging.handlers.TimedRotatingFileHandler(filename=logf, when='D', interval=1, backupCount=30)
+                handler = logging.handlers.TimedRotatingFileHandler(
+                    filename=logf, when='D', interval=1, backupCount=30)
             elif os.name == 'posix':
                 handler = logging.handlers.WatchedFileHandler(logf)
             else:
                 handler = logging.FileHandler(logf)
         except Exception:
-            sys.stderr.write("ERROR: couldn't create the logfile directory. Logging to the standard output.\n")
+            sys.stderr.write(
+                "ERROR: couldn't create the logfile directory. Logging to the standard output.\n")
 
     # Check that handler.stream has a fileno() method: when running OpenERP
     # behind Apache with mod_wsgi, handler.stream will have type mod_wsgi.Log,
@@ -176,7 +196,8 @@ def init_logger():
             'critical': logging.CRITICAL,
         }
         postgresqlHandler = PostgreSQLHandler()
-        postgresqlHandler.setLevel(int(db_levels.get(tools.config['log_db_level'], tools.config['log_db_level'])))
+        postgresqlHandler.setLevel(
+            int(db_levels.get(tools.config['log_db_level'], tools.config['log_db_level'])))
         logging.getLogger().addHandler(postgresqlHandler)
 
     # Configure loggers levels
@@ -194,6 +215,7 @@ def init_logger():
     for logconfig_item in logging_configurations:
         _logger.debug('logger level set: "%s"', logconfig_item)
 
+
 DEFAULT_LOG_CONFIGURATION = [
     'odoo.workflow.workitem:WARNING',
     'odoo.http.rpc.request:INFO',
@@ -203,8 +225,8 @@ DEFAULT_LOG_CONFIGURATION = [
     ':INFO',
 ]
 PSEUDOCONFIG_MAPPER = {
-    'debug_rpc_answer': ['odoo:DEBUG','odoo.http.rpc.request:DEBUG', 'odoo.http.rpc.response:DEBUG'],
-    'debug_rpc': ['odoo:DEBUG','odoo.http.rpc.request:DEBUG'],
+    'debug_rpc_answer': ['odoo:DEBUG', 'odoo.http.rpc.request:DEBUG', 'odoo.http.rpc.response:DEBUG'],
+    'debug_rpc': ['odoo:DEBUG', 'odoo.http.rpc.request:DEBUG'],
     'debug': ['odoo:DEBUG'],
     'debug_sql': ['odoo.sql_db:DEBUG'],
     'info': [],

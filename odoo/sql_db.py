@@ -31,19 +31,24 @@ types_mapping = {
     'datetime': (1114,),
 }
 
+
 def unbuffer(symb, cr):
     if symb is None:
         return None
     return str(symb)
+
 
 def undecimalize(symb, cr):
     if symb is None:
         return None
     return float(symb)
 
+
 for name, typeoid in list(types_mapping.items()):
-    psycopg2.extensions.register_type(psycopg2.extensions.new_type(typeoid, name, lambda x, cr: x))
-psycopg2.extensions.register_type(psycopg2.extensions.new_type((700, 701, 1700,), 'float', undecimalize))
+    psycopg2.extensions.register_type(
+        psycopg2.extensions.new_type(typeoid, name, lambda x, cr: x))
+psycopg2.extensions.register_type(psycopg2.extensions.new_type(
+    (700, 701, 1700,), 'float', undecimalize))
 
 
 from . import tools
@@ -57,6 +62,7 @@ re_from = re.compile('.* from "?([a-zA-Z_0-9]+)"? .*$')
 re_into = re.compile('.* into "?([a-zA-Z_0-9]+)"? .*$')
 
 sql_counter = 0
+
 
 class Cursor(object):
     """Represents an open transaction to the PostgreSQL DB backend,
@@ -180,11 +186,14 @@ class Cursor(object):
 
     def __build_dict(self, row):
         return {d.name: row[i] for i, d in enumerate(self._obj.description)}
+
     def dictfetchone(self):
         row = self._obj.fetchone()
         return row and self.__build_dict(row)
+
     def dictfetchmany(self, size):
         return list(map(self.__build_dict, self._obj.fetchmany(size)))
+
     def dictfetchall(self):
         return list(map(self.__build_dict, self._obj.fetchall()))
 
@@ -207,7 +216,8 @@ class Cursor(object):
     def execute(self, query, params=None, log_exceptions=None):
         if params and not isinstance(params, (tuple, list, dict)):
             # psycopg2's TypeError is not clear if you mess up the params
-            raise ValueError("SQL query parameters should be a tuple, list or dict; got %r" % (params,))
+            raise ValueError(
+                "SQL query parameters should be a tuple, list or dict; got %r" % (params,))
 
         if self.sql_log:
             now = time.time()
@@ -250,6 +260,7 @@ class Cursor(object):
 
         if not self.sql_log:
             return
+
         def process(type):
             sqllogs = {'from': self.sql_from_log, 'into': self.sql_into_log}
             sum = 0
@@ -264,7 +275,8 @@ class Cursor(object):
                     sum += r[1][1]
                 sqllogs[type].clear()
             sum = timedelta(microseconds=sum)
-            _logger.debug("SUM %s:%s/%d [%d]", type, sum, self.sql_log_count, sql_counter)
+            _logger.debug("SUM %s:%s/%d [%d]", type,
+                          sum, self.sql_log_count, sql_counter)
             sqllogs[type].clear()
         process('from')
         process('into')
@@ -309,7 +321,8 @@ class Cursor(object):
             self._cnx.leaked = True
         else:
             chosen_template = tools.config['db_template']
-            templates_list = tuple(set(['template0', 'template1', 'postgres', chosen_template]))
+            templates_list = tuple(
+                set(['template0', 'template1', 'postgres', chosen_template]))
             keep_in_pool = self.dbname not in templates_list
             self.__pool.give_back(self._cnx, keep_in_pool=keep_in_pool)
 
@@ -413,10 +426,12 @@ class Cursor(object):
     def closed(self):
         return self._closed
 
+
 class TestCursor(Cursor):
     """ A cursor to be used for tests. It keeps the transaction open across
         several requests, and simulates committing, rolling back, and closing.
     """
+
     def __init__(self, *args, **kwargs):
         super(TestCursor, self).__init__(*args, **kwargs)
         # in order to simulate commit and rollback, the cursor maintains a
@@ -450,11 +465,13 @@ class TestCursor(Cursor):
         self.execute("ROLLBACK TO SAVEPOINT test_cursor")
         self.execute("SAVEPOINT test_cursor")
 
+
 class LazyCursor(object):
     """ A proxy object to a cursor. The cursor itself is allocated only if it is
         needed. This class is useful for cached methods, that use the cursor
         only in the case of a cache miss.
     """
+
     def __init__(self, dbname=None):
         self._dbname = dbname
         self._cursor = None
@@ -484,8 +501,10 @@ class LazyCursor(object):
         if self._cursor is not None:
             self._cursor.__exit__(exc_type, exc_value, traceback)
 
+
 class PsycoConnection(psycopg2.extensions.connection):
     pass
+
 
 class ConnectionPool(object):
     """ The pool of connections to database(s)
@@ -530,7 +549,8 @@ class ConnectionPool(object):
         for i, (cnx, _) in tools.reverse_enumerate(self._connections):
             if cnx.closed:
                 self._connections.pop(i)
-                self._debug('Removing closed connection at index %d: %r', i, cnx.dsn)
+                self._debug(
+                    'Removing closed connection at index %d: %r', i, cnx.dsn)
                 continue
             if getattr(cnx, 'leaked', False):
                 delattr(cnx, 'leaked')
@@ -543,14 +563,17 @@ class ConnectionPool(object):
                 try:
                     cnx.reset()
                 except psycopg2.OperationalError:
-                    self._debug('Cannot reset connection at index %d: %r', i, cnx.dsn)
-                    # psycopg2 2.4.4 and earlier do not allow closing a closed connection
+                    self._debug(
+                        'Cannot reset connection at index %d: %r', i, cnx.dsn)
+                    # psycopg2 2.4.4 and earlier do not allow closing a closed
+                    # connection
                     if not cnx.closed:
                         cnx.close()
                     continue
                 self._connections.pop(i)
                 self._connections.append((cnx, True))
-                self._debug('Borrow existing connection to %r at index %d', cnx.dsn, i)
+                self._debug(
+                    'Borrow existing connection to %r at index %d', cnx.dsn, i)
 
                 return cnx
 
@@ -561,10 +584,12 @@ class ConnectionPool(object):
                     self._connections.pop(i)
                     if not cnx.closed:
                         cnx.close()
-                    self._debug('Removing old connection at index %d: %r', i, cnx.dsn)
+                    self._debug(
+                        'Removing old connection at index %d: %r', i, cnx.dsn)
                     break
             else:
-                # note: this code is called only if the for loop has completed (no break)
+                # note: this code is called only if the for loop has completed
+                # (no break)
                 raise PoolError('The Connection Pool Is Full')
 
         try:
@@ -605,12 +630,13 @@ class ConnectionPool(object):
                 last = self._connections.pop(i)[0]
                 count += 1
         _logger.info('%r: Closed %d connections %s', self, count,
-                    (dsn and last and 'to %r' % last.dsn) or '')
+                     (dsn and last and 'to %r' % last.dsn) or '')
 
 
 class Connection(object):
     """ A lightweight instance of a connection to postgres
     """
+
     def __init__(self, pool, dbname, dsn):
         self.dbname = dbname
         self.dsn = dsn
@@ -632,12 +658,14 @@ class Connection(object):
     def __bool__(self):
         """Check if connection is possible"""
         try:
-            _logger.info("__nonzero__() is deprecated. (It is too expensive to test a connection.)")
+            _logger.info(
+                "__nonzero__() is deprecated. (It is too expensive to test a connection.)")
             cr = self.cursor()
             cr.close()
             return True
         except Exception:
             return False
+
 
 def connection_info_for(db_or_uri):
     """ parse the given `db_or_uri` and return a 2-tuple (dbname, connection_params)
@@ -669,7 +697,9 @@ def connection_info_for(db_or_uri):
 
     return db_or_uri, connection_info
 
+
 _Pool = None
+
 
 def db_connect(to, allow_uri=False):
     global _Pool
@@ -681,11 +711,13 @@ def db_connect(to, allow_uri=False):
         raise ValueError('URI connections not allowed')
     return Connection(_Pool, db, info)
 
+
 def close_db(db_name):
     """ You might want to call odoo.modules.registry.Registry.delete(db_name) along this function."""
     global _Pool
     if _Pool:
         _Pool.close_all(connection_info_for(db_name)[1])
+
 
 def close_all():
     global _Pool

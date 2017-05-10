@@ -9,7 +9,8 @@ class BaseModuleConfiguration(models.TransientModel):
 
     @api.multi
     def start(self):
-        todos_domain = ['|', ('type','=','recurring'), ('state', '=', 'open')]
+        todos_domain = ['|', ('type', '=', 'recurring'),
+                        ('state', '=', 'open')]
         if self.env['ir.actions.todo'].search_count(todos_domain):
             # Run the config wizards
             return self.env['res.config'].start()

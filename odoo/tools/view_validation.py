@@ -7,6 +7,8 @@ _logger = logging.getLogger(__name__)
 
 
 _validators = collections.defaultdict(list)
+
+
 def valid_view(arch):
     for pred in _validators[arch.tag]:
         if not pred(arch):

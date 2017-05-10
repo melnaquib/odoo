@@ -14,13 +14,15 @@ class Category(models.Model):
     color = fields.Integer('Color Index')
     parent = fields.Many2one('test_new_api.category')
     root_categ = fields.Many2one(_name, compute='_compute_root_categ')
-    display_name = fields.Char(compute='_compute_display_name', inverse='_inverse_display_name')
+    display_name = fields.Char(
+        compute='_compute_display_name', inverse='_inverse_display_name')
     dummy = fields.Char(store=False)
     discussions = fields.Many2many('test_new_api.discussion', 'test_new_api_discussion_category',
                                    'category', 'discussion')
 
     @api.one
-    @api.depends('name', 'parent.display_name')     # this definition is recursive
+    # this definition is recursive
+    @api.depends('name', 'parent.display_name')
     def _compute_display_name(self):
         if self.parent:
             self.display_name = self.parent.display_name + ' / ' + self.name
@@ -48,7 +50,8 @@ class Category(models.Model):
         for parent, child in zip(categories, categories[1:]):
             if parent and child:
                 child.parent = parent
-        # assign name of last category, and reassign display_name (to normalize it)
+        # assign name of last category, and reassign display_name (to normalize
+        # it)
         self.name = names[-1].strip()
 
     @api.multi
@@ -62,10 +65,10 @@ class Discussion(models.Model):
     _name = 'test_new_api.discussion'
 
     name = fields.Char(string='Title', required=True,
-        help="General description of what this discussion is about.")
+                       help="General description of what this discussion is about.")
     moderator = fields.Many2one('res.users')
     categories = fields.Many2many('test_new_api.category',
-        'test_new_api_discussion_category', 'discussion', 'category')
+                                  'test_new_api_discussion_category', 'discussion', 'category')
     participants = fields.Many2many('res.users')
     messages = fields.One2many('test_new_api.message', 'discussion')
     message_concat = fields.Text(string='Message concatenate')
@@ -92,7 +95,8 @@ class Discussion(models.Model):
             for message in self.important_messages:
                 message.body = 'not last dummy message'
             # add new dummy message
-            message_vals = self.messages._add_missing_default_values({'body': 'dummy message', 'important': True})
+            message_vals = self.messages._add_missing_default_values(
+                {'body': 'dummy message', 'important': True})
             self.messages |= self.messages.new(message_vals)
             self.important_messages |= self.messages.new(message_vals)
 
@@ -102,7 +106,8 @@ class Discussion(models.Model):
 
     @api.onchange('messages')
     def _onchange_messages(self):
-        self.message_concat = "\n".join(["%s:%s" % (m.name, m.body) for m in self.messages])
+        self.message_concat = "\n".join(
+            ["%s:%s" % (m.name, m.body) for m in self.messages])
 
 
 class Message(models.Model):
@@ -112,10 +117,12 @@ class Message(models.Model):
     body = fields.Text()
     author = fields.Many2one('res.users', default=lambda self: self.env.user)
     name = fields.Char(string='Title', compute='_compute_name', store=True)
-    display_name = fields.Char(string='Abstract', compute='_compute_display_name')
+    display_name = fields.Char(
+        string='Abstract', compute='_compute_display_name')
     size = fields.Integer(compute='_compute_size', search='_search_size')
     double_size = fields.Integer(compute='_compute_double_size')
-    discussion_name = fields.Char(related='discussion.name', string="Discussion Name")
+    discussion_name = fields.Char(
+        related='discussion.name', string="Discussion Name")
     author_partner = fields.Many2one(
         'res.partner', compute='_compute_author_partner',
         search='_search_author_partner')
@@ -125,17 +132,20 @@ class Message(models.Model):
     @api.constrains('author', 'discussion')
     def _check_author(self):
         if self.discussion and self.author not in self.discussion.participants:
-            raise ValidationError(_("Author must be among the discussion participants."))
+            raise ValidationError(
+                _("Author must be among the discussion participants."))
 
     @api.one
     @api.depends('author.name', 'discussion.name')
     def _compute_name(self):
-        self.name = "[%s] %s" % (self.discussion.name or '', self.author.name or '')
+        self.name = "[%s] %s" % (
+            self.discussion.name or '', self.author.name or '')
 
     @api.one
     @api.depends('author.name', 'discussion.name', 'body')
     def _compute_display_name(self):
-        stuff = "[%s] %s: %s" % (self.author.name, self.discussion.name or '', self.body or '')
+        stuff = "[%s] %s: %s" % (
+            self.author.name, self.discussion.name or '', self.body or '')
         self.display_name = stuff[:80]
 
     @api.one
@@ -248,13 +258,14 @@ class MixedModel(models.Model):
     now = fields.Datetime(compute='_compute_now')
     lang = fields.Selection(string='Language', selection='_get_lang')
     reference = fields.Reference(string='Related Document',
-        selection='_reference_models')
+                                 selection='_reference_models')
     comment1 = fields.Html(sanitize=False)
     comment2 = fields.Html(sanitize_attributes=True, strip_classes=False)
     comment3 = fields.Html(sanitize_attributes=True, strip_classes=True)
     comment4 = fields.Html(sanitize_attributes=True, strip_style=True)
 
-    currency_id = fields.Many2one('res.currency', default=lambda self: self.env.ref('base.EUR'))
+    currency_id = fields.Many2one(
+        'res.currency', default=lambda self: self.env.ref('base.EUR'))
     amount = fields.Monetary()
 
     @api.one
@@ -301,7 +312,8 @@ class Bar(models.Model):
     @api.depends('name')
     def _compute_foo(self):
         for bar in self:
-            bar.foo = self.env['test_new_api.foo'].search([('name', '=', bar.name)], limit=1)
+            bar.foo = self.env['test_new_api.foo'].search(
+                [('name', '=', bar.name)], limit=1)
 
 
 class Related(models.Model):
@@ -319,7 +331,8 @@ class ComputeInverse(models.Model):
     counts = {'compute': 0, 'inverse': 0}
 
     foo = fields.Char()
-    bar = fields.Char(compute='_compute_bar', inverse='_inverse_bar', store=True)
+    bar = fields.Char(compute='_compute_bar',
+                      inverse='_inverse_bar', store=True)
 
     @api.depends('foo')
     def _compute_bar(self):
@@ -338,6 +351,7 @@ class CompanyDependent(models.Model):
 
     foo = fields.Char(company_dependent=True)
 
+
 class CompanyDependentAttribute(models.Model):
     _name = 'test_new_api.company.attr'
 
@@ -350,6 +364,7 @@ class CompanyDependentAttribute(models.Model):
         for record in self:
             record.bar = (record.company.foo or '') * record.quantity
 
+
 class Sparse(models.Model):
     _name = 'test_new_api.sparse'
 
@@ -358,7 +373,8 @@ class Sparse(models.Model):
     integer = fields.Integer(sparse='data')
     float = fields.Float(sparse='data')
     char = fields.Char(sparse='data')
-    selection = fields.Selection([('one', 'One'), ('two', 'Two')], sparse='data')
+    selection = fields.Selection(
+        [('one', 'One'), ('two', 'Two')], sparse='data')
     partner = fields.Many2one('res.partner', sparse='data')
 
 

@@ -32,9 +32,10 @@ class Country(models.Model):
     _description = 'Country'
     _order = 'name'
 
-    name = fields.Char(string='Country Name', required=True, translate=True, help='The full name of the country.')
+    name = fields.Char(string='Country Name', required=True,
+                       translate=True, help='The full name of the country.')
     code = fields.Char(string='Country Code', size=2,
-                help='The ISO country code in two chars. \nYou can use this field for quick search.')
+                       help='The ISO country code in two chars. \nYou can use this field for quick search.')
     address_format = fields.Text(help="""You can state here the usual format to use for the \
 addresses belonging to this country.\n\nYou can use the python-style string patern with all the field of the address \
 (for example, use '%(street)s' to display the field 'street') plus
@@ -42,13 +43,14 @@ addresses belonging to this country.\n\nYou can use the python-style string pate
             \n%(state_code)s: the code of the state
             \n%(country_name)s: the name of the country
             \n%(country_code)s: the code of the country""",
-            default='%(street)s\n%(street2)s\n%(city)s %(state_code)s %(zip)s\n%(country_name)s')
+                                 default='%(street)s\n%(street2)s\n%(city)s %(state_code)s %(zip)s\n%(country_name)s')
     currency_id = fields.Many2one('res.currency', string='Currency')
     image = fields.Binary(attachment=True)
     phone_code = fields.Integer(string='Country Calling Code')
     country_group_ids = fields.Many2many('res.country.group', 'res_country_res_country_group_rel',
-                         'res_country_id', 'res_country_group_id', string='Country Groups')
-    state_ids = fields.One2many('res.country.state', 'country_id', string='States')
+                                         'res_country_id', 'res_country_group_id', string='Country Groups')
+    state_ids = fields.One2many(
+        'res.country.state', 'country_id', string='States')
 
     _sql_constraints = [
         ('name_uniq', 'unique (name)',
@@ -91,13 +93,16 @@ class CountryState(models.Model):
     _name = 'res.country.state'
     _order = 'code'
 
-    country_id = fields.Many2one('res.country', string='Country', required=True)
+    country_id = fields.Many2one(
+        'res.country', string='Country', required=True)
     name = fields.Char(string='State Name', required=True,
-               help='Administrative divisions of a country. E.g. Fed. State, Departement, Canton')
-    code = fields.Char(string='State Code', help='The state code.', required=True)
+                       help='Administrative divisions of a country. E.g. Fed. State, Departement, Canton')
+    code = fields.Char(string='State Code',
+                       help='The state code.', required=True)
 
     name_search = location_name_search
 
     _sql_constraints = [
-        ('name_code_uniq', 'unique(country_id, code)', 'The code of the state must be unique by country !')
+        ('name_code_uniq', 'unique(country_id, code)',
+         'The code of the state must be unique by country !')
     ]

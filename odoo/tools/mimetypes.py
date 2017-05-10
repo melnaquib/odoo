@@ -23,6 +23,8 @@ _ooxml_dirs = {
     'pt/': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     'xl/': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 }
+
+
 def _check_ooxml(data):
     with io.BytesIO(data) as f, zipfile.ZipFile(f) as z:
         filenames = z.namelist()
@@ -48,6 +50,8 @@ _mime_validator = re.compile(r"""
     (?:\.[\w-]+)* # optional faceted name
     (?:\+[\w-]+)? # optional structured syntax specifier
 """, re.VERBOSE)
+
+
 def _check_open_container_format(data):
     with io.BytesIO(data) as f, zipfile.ZipFile(f) as z:
         # OCF zip files must contain a ``mimetype`` entry
@@ -65,6 +69,7 @@ def _check_open_container_format(data):
 
         return False
 
+
 _xls_pattern = re.compile("""
     \x09\x08\x10\x00\x00\x06\x05\x00
   | \xFD\xFF\xFF\xFF(\x10|\x1F|\x20|"|\\#|\\(|\\))
@@ -75,6 +80,8 @@ _ppt_pattern = re.compile("""
   | \xA0\x46\x1D\xF0
   | \xFD\xFF\xFF\xFF(\x0E|\x1C|\x43)\x00\x00\x00
 """, re.VERBOSE)
+
+
 def _check_olecf(data):
     """ Pre-OOXML Office formats are OLE Compound Files which all use the same
     file signature ("magic bytes") and should have a subheader at offset 512
@@ -95,26 +102,33 @@ def _check_olecf(data):
         return 'application/vnd.ms-powerpoint'
     return False
 
+
 # for "master" formats with many subformats, discriminants is a list of
 # functions, tried in order and the first non-falsy value returned is the
 # selected mime type. If all functions return falsy values, the master
 # mimetype is returned.
-_Entry = collections.namedtuple('_Entry', ['mimetype', 'signatures', 'discriminants'])
+_Entry = collections.namedtuple(
+    '_Entry', ['mimetype', 'signatures', 'discriminants'])
 _mime_mappings = (
     # pdf
     _Entry('application/pdf', ['%PDF'], []),
     # jpg, jpeg, png, gif, bmp
-    _Entry('image/jpeg', ['\xFF\xD8\xFF\xE0', '\xFF\xD8\xFF\xE2', '\xFF\xD8\xFF\xE3', '\xFF\xD8\xFF\xE1'], []),
+    _Entry('image/jpeg', ['\xFF\xD8\xFF\xE0', '\xFF\xD8\xFF\xE2',
+                          '\xFF\xD8\xFF\xE3', '\xFF\xD8\xFF\xE1'], []),
     _Entry('image/png', ['\x89PNG\r\n\x1A\n'], []),
     _Entry('image/gif', ['GIF87a', 'GIF89a'], []),
     _Entry('image/bmp', ['BM'], []),
-    # OLECF files in general (Word, Excel, PPT, default to word because why not?)
+    # OLECF files in general (Word, Excel, PPT, default to word because why
+    # not?)
     _Entry('application/msword', ['\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1', '\x0D\x44\x4F\x43'], [
         _check_olecf
     ]),
     # zip, but will include jar, odt, ods, odp, docx, xlsx, pptx, apk
-    _Entry('application/zip', ['PK\x03\x04'], [_check_ooxml, _check_open_container_format]),
+    _Entry('application/zip', ['PK\x03\x04'],
+           [_check_ooxml, _check_open_container_format]),
 )
+
+
 def guess_mimetype(bin_data, default='application/octet-stream'):
     """ Attempts to guess the mime type of the provided binary data, similar
     to but significantly more limited than libmagic
@@ -130,7 +144,8 @@ def guess_mimetype(bin_data, default='application/octet-stream'):
                 for discriminant in entry.discriminants:
                     try:
                         guess = discriminant(bin_data)
-                        if guess: return guess
+                        if guess:
+                            return guess
                     except Exception:
                         # log-and-next
                         _logger.getChild('guess_mimetype').warn(
@@ -152,10 +167,11 @@ else:
     # There are 2 python libs named 'magic' with incompatible api.
 
     # magic from pypi https://pypi.python.org/pypi/python-magic/
-    if hasattr(magic,'from_buffer'):
-        guess_mimetype = lambda bin_data, default=None: magic.from_buffer(bin_data, mime=True)
+    if hasattr(magic, 'from_buffer'):
+        guess_mimetype = lambda bin_data, default=None: magic.from_buffer(
+            bin_data, mime=True)
     # magic from file(1) https://packages.debian.org/squeeze/python-magic
-    elif hasattr(magic,'open'):
+    elif hasattr(magic, 'open'):
         ms = magic.open(magic.MAGIC_MIME_TYPE)
         ms.load()
         guess_mimetype = lambda bin_data, default=None: ms.buffer(bin_data)

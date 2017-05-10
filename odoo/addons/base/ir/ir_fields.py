@@ -11,22 +11,41 @@ from odoo import api, fields, models, _
 from odoo.tools import ustr
 
 REFERENCING_FIELDS = {None, 'id', '.id'}
+
+
 def only_ref_fields(record):
     return {k: v for k, v in record.items() if k in REFERENCING_FIELDS}
+
+
 def exclude_ref_fields(record):
     return {k: v for k, v in record.items() if k not in REFERENCING_FIELDS}
 
-CREATE = lambda values: (0, False, values)
-UPDATE = lambda id, values: (1, id, values)
-DELETE = lambda id: (2, id, False)
-FORGET = lambda id: (3, id, False)
-LINK_TO = lambda id: (4, id, False)
-DELETE_ALL = lambda: (5, False, False)
-REPLACE_WITH = lambda ids: (6, False, ids)
+
+def CREATE(values): return (0, False, values)
+
+
+def UPDATE(id, values): return (1, id, values)
+
+
+def DELETE(id): return (2, id, False)
+
+
+def FORGET(id): return (3, id, False)
+
+
+def LINK_TO(id): return (4, id, False)
+
+
+def DELETE_ALL(): return (5, False, False)
+
+
+def REPLACE_WITH(ids): return (6, False, ids)
+
 
 class ImportWarning(Warning):
     """ Used to send warnings upwards the stack during the import process """
     pass
+
 
 class ConversionNotFound(ValueError):
     pass
@@ -38,12 +57,14 @@ class IrFieldsConverter(models.AbstractModel):
     @api.model
     def _format_import_error(self, error_type, error_msg, error_params=(), error_args=None):
         # sanitize error params for later formatting by the import system
-        sanitize = lambda p: p.replace('%', '%%') if isinstance(p, str) else p
+        def sanitize(p): return p.replace(
+            '%', '%%') if isinstance(p, str) else p
         if error_params:
             if isinstance(error_params, str):
                 error_params = sanitize(error_params)
             elif isinstance(error_params, dict):
-                error_params = {k: sanitize(v) for k, v in error_params.items()}
+                error_params = {k: sanitize(v)
+                                for k, v in error_params.items()}
             elif isinstance(error_params, tuple):
                 error_params = tuple(map(sanitize, error_params))
         return error_type(error_msg % error_params, error_args)
@@ -131,7 +152,8 @@ class IrFieldsConverter(models.AbstractModel):
         """
         assert isinstance(fromtype, (type, str))
         # FIXME: return None
-        typename = fromtype.__name__ if isinstance(fromtype, type) else fromtype
+        typename = fromtype.__name__ if isinstance(
+            fromtype, type) else fromtype
         converter = getattr(self, '_%s_to_%s' % (typename, field.type), None)
         if not converter:
             return None
@@ -143,7 +165,7 @@ class IrFieldsConverter(models.AbstractModel):
         true, yes, false, no = _("true"), _("yes"), _("false"), _("no")
         # potentially broken casefolding? What about locales?
         trues = set(word.lower() for word in itertools.chain(
-            ['1', "true", "yes"], # don't use potentially translated values
+            ['1', "true", "yes"],  # don't use potentially translated values
             self._get_translations(['code'], "true"),
             self._get_translations(['code'], "yes"),
         ))
@@ -241,7 +263,7 @@ class IrFieldsConverter(models.AbstractModel):
                 {'moreinfo': _("Use the format '%s'") % "2012-12-31 23:59:59"}
             )
 
-        input_tz = self._input_tz()# Apply input tz to the parsed naive datetime
+        input_tz = self._input_tz()  # Apply input tz to the parsed naive datetime
         dt = input_tz.localize(parsed_value, is_dst=False)
         # And convert to UTC before reformatting for writing
         return fields.Datetime.to_string(dt.astimezone(pytz.UTC)), []
@@ -257,7 +279,8 @@ class IrFieldsConverter(models.AbstractModel):
 
         Translations = self.env['ir.translation']
         tnx = Translations.search([('type', 'in', types), ('src', '=', src)])
-        result = tnx_cache[types][src] = [t.value for t in tnx if t.value is not False]
+        result = tnx_cache[types][src] = [
+            t.value for t in tnx if t.value is not False]
         return result
 
     @api.model
@@ -268,7 +291,8 @@ class IrFieldsConverter(models.AbstractModel):
 
         for item, label in selection:
             label = ustr(label)
-            labels = [label] + self._get_translations(('selection', 'model', 'code'), label)
+            labels = [label] + \
+                self._get_translations(('selection', 'model', 'code'), label)
             if value == str(item) or value in labels:
                 return item, []
 
@@ -276,7 +300,8 @@ class IrFieldsConverter(models.AbstractModel):
             ValueError,
             _("Value '%s' not found in selection field '%%(field)s'"),
             value,
-            {'moreinfo': [_label or str(item) for item, _label in selection if _label or item]}
+            {'moreinfo': [_label or str(
+                item) for item, _label in selection if _label or item]}
         )
 
     @api.model
@@ -312,8 +337,10 @@ class IrFieldsConverter(models.AbstractModel):
         RelatedModel = self.env[field.comodel_name]
         if subfield == '.id':
             field_type = _("database id")
-            try: tentative_id = int(value)
-            except ValueError: tentative_id = value
+            try:
+                tentative_id = int(value)
+            except ValueError:
+                tentative_id = value
             try:
                 if RelatedModel.search([('id', '=', tentative_id)]):
                     id = tentative_id
@@ -329,11 +356,12 @@ class IrFieldsConverter(models.AbstractModel):
             if '.' in value:
                 xmlid = value
             else:
-                xmlid = "%s.%s" % (self._context.get('_import_current_module', ''), value)
+                xmlid = "%s.%s" % (self._context.get(
+                    '_import_current_module', ''), value)
             try:
                 id = self.env.ref(xmlid).id
             except ValueError:
-                pass # leave id is None
+                pass  # leave id is None
         elif subfield is None:
             field_type = _("name")
             ids = RelatedModel.name_search(name=value, operator='=')
@@ -421,7 +449,8 @@ class IrFieldsConverter(models.AbstractModel):
             warnings.extend(ws)
             # transform [{subfield:ref1,ref2,ref3}] into
             # [{subfield:ref1},{subfield:ref2},{subfield:ref3}]
-            records = ({subfield:item} for item in record[subfield].split(','))
+            records = ({subfield: item}
+                       for item in record[subfield].split(','))
 
         def log(_, e):
             if not isinstance(e, Warning):
@@ -437,7 +466,8 @@ class IrFieldsConverter(models.AbstractModel):
             if refs:
                 subfield, w1 = self._referencing_subfield(refs)
                 warnings.extend(w1)
-                id, _, w2 = self.db_id_for(model, field, subfield, record[subfield])
+                id, _, w2 = self.db_id_for(
+                    model, field, subfield, record[subfield])
                 warnings.extend(w2)
 
             writable = convert(exclude_ref_fields(record), log)

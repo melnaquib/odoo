@@ -25,7 +25,8 @@ class TestResConfig(TransactionCase):
 
         self.expected_path = menu.complete_name
         self.expected_action_id = menu.action.id
-        self.expected_name = self.env[model_name].fields_get([field_name])[field_name]['string']
+        self.expected_name = self.env[model_name].fields_get([field_name])[
+            field_name]['string']
         self.expected_final_error_msg = self.error_msg % {
             'field:res.partner.lang': self.expected_name,
             'menu:base.menu_action_res_users': self.expected_path

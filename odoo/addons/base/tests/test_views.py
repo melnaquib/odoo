@@ -20,7 +20,9 @@ class ViewXMLID(common.TransactionCase):
         view = self.env.ref('base.view_company_form')
         self.assertTrue(view)
         self.assertTrue(view.model_data_id)
-        self.assertEqual(view.model_data_id.complete_name, 'base.view_company_form')
+        self.assertEqual(view.model_data_id.complete_name,
+                         'base.view_company_form')
+
 
 class ViewCase(common.TransactionCase):
     def setUp(self):
@@ -76,7 +78,8 @@ class TestNodeLocator(common.TransactionCase):
         self.assertIsNone(node)
 
         node = self.env['ir.ui.view'].locate_node(
-            E.root(E.field(name="foo"), E.field(name="bar"), E.field(name="baz")),
+            E.root(E.field(name="foo"), E.field(
+                name="bar"), E.field(name="baz")),
             E.field(name="qux"),
         )
         self.assertIsNone(node)
@@ -156,9 +159,9 @@ class TestViewInheritance(ViewCase):
             element = E(view_type, string=name)
         else:
             element = E(view_type,
-                E.attribute(name, name='string'),
-                position='attributes'
-            )
+                        E.attribute(name, name='string'),
+                        position='attributes'
+                        )
         return etree.tostring(element)
 
     def makeView(self, name, parent=None, arch=None):
@@ -179,7 +182,7 @@ class TestViewInheritance(ViewCase):
             'name': name,
             'arch': arch or self.arch_for(name, parent=parent),
             'inherit_id': parent,
-            'priority': 5, # higher than default views
+            'priority': 5,  # higher than default views
         })
         self.view_ids[name] = view.id
         return view
@@ -210,28 +213,33 @@ class TestViewInheritance(ViewCase):
     def test_get_inheriting_views_arch(self):
         self.assertEqual(
             self.View.get_inheriting_views_arch(self.view_ids['A'], self.model), [
-            (self.arch_for('A1', parent=True), self.view_ids['A1']),
-            (self.arch_for('A2', parent=True), self.view_ids['A2']),
-        ])
+                (self.arch_for('A1', parent=True), self.view_ids['A1']),
+                (self.arch_for('A2', parent=True), self.view_ids['A2']),
+            ])
 
         self.assertEqual(
-            self.View.get_inheriting_views_arch(self.view_ids['A21'], self.model),
+            self.View.get_inheriting_views_arch(
+                self.view_ids['A21'], self.model),
             [])
 
         self.assertEqual(
-            self.View.get_inheriting_views_arch(self.view_ids['A11'], self.model),
+            self.View.get_inheriting_views_arch(
+                self.view_ids['A11'], self.model),
             [(self.arch_for('A111', parent=True), self.view_ids['A111'])])
 
     def test_default_view(self):
         default = self.View.default_view(model=self.model, view_type='form')
         self.assertEqual(default, self.view_ids['A'])
 
-        default_tree = self.View.default_view(model=self.model, view_type='tree')
+        default_tree = self.View.default_view(
+            model=self.model, view_type='tree')
         self.assertEqual(default_tree, self.view_ids['C'])
 
     def test_no_default_view(self):
-        self.assertFalse(self.View.default_view(model='does.not.exist', view_type='form'))
-        self.assertFalse(self.View.default_view(model=self.model, view_type='graph'))
+        self.assertFalse(self.View.default_view(
+            model='does.not.exist', view_type='form'))
+        self.assertFalse(self.View.default_view(
+            model=self.model, view_type='graph'))
 
     def test_no_recursion(self):
         r1 = self.makeView('R1')
@@ -252,6 +260,7 @@ class TestViewInheritance(ViewCase):
                 'arch': self.arch_for('itself', parent=True),
             })
 
+
 class TestApplyInheritanceSpecs(ViewCase):
     """ Applies a sequence of inheritance specification nodes to a base
     architecture. IO state parameters (cr, uid, model, context) are used for
@@ -259,6 +268,7 @@ class TestApplyInheritanceSpecs(ViewCase):
 
     The base architecture is altered in-place.
     """
+
     def setUp(self):
         super(TestApplyInheritanceSpecs, self).setUp()
         self.base_arch = E.form(
@@ -267,8 +277,8 @@ class TestApplyInheritanceSpecs(ViewCase):
 
     def test_replace(self):
         spec = E.field(
-                E.field(name="replacement"),
-                name="target", position="replace")
+            E.field(name="replacement"),
+            name="target", position="replace")
 
         self.View.apply_inheritance_specs(self.base_arch, spec, None)
 
@@ -287,8 +297,8 @@ class TestApplyInheritanceSpecs(ViewCase):
 
     def test_insert_after(self):
         spec = E.field(
-                E.field(name="inserted"),
-                name="target", position="after")
+            E.field(name="inserted"),
+            name="target", position="after")
 
         self.View.apply_inheritance_specs(self.base_arch, spec, None)
 
@@ -302,8 +312,8 @@ class TestApplyInheritanceSpecs(ViewCase):
 
     def test_insert_before(self):
         spec = E.field(
-                E.field(name="inserted"),
-                name="target", position="before")
+            E.field(name="inserted"),
+            name="target", position="before")
 
         self.View.apply_inheritance_specs(self.base_arch, spec, None)
 
@@ -316,7 +326,8 @@ class TestApplyInheritanceSpecs(ViewCase):
 
     def test_insert_inside(self):
         default = E.field(E.field(name="inserted"), name="target")
-        spec = E.field(E.field(name="inserted 2"), name="target", position='inside')
+        spec = E.field(E.field(name="inserted 2"),
+                       name="target", position='inside')
 
         self.View.apply_inheritance_specs(self.base_arch, default, None)
         self.View.apply_inheritance_specs(self.base_arch, spec, None)
@@ -332,11 +343,11 @@ class TestApplyInheritanceSpecs(ViewCase):
 
     def test_unpack_data(self):
         spec = E.data(
-                E.field(E.field(name="inserted 0"), name="target"),
-                E.field(E.field(name="inserted 1"), name="target"),
-                E.field(E.field(name="inserted 2"), name="target"),
-                E.field(E.field(name="inserted 3"), name="target"),
-            )
+            E.field(E.field(name="inserted 0"), name="target"),
+            E.field(E.field(name="inserted 1"), name="target"),
+            E.field(E.field(name="inserted 2"), name="target"),
+            E.field(E.field(name="inserted 3"), name="target"),
+        )
 
         self.View.apply_inheritance_specs(self.base_arch, spec, None)
 
@@ -354,8 +365,8 @@ class TestApplyInheritanceSpecs(ViewCase):
     @mute_logger('odoo.addons.base.ir.ir_ui_view')
     def test_invalid_position(self):
         spec = E.field(
-                E.field(name="whoops"),
-                name="target", position="serious_series")
+            E.field(name="whoops"),
+            name="target", position="serious_series")
 
         with self.assertRaises(ValueError):
             self.View.apply_inheritance_specs(self.base_arch, spec, None)
@@ -399,6 +410,7 @@ class TestApplyInheritanceWrapSpecs(ViewCase):
                 E.div(E.p('Content'), {'class': 'some'})
             ))
         )
+
 
 class TestApplyInheritedArchs(ViewCase):
     """ Applies a sequence of modificator archs to a base view
@@ -487,7 +499,8 @@ class TestTemplating(ViewCase):
             """
         })
 
-        arch_string = view1.with_context(inherit_branding=True).read_combined(['arch'])['arch']
+        arch_string = view1.with_context(
+            inherit_branding=True).read_combined(['arch'])['arch']
 
         arch = etree.fromstring(arch_string)
         self.View.distribute_branding(arch)
@@ -530,7 +543,8 @@ class TestTemplating(ViewCase):
             </xpath>"""
         })
 
-        arch_string = view1.with_context(inherit_branding=True).read_combined(['arch'])['arch']
+        arch_string = view1.with_context(
+            inherit_branding=True).read_combined(['arch'])['arch']
 
         arch = etree.fromstring(arch_string)
         self.View.distribute_branding(arch)
@@ -567,7 +581,8 @@ class TestTemplating(ViewCase):
             </root>""",
         })
 
-        arch_string = view.with_context(inherit_branding=True).read_combined(['arch'])['arch']
+        arch_string = view.with_context(
+            inherit_branding=True).read_combined(['arch'])['arch']
         arch = etree.fromstring(arch_string)
         self.View.distribute_branding(arch)
 
@@ -594,7 +609,8 @@ class TestTemplating(ViewCase):
             </xpath>"""
         })
 
-        arch_string = view1.with_context(inherit_branding=True).read_combined(['arch'])['arch']
+        arch_string = view1.with_context(
+            inherit_branding=True).read_combined(['arch'])['arch']
 
         arch = etree.fromstring(arch_string)
         self.View.distribute_branding(arch)
@@ -635,14 +651,16 @@ class TestViews(ViewCase):
     def _insert_view(self, **kw):
         """Insert view into database via a query to passtrough validation"""
         kw.pop('id', None)
-        kw.setdefault('mode', 'extension' if kw.get('inherit_id') else 'primary')
+        kw.setdefault('mode', 'extension' if kw.get(
+            'inherit_id') else 'primary')
         kw.setdefault('active', True)
 
         keys = sorted(kw.keys())
         fields = ','.join('"%s"' % (k.replace('"', r'\"'),) for k in keys)
         params = ','.join('%%(%s)s' % (k,) for k in keys)
 
-        query = 'INSERT INTO ir_ui_view(%s) VALUES(%s) RETURNING id' % (fields, params)
+        query = 'INSERT INTO ir_ui_view(%s) VALUES(%s) RETURNING id' % (
+            fields, params)
         self.cr.execute(query, kw)
         return self.cr.fetchone()[0]
 
@@ -751,7 +769,8 @@ class TestViews(ViewCase):
             E.form(
                 E.p("Replacement data"),
                 E.footer(
-                    E.button(name="action_next", type="object", string="New button"),
+                    E.button(name="action_next", type="object",
+                             string="New button"),
                     thing="bob lolo bibi and co", otherthing="lolo"
                 ),
                 string="Replacement title", version="7.0"))
@@ -1244,8 +1263,10 @@ class TestQWebRender(ViewCase):
         })
 
         # render view and child view with an id
-        content1 = self.env['ir.qweb'].with_context(check_view_ids=[view1.id, view2.id]).render(view1.id)
-        content2 = self.env['ir.qweb'].with_context(check_view_ids=[view1.id, view2.id]).render(view2.id)
+        content1 = self.env['ir.qweb'].with_context(
+            check_view_ids=[view1.id, view2.id]).render(view1.id)
+        content2 = self.env['ir.qweb'].with_context(
+            check_view_ids=[view1.id, view2.id]).render(view2.id)
 
         self.assertEqual(content1, content2)
 
@@ -1255,14 +1276,18 @@ class TestQWebRender(ViewCase):
         self.env.cr.execute("INSERT INTO ir_model_data(name, model, res_id, module)"
                             "VALUES ('dummy_ext', 'ir.ui.view', %s, 'base')" % view2.id)
 
-        content1 = self.env['ir.qweb'].with_context(check_view_ids=[view1.id, view2.id]).render('base.dummy')
-        content2 = self.env['ir.qweb'].with_context(check_view_ids=[view1.id, view2.id]).render('base.dummy_ext')
+        content1 = self.env['ir.qweb'].with_context(
+            check_view_ids=[view1.id, view2.id]).render('base.dummy')
+        content2 = self.env['ir.qweb'].with_context(
+            check_view_ids=[view1.id, view2.id]).render('base.dummy_ext')
 
         self.assertEqual(content1, content2)
 
         # render view and primary extension with an id
-        content1 = self.env['ir.qweb'].with_context(check_view_ids=[view1.id, view2.id, view3.id]).render(view1.id)
-        content3 = self.env['ir.qweb'].with_context(check_view_ids=[view1.id, view2.id, view3.id]).render(view3.id)
+        content1 = self.env['ir.qweb'].with_context(
+            check_view_ids=[view1.id, view2.id, view3.id]).render(view1.id)
+        content3 = self.env['ir.qweb'].with_context(
+            check_view_ids=[view1.id, view2.id, view3.id]).render(view3.id)
 
         self.assertNotEqual(content1, content3)
 
@@ -1270,7 +1295,9 @@ class TestQWebRender(ViewCase):
         self.env.cr.execute("INSERT INTO ir_model_data(name, model, res_id, module)"
                             "VALUES ('dummy_primary_ext', 'ir.ui.view', %s, 'base')" % view3.id)
 
-        content1 = self.env['ir.qweb'].with_context(check_view_ids=[view1.id, view2.id, view3.id]).render('base.dummy')
-        content3 = self.env['ir.qweb'].with_context(check_view_ids=[view1.id, view2.id, view3.id]).render('base.dummy_primary_ext')
+        content1 = self.env['ir.qweb'].with_context(
+            check_view_ids=[view1.id, view2.id, view3.id]).render('base.dummy')
+        content3 = self.env['ir.qweb'].with_context(
+            check_view_ids=[view1.id, view2.id, view3.id]).render('base.dummy_primary_ext')
 
         self.assertNotEqual(content1, content3)

@@ -9,7 +9,8 @@ class BaseModuleUpdate(models.TransientModel):
 
     updated = fields.Integer('Number of modules updated', readonly=True)
     added = fields.Integer('Number of modules added', readonly=True)
-    state = fields.Selection([('init', 'init'), ('done', 'done')], 'Status', readonly=True, default='init')
+    state = fields.Selection(
+        [('init', 'init'), ('done', 'done')], 'Status', readonly=True, default='init')
 
     @api.multi
     def update_module(self):

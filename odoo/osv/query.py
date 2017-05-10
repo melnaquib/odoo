@@ -2,7 +2,6 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 
-
 def _quote(to_quote):
     if '"' not in to_quote:
         return '"%s"' % to_quote
@@ -46,7 +45,8 @@ class Query(object):
         #                 }
         #   which should lead to the following SQL:
         #       SELECT ... FROM "table_a" LEFT JOIN "table_b" ON ("table_a"."table_a_col1" = "table_b"."table_b_col")
-        #                                 LEFT JOIN "table_c" ON ("table_a"."table_a_col2" = "table_c"."table_c_col")
+        # LEFT JOIN "table_c" ON ("table_a"."table_a_col2" =
+        # "table_c"."table_c_col")
         self.joins = joins or {}
 
         # holds extra conditions for table joins that should not be in the where
@@ -115,7 +115,8 @@ class Query(object):
         if implicit:
             if alias_statement not in self.tables:
                 self.tables.append(alias_statement)
-                condition = '("%s"."%s" = "%s"."%s")' % (lhs, lhs_col, alias, col)
+                condition = '("%s"."%s" = "%s"."%s")' % (
+                    lhs, lhs_col, alias, col)
                 self.where_clause.append(condition)
             else:
                 # already joined
@@ -123,14 +124,17 @@ class Query(object):
             return alias, alias_statement
         else:
             aliases = self._get_table_aliases()
-            assert lhs in aliases, "Left-hand-side table %s must already be part of the query tables %s!" % (lhs, str(self.tables))
+            assert lhs in aliases, "Left-hand-side table %s must already be part of the query tables %s!" % (
+                lhs, str(self.tables))
             if alias_statement in self.tables:
-                # already joined, must ignore (promotion to outer and multiple joins not supported yet)
+                # already joined, must ignore (promotion to outer and multiple
+                # joins not supported yet)
                 pass
             else:
                 # add JOIN
                 self.tables.append(alias_statement)
-                join_tuple = (alias, lhs_col, col, outer and 'LEFT JOIN' or 'JOIN')
+                join_tuple = (alias, lhs_col, col,
+                              outer and 'LEFT JOIN' or 'JOIN')
                 self.joins.setdefault(lhs, []).append(join_tuple)
                 if extra or extra_params:
                     extra = (extra or '').format(lhs=lhs, rhs=alias)
@@ -148,8 +152,8 @@ class Query(object):
         def add_joins_for_table(lhs):
             for (rhs, lhs_col, rhs_col, join) in self.joins.get(lhs, []):
                 tables_to_process.remove(alias_mapping[rhs])
-                from_clause.append(' %s %s ON ("%s"."%s" = "%s"."%s"' % \
-                    (join, alias_mapping[rhs], lhs, lhs_col, rhs, rhs_col))
+                from_clause.append(' %s %s ON ("%s"."%s" = "%s"."%s"' %
+                                   (join, alias_mapping[rhs], lhs, lhs_col, rhs, rhs_col))
                 extra = self.extras.get((lhs, (rhs, lhs_col, rhs_col, join)))
                 if extra:
                     if extra[0]:

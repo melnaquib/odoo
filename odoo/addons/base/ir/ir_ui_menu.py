@@ -22,28 +22,35 @@ class IrUiMenu(models.Model):
 
     def __init__(self, *args, **kwargs):
         super(IrUiMenu, self).__init__(*args, **kwargs)
-        self.pool['ir.model.access'].register_cache_clearing_method(self._name, 'clear_caches')
+        self.pool['ir.model.access'].register_cache_clearing_method(
+            self._name, 'clear_caches')
 
     name = fields.Char(string='Menu', required=True, translate=True)
     active = fields.Boolean(default=True)
     sequence = fields.Integer(default=10)
     child_id = fields.One2many('ir.ui.menu', 'parent_id', string='Child IDs')
-    parent_id = fields.Many2one('ir.ui.menu', string='Parent Menu', index=True, ondelete="restrict")
+    parent_id = fields.Many2one(
+        'ir.ui.menu', string='Parent Menu', index=True, ondelete="restrict")
     parent_left = fields.Integer(index=True)
     parent_right = fields.Integer(index=True)
     groups_id = fields.Many2many('res.groups', 'ir_ui_menu_group_rel',
                                  'menu_id', 'gid', string='Groups',
-                                 help="If you have groups, the visibility of this menu will be based on these groups. "\
+                                 help="If you have groups, the visibility of this menu will be based on these groups. "
                                       "If this field is empty, Odoo will compute visibility based on the related object's read access.")
-    complete_name = fields.Char(compute='_compute_complete_name', string='Full Path')
+    complete_name = fields.Char(
+        compute='_compute_complete_name', string='Full Path')
     web_icon = fields.Char(string='Web Icon File')
     action = fields.Reference(selection=[('ir.actions.report.xml', 'ir.actions.report.xml'),
-                                         ('ir.actions.act_window', 'ir.actions.act_window'),
-                                         ('ir.actions.act_url', 'ir.actions.act_url'),
-                                         ('ir.actions.server', 'ir.actions.server'),
+                                         ('ir.actions.act_window',
+                                          'ir.actions.act_window'),
+                                         ('ir.actions.act_url',
+                                          'ir.actions.act_url'),
+                                         ('ir.actions.server',
+                                          'ir.actions.server'),
                                          ('ir.actions.client', 'ir.actions.client')])
 
-    web_icon_data = fields.Binary(string='Web Icon Image', compute="_compute_web_icon", store=True, attachment=True)
+    web_icon_data = fields.Binary(
+        string='Web Icon Image', compute="_compute_web_icon", store=True, attachment=True)
 
     @api.depends('name', 'parent_id.complete_name')
     def _compute_complete_name(self):
@@ -85,7 +92,8 @@ class IrUiMenu(models.Model):
     @api.constrains('parent_id')
     def _check_parent_id(self):
         if not self._check_recursion():
-            raise ValidationError(_('Error! You cannot create recursive menus.'))
+            raise ValidationError(
+                _('Error! You cannot create recursive menus.'))
 
     @api.model
     @tools.ormcache('frozenset(self.env.user.groups_id.ids)', 'debug')
@@ -134,14 +142,17 @@ class IrUiMenu(models.Model):
             the menu hierarchy of the current user.
             Uses a cache for speeding up the computation.
         """
-        visible_ids = self._visible_menu_ids(request.debug if request else False)
+        visible_ids = self._visible_menu_ids(
+            request.debug if request else False)
         return self.filtered(lambda menu: menu.id in visible_ids)
 
     @api.model
     def search(self, args, offset=0, limit=None, order=None, count=False):
-        menus = super(IrUiMenu, self).search(args, offset=0, limit=None, order=order, count=False)
+        menus = super(IrUiMenu, self).search(
+            args, offset=0, limit=None, order=order, count=False)
         if menus:
-            # menu filtering is done only on main menu tree, not other menu lists
+            # menu filtering is done only on main menu tree, not other menu
+            # lists
             if not self._context.get('ir.ui.menu.full_list'):
                 menus = menus._filter_visible_menus()
             if offset:
@@ -169,9 +180,11 @@ class IrUiMenu(models.Model):
         # Detach children and promote them to top-level, because it would be unwise to
         # cascade-delete submenus blindly. We also can't use ondelete=set null because
         # that is not supported when _parent_store is used (would silently corrupt it).
-        # TODO: ideally we should move them under a generic "Orphans" menu somewhere?
+        # TODO: ideally we should move them under a generic "Orphans" menu
+        # somewhere?
         extra = {'ir.ui.menu.full_list': True}
-        direct_children = self.with_context(**extra).search([('parent_id', 'in', self.ids)])
+        direct_children = self.with_context(
+            **extra).search([('parent_id', 'in', self.ids)])
         direct_children.write({'parent_id': False})
 
         self.clear_caches()
@@ -201,9 +214,11 @@ class IrUiMenu(models.Model):
             ctx = {}
             if menu.action and menu.action.type in ('ir.actions.act_window', 'ir.actions.client') and menu.action.context:
                 with tools.ignore(Exception):
-                    # use magical UnquoteEvalContext to ignore undefined client-side variables such as `active_id`
+                    # use magical UnquoteEvalContext to ignore undefined
+                    # client-side variables such as `active_id`
                     eval_ctx = tools.UnquoteEvalContext(self._context)
-                    ctx = safe_eval(menu.action.context, locals_dict=eval_ctx, nocopy=True) or {}
+                    ctx = safe_eval(menu.action.context,
+                                    locals_dict=eval_ctx, nocopy=True) or {}
             menu_refs = ctx.get('needaction_menu_ref')
             if menu_refs:
                 if not isinstance(menu_refs, list):
@@ -224,12 +239,16 @@ class IrUiMenu(models.Model):
                     model = self.env[menu.action.res_model]
                     if model._needaction:
                         if menu.action.type == 'ir.actions.act_window':
-                            eval_context = self.env['ir.actions.act_window']._get_eval_context()
-                            dom = safe_eval(menu.action.domain or '[]', eval_context)
+                            eval_context = self.env['ir.actions.act_window']._get_eval_context(
+                            )
+                            dom = safe_eval(
+                                menu.action.domain or '[]', eval_context)
                         else:
-                            dom = safe_eval(menu.action.params_store or '{}', {'uid': self._uid}).get('domain')
+                            dom = safe_eval(menu.action.params_store or '{}', {
+                                            'uid': self._uid}).get('domain')
                         res[menu.id]['needaction_enabled'] = model._needaction
-                        res[menu.id]['needaction_counter'] = model._needaction_count(dom)
+                        res[menu.id]['needaction_counter'] = model._needaction_count(
+                            dom)
         return res
 
     @api.model
@@ -264,7 +283,8 @@ class IrUiMenu(models.Model):
         :return: the menu root
         :rtype: dict('children': menu_nodes)
         """
-        fields = ['name', 'sequence', 'parent_id', 'action', 'web_icon', 'web_icon_data']
+        fields = ['name', 'sequence', 'parent_id',
+                  'action', 'web_icon', 'web_icon_data']
         menu_roots = self.get_user_roots()
         menu_roots_data = menu_roots.read(fields) if menu_roots else []
         menu_root = {
@@ -289,7 +309,7 @@ class IrUiMenu(models.Model):
         menu_root['all_menu_ids'] = menus.ids  # includes menu_roots!
 
         # make a tree using parent_id
-        menu_items_map = {menu_item["id"]: menu_item for menu_item in menu_items}
+        menu_items_map = {menu_item["id"]                          : menu_item for menu_item in menu_items}
         for menu_item in menu_items:
             parent = menu_item['parent_id'] and menu_item['parent_id'][0]
             if parent in menu_items_map:
@@ -298,6 +318,7 @@ class IrUiMenu(models.Model):
 
         # sort by sequence a tree using parent_id
         for menu_item in menu_items:
-            menu_item.setdefault('children', []).sort(key=operator.itemgetter('sequence'))
+            menu_item.setdefault('children', []).sort(
+                key=operator.itemgetter('sequence'))
 
         return menu_root

@@ -29,8 +29,10 @@ class TestORM(TransactionCase):
             'groups_id': [4, self.ref('base.group_user')],
         })
         ps = (p1 + p2).sudo(user)
-        self.assertEqual([{'id': p2.id, 'name': 'Y'}], ps.read(['name']), "read() should skip deleted records")
-        self.assertEqual([], ps[0].read(['name']), "read() should skip deleted records")
+        self.assertEqual([{'id': p2.id, 'name': 'Y'}], ps.read(
+            ['name']), "read() should skip deleted records")
+        self.assertEqual([], ps[0].read(['name']),
+                         "read() should skip deleted records")
 
         # Deleting an already deleted record should be simply ignored
         self.assertTrue(p1.unlink(), "Re-deleting should be a no-op")
@@ -50,7 +52,8 @@ class TestORM(TransactionCase):
             'groups_id': [4, self.ref('base.group_user')],
         })
 
-        partner_model = self.env['ir.model'].search([('model','=','res.partner')])
+        partner_model = self.env['ir.model'].search(
+            [('model', '=', 'res.partner')])
         self.env['ir.rule'].create({
             'name': 'Y is invisible',
             'domain_force': [('id', '!=', p1.id)],
@@ -72,7 +75,7 @@ class TestORM(TransactionCase):
         with self.assertRaises(AccessError):
             p1.sudo(user).unlink()
 
-        # Prepare mixed case 
+        # Prepare mixed case
         p2.unlink()
         # read mixed records: some deleted and some filtered
         with self.assertRaises(AccessError):
@@ -99,17 +102,20 @@ class TestORM(TransactionCase):
 
         # search_read correct order
         partner.create({'name': 'MyPartner2'})
-        found = partner.search_read([('name', 'like', 'MyPartner')], ['name'], order="name")
+        found = partner.search_read(
+            [('name', 'like', 'MyPartner')], ['name'], order="name")
         self.assertEqual(len(found), 2)
         self.assertEqual(found[0]['name'], 'MyPartner1')
         self.assertEqual(found[1]['name'], 'MyPartner2')
-        found = partner.search_read([('name', 'like', 'MyPartner')], ['name'], order="name desc")
+        found = partner.search_read([('name', 'like', 'MyPartner')], [
+                                    'name'], order="name desc")
         self.assertEqual(len(found), 2)
         self.assertEqual(found[0]['name'], 'MyPartner2')
         self.assertEqual(found[1]['name'], 'MyPartner1')
 
         # search_read that finds nothing
-        found = partner.search_read([('name', '=', 'Does not exists')], ['name'])
+        found = partner.search_read(
+            [('name', '=', 'Does not exists')], ['name'])
         self.assertEqual(len(found), 0)
 
     def test_exists(self):
@@ -152,7 +158,8 @@ class TestORM(TransactionCase):
             domain = [('id', 'in', partner_ids)]
             result = {}
             for grp in partners.read_group(domain, ['date'], ['date:' + interval]):
-                result[grp['date:' + interval]] = partners.search(grp['__domain'])
+                result[grp['date:' + interval]
+                       ] = partners.search(grp['__domain'])
             return result
 
         self.assertEqual(len(read_group('day')), len(partner_ids_by_day))
@@ -198,7 +205,8 @@ class TestInherits(TransactionCase):
     def test_create(self):
         """ creating a user should automatically create a new partner """
         partners_before = self.env['res.partner'].search([])
-        user_foo = self.env['res.users'].create({'name': 'Foo', 'login': 'foo'})
+        user_foo = self.env['res.users'].create(
+            {'name': 'Foo', 'login': 'foo'})
 
         self.assertNotIn(user_foo.partner_id, partners_before)
 
@@ -206,7 +214,8 @@ class TestInherits(TransactionCase):
         """ creating a user with a specific 'partner_id' should not create a new partner """
         partner_foo = self.env['res.partner'].create({'name': 'Foo'})
         partners_before = self.env['res.partner'].search([])
-        user_foo = self.env['res.users'].create({'partner_id': partner_foo.id, 'login': 'foo'})
+        user_foo = self.env['res.users'].create(
+            {'partner_id': partner_foo.id, 'login': 'foo'})
         partners_after = self.env['res.partner'].search([])
 
         self.assertEqual(partners_before, partners_after)
@@ -216,7 +225,8 @@ class TestInherits(TransactionCase):
     @mute_logger('odoo.models')
     def test_read(self):
         """ inherited fields should be read without any indirection """
-        user_foo = self.env['res.users'].create({'name': 'Foo', 'login': 'foo'})
+        user_foo = self.env['res.users'].create(
+            {'name': 'Foo', 'login': 'foo'})
         user_values, = user_foo.read()
         partner_values, = user_foo.partner_id.read()
 
@@ -256,7 +266,8 @@ class TestInherits(TransactionCase):
         del foo_before['__last_update']
         del foo_before['login_date']
         partners_before = self.env['res.partner'].search([])
-        user_bar = user_foo.copy({'partner_id': partner_bar.id, 'login': 'bar'})
+        user_bar = user_foo.copy(
+            {'partner_id': partner_bar.id, 'login': 'bar'})
         foo_after, = user_foo.read()
         del foo_after['__last_update']
         del foo_after['login_date']
@@ -267,19 +278,35 @@ class TestInherits(TransactionCase):
 
         self.assertNotEqual(user_foo.id, user_bar.id)
         self.assertEqual(user_bar.partner_id.id, partner_bar.id)
-        self.assertEqual(user_bar.login, 'bar', "login is given from copy parameters")
-        self.assertFalse(user_bar.password, "password should not be copied from original record")
-        self.assertEqual(user_bar.name, 'Bar', "name is given from specific partner")
-        self.assertEqual(user_bar.signature, user_foo.signature, "signature should be copied")
+        self.assertEqual(user_bar.login, 'bar',
+                         "login is given from copy parameters")
+        self.assertFalse(user_bar.password,
+                         "password should not be copied from original record")
+        self.assertEqual(user_bar.name, 'Bar',
+                         "name is given from specific partner")
+        self.assertEqual(user_bar.signature, user_foo.signature,
+                         "signature should be copied")
 
 
-CREATE = lambda values: (0, False, values)
-UPDATE = lambda id, values: (1, id, values)
-DELETE = lambda id: (2, id, False)
-FORGET = lambda id: (3, id, False)
-LINK_TO = lambda id: (4, id, False)
-DELETE_ALL = lambda: (5, False, False)
-REPLACE_WITH = lambda ids: (6, False, ids)
+def CREATE(values): return (0, False, values)
+
+
+def UPDATE(id, values): return (1, id, values)
+
+
+def DELETE(id): return (2, id, False)
+
+
+def FORGET(id): return (3, id, False)
+
+
+def LINK_TO(id): return (4, id, False)
+
+
+def DELETE_ALL(): return (5, False, False)
+
+
+def REPLACE_WITH(ids): return (6, False, ids)
 
 
 class TestO2MSerialization(TransactionCase):
@@ -291,13 +318,15 @@ class TestO2MSerialization(TransactionCase):
 
     def test_no_command(self):
         " empty list of commands yields an empty list of records "
-        results = self.env['res.partner'].resolve_2many_commands('child_ids', [])
+        results = self.env['res.partner'].resolve_2many_commands(
+            'child_ids', [])
         self.assertEqual(results, [])
 
     def test_CREATE_commands(self):
         " returns the VALUES dict as-is "
         values = [{'foo': 'bar'}, {'foo': 'baz'}, {'foo': 'baq'}]
-        results = self.env['res.partner'].resolve_2many_commands('child_ids', list(map(CREATE, values)))
+        results = self.env['res.partner'].resolve_2many_commands(
+            'child_ids', list(map(CREATE, values)))
         self.assertEqual(results, values)
 
     def test_LINK_TO_command(self):
@@ -309,7 +338,8 @@ class TestO2MSerialization(TransactionCase):
         ]
         commands = list(map(LINK_TO, ids))
 
-        results = self.env['res.partner'].resolve_2many_commands('child_ids', commands, ['name'])
+        results = self.env['res.partner'].resolve_2many_commands(
+            'child_ids', commands, ['name'])
         self.assertItemsEqual(results, [
             {'id': ids[0], 'name': 'foo'},
             {'id': ids[1], 'name': 'bar'},
@@ -324,7 +354,8 @@ class TestO2MSerialization(TransactionCase):
             self.env['res.partner'].create({'name': 'baz'}).id,
         ]
 
-        results = self.env['res.partner'].resolve_2many_commands('child_ids', ids, ['name'])
+        results = self.env['res.partner'].resolve_2many_commands(
+            'child_ids', ids, ['name'])
         self.assertItemsEqual(results, [
             {'id': ids[0], 'name': 'foo'},
             {'id': ids[1], 'name': 'bar'},
@@ -342,7 +373,8 @@ class TestO2MSerialization(TransactionCase):
             UPDATE(baz.id, {'name': 'quux'}),
         ]
 
-        results = self.env['res.partner'].resolve_2many_commands('child_ids', commands, ['name', 'city'])
+        results = self.env['res.partner'].resolve_2many_commands(
+            'child_ids', commands, ['name', 'city'])
         self.assertItemsEqual(results, [
             {'id': foo.id, 'name': 'foo', 'city': False},
             {'id': bar.id, 'name': 'qux', 'city': 'tagtag'},
@@ -358,7 +390,8 @@ class TestO2MSerialization(TransactionCase):
         ]
         commands = list(map(DELETE, ids))
 
-        results = self.env['res.partner'].resolve_2many_commands('child_ids', commands, ['name'])
+        results = self.env['res.partner'].resolve_2many_commands(
+            'child_ids', commands, ['name'])
         self.assertEqual(results, [])
 
     def test_mixed_commands(self):
@@ -371,13 +404,14 @@ class TestO2MSerialization(TransactionCase):
             UPDATE(ids[0], {'name': 'bar'}),
             LINK_TO(ids[1]),
             DELETE(ids[2]),
-            UPDATE(ids[3], {'name': 'quux',}),
+            UPDATE(ids[3], {'name': 'quux', }),
             UPDATE(ids[4], {'name': 'corge'}),
             CREATE({'name': 'grault'}),
             LINK_TO(ids[5]),
         ]
 
-        results = self.env['res.partner'].resolve_2many_commands('child_ids', commands, ['name'])
+        results = self.env['res.partner'].resolve_2many_commands(
+            'child_ids', commands, ['name'])
         self.assertItemsEqual(results, [
             {'name': 'foo'},
             {'id': ids[0], 'name': 'bar'},
@@ -397,7 +431,8 @@ class TestO2MSerialization(TransactionCase):
         ]
         commands = [(4, id) for id in ids]
 
-        results = self.env['res.partner'].resolve_2many_commands('child_ids', commands, ['name'])
+        results = self.env['res.partner'].resolve_2many_commands(
+            'child_ids', commands, ['name'])
         self.assertItemsEqual(results, [
             {'id': ids[0], 'name': 'foo'},
             {'id': ids[1], 'name': 'bar'},
@@ -407,5 +442,6 @@ class TestO2MSerialization(TransactionCase):
     def test_singleton_commands(self):
         "DELETE_ALL can appear as a singleton"
         commands = [DELETE_ALL()]
-        results = self.env['res.partner'].resolve_2many_commands('child_ids', commands, ['name'])
+        results = self.env['res.partner'].resolve_2many_commands(
+            'child_ids', commands, ['name'])
         self.assertEqual(results, [])

@@ -13,12 +13,14 @@ class test_workflows(common.TransactionCase):
         Workitem = self.env['workflow.workitem']
 
         # Given the workflow instance associated to the record ...
-        instance = Instance.search([('res_type', '=', record._name), ('res_id', '=', record.id)])
+        instance = Instance.search(
+            [('res_type', '=', record._name), ('res_id', '=', record.id)])
         self.assertTrue(instance, 'A workflow instance is expected.')
 
         # ... get all its workitems ...
         workitems = Workitem.search([('inst_id', '=', instance.id)])
-        self.assertTrue(workitems, 'The workflow instance should have workitems.')
+        self.assertTrue(
+            workitems, 'The workflow instance should have workitems.')
 
         # ... and check the activity the are in against the provided names.
         self.assertEqual(
