@@ -7,7 +7,7 @@ from collections import OrderedDict, defaultdict
 from datetime import date, datetime
 from functools import partial
 from operator import attrgetter
-from types import NoneType
+# from types import NoneType
 import json
 import logging
 import pytz
@@ -1336,7 +1336,7 @@ class Char(_String):
 
     def _setup_regular_base(self, model):
         super(Char, self)._setup_regular_base(model)
-        assert isinstance(self.size, (NoneType, int)), \
+        assert isinstance(self.size, (type(None), int)), \
             "Char field %s with non-integer size %r" % (self, self.size)
 
     def convert_to_column(self, value, record):
