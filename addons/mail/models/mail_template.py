@@ -10,6 +10,8 @@ import logging
 import lxml
 import urllib.parse
 from urllib.parse import urlencode, quote as quote
+from functools import reduce as func_reduce
+
 
 from odoo import _, api, fields, models, tools
 from odoo import report as odoo_report
@@ -96,10 +98,10 @@ try:
         'max': max,
         'sum': sum,
         'filter': filter,
-        'reduce': reduce,
+        'reduce': func_reduce,
         'map': map,
         'round': round,
-        'cmp': cmp,
+        'cmp': lambda a, b: (a > b) - (a < b),
 
         # dateutil.relativedelta is an old-style class and cannot be directly
         # instanciated wihtin a jinja2 expression, so a lambda "proxy" is
