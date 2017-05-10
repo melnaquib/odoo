@@ -109,10 +109,10 @@ class IrModule(models.Model):
                         path = opj(module_dir, mod_name)
                         self.import_module(mod_name, path, force=force)
                         success.append(mod_name)
-                    except Exception, e:
+                    except Exception as e:
                         _logger.exception('Error while importing module')
                         errors[mod_name] = exception_to_unicode(e)
         r = ["Successfully imported module '%s'" % mod for mod in success]
-        for mod, error in errors.items():
+        for mod, error in list(errors.items()):
             r.append("Error while importing module '%s': %r" % (mod, error))
         return '\n'.join(r), module_names

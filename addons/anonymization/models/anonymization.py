@@ -13,7 +13,7 @@ ANONYMIZATION_DIRECTION = [('clear -> anonymized', 'clear -> anonymized'), ('ano
 
 
 def group(lst, cols):
-    if isinstance(cols, basestring):
+    if isinstance(cols, str):
         cols = [cols]
     return dict((k, [v for v in itr]) for k, itr in groupby(sorted(lst, key=itemgetter(*cols)), itemgetter(*cols)))
 
@@ -79,7 +79,7 @@ class IrModelFieldsAnonymization(models.Model):
     @api.multi
     def write(self, vals):
         # check field state: all should be clear before we can modify a field:
-        if not len(vals.keys()) == 1 and vals.get('state') == 'clear':
+        if not len(list(vals.keys())) == 1 and vals.get('state') == 'clear':
             self._check_write()
         if vals.get('field_name') and vals.get('model_name'):
             vals['model_id'], vals['field_id'] = self._get_model_and_field_ids(vals)

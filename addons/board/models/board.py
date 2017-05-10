@@ -45,7 +45,7 @@ class Board(models.AbstractModel):
             return node
 
         def encode(s):
-            if isinstance(s, unicode):
+            if isinstance(s, str):
                 return s.encode('utf8')
             return s
 

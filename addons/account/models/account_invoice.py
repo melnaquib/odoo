@@ -13,6 +13,7 @@ from odoo.exceptions import UserError, RedirectWarning, ValidationError
 
 import odoo.addons.decimal_precision as dp
 import logging
+from functools import reduce
 
 _logger = logging.getLogger(__name__)
 
@@ -66,7 +67,7 @@ class AccountInvoice(models.Model):
         inv_types = inv_type if isinstance(inv_type, list) else [inv_type]
         company_id = self._context.get('company_id', self.env.user.company_id.id)
         domain = [
-            ('type', 'in', filter(None, map(TYPE2JOURNAL.get, inv_types))),
+            ('type', 'in', [_f for _f in map(TYPE2JOURNAL.get, inv_types) if _f]),
             ('company_id', '=', company_id),
         ]
         return self.env['account.journal'].search(domain, limit=1)
@@ -189,8 +190,8 @@ class AccountInvoice(models.Model):
     def _compute_payments(self):
         payment_lines = []
         for line in self.move_id.line_ids:
-            payment_lines.extend(filter(None, [rp.credit_move_id.id for rp in line.matched_credit_ids]))
-            payment_lines.extend(filter(None, [rp.debit_move_id.id for rp in line.matched_debit_ids]))
+            payment_lines.extend([_f for _f in [rp.credit_move_id.id for rp in line.matched_credit_ids] if _f])
+            payment_lines.extend([_f for _f in [rp.debit_move_id.id for rp in line.matched_debit_ids] if _f])
         self.payment_move_line_ids = self.env['account.move.line'].browse(list(set(payment_lines)))
 
     name = fields.Char(string='Reference/Description', index=True,
@@ -332,7 +333,7 @@ class AccountInvoice(models.Model):
             '_onchange_partner_id': ['account_id', 'payment_term_id', 'fiscal_position_id', 'partner_bank_id'],
             '_onchange_journal_id': ['currency_id'],
         }
-        for onchange_method, changed_fields in onchanges.items():
+        for onchange_method, changed_fields in list(onchanges.items()):
             if any(f not in vals for f in changed_fields):
                 invoice = self.new(vals)
                 getattr(invoice, onchange_method)()
@@ -436,7 +437,7 @@ class AccountInvoice(models.Model):
             tax_grouped = invoice.get_taxes_values()
 
             # Create new tax lines
-            for tax in tax_grouped.values():
+            for tax in list(tax_grouped.values()):
                 account_invoice_tax.create(tax)
 
         # dummy write on self to trigger recomputations
@@ -455,7 +456,7 @@ class AccountInvoice(models.Model):
     def _onchange_invoice_line_ids(self):
         taxes_grouped = self.get_taxes_values()
         tax_lines = self.tax_line_ids.browse([])
-        for tax in taxes_grouped.values():
+        for tax in list(taxes_grouped.values()):
             tax_lines += tax_lines.new(tax)
         self.tax_line_ids = tax_lines
         return
@@ -804,7 +805,7 @@ class AccountInvoice(models.Model):
                 else:
                     line2[tmp] = l
             line = []
-            for key, val in line2.items():
+            for key, val in list(line2.items()):
                 line.append((0, 0, val))
         return line
 
@@ -992,7 +993,7 @@ class AccountInvoice(models.Model):
         result = []
         for line in lines:
             values = {}
-            for name, field in line._fields.iteritems():
+            for name, field in line._fields.items():
                 if name in MAGIC_COLUMNS:
                     continue
                 elif field.type == 'many2one':
@@ -1077,7 +1078,7 @@ class AccountInvoice(models.Model):
             :param date: payment date, defaults to fields.Date.context_today(self)
             :param writeoff_acc: account in which to create a writeoff if pay_amount < self.residual, so that the invoice is fully paid
         """
-        if isinstance( pay_journal, ( int, long ) ):
+        if isinstance( pay_journal, int ):
             pay_journal = self.env['account.journal'].browse([pay_journal])
         assert len(self) == 1, "Can only pay one invoice at a time."
         payment_type = self.type in ('out_invoice', 'in_refund') and 'inbound' or 'outbound'
@@ -1130,8 +1131,8 @@ class AccountInvoice(models.Model):
         for line in self.tax_line_ids:
             res.setdefault(line.tax_id.tax_group_id, 0.0)
             res[line.tax_id.tax_group_id] += line.amount
-        res = sorted(res.items(), key=lambda l: l[0].sequence)
-        res = map(lambda l: (l[0].name, l[1]), res)
+        res = sorted(list(res.items()), key=lambda l: l[0].sequence)
+        res = [(l[0].name, l[1]) for l in res]
         return res
 
 

@@ -3,7 +3,7 @@
 
 from odoo.exceptions import UserError, AccessError
 
-from test_sale_common import TestSale
+from .test_sale_common import TestSale
 
 
 class TestSaleOrder(TestSale):
@@ -17,10 +17,10 @@ class TestSaleOrder(TestSale):
             'partner_id': self.partner.id,
             'partner_invoice_id': self.partner.id,
             'partner_shipping_id': self.partner.id,
-            'order_line': [(0, 0, {'name': p.name, 'product_id': p.id, 'product_uom_qty': 2, 'product_uom': p.uom_id.id, 'price_unit': p.list_price}) for (_, p) in self.products.iteritems()],
+            'order_line': [(0, 0, {'name': p.name, 'product_id': p.id, 'product_uom_qty': 2, 'product_uom': p.uom_id.id, 'price_unit': p.list_price}) for (_, p) in self.products.items()],
             'pricelist_id': self.env.ref('product.list0').id,
         })
-        self.assertEqual(so.amount_total, sum([2 * p.list_price for (k, p) in self.products.iteritems()]), 'Sale: total amount is wrong')
+        self.assertEqual(so.amount_total, sum([2 * p.list_price for (k, p) in self.products.items()]), 'Sale: total amount is wrong')
 
         # send quotation
         so.force_quotation_send()
@@ -35,7 +35,7 @@ class TestSaleOrder(TestSale):
         inv_id = so.action_invoice_create()
         inv = inv_obj.browse(inv_id)
         self.assertEqual(len(inv.invoice_line_ids), 2, 'Sale: invoice is missing lines')
-        self.assertEqual(inv.amount_total, sum([2 * p.list_price if p.invoice_policy == 'order' else 0 for (k, p) in self.products.iteritems()]), 'Sale: invoice total amount is wrong')
+        self.assertEqual(inv.amount_total, sum([2 * p.list_price if p.invoice_policy == 'order' else 0 for (k, p) in self.products.items()]), 'Sale: invoice total amount is wrong')
         self.assertTrue(so.invoice_status == 'no', 'Sale: SO status after invoicing should be "nothing to invoice"')
         self.assertTrue(len(so.invoice_ids) == 1, 'Sale: invoice is missing')
 
@@ -46,7 +46,7 @@ class TestSaleOrder(TestSale):
         inv_id = so.action_invoice_create()
         inv = inv_obj.browse(inv_id)
         self.assertEqual(len(inv.invoice_line_ids), 2, 'Sale: second invoice is missing lines')
-        self.assertEqual(inv.amount_total, sum([2 * p.list_price if p.invoice_policy == 'delivery' else 0 for (k, p) in self.products.iteritems()]), 'Sale: second invoice total amount is wrong')
+        self.assertEqual(inv.amount_total, sum([2 * p.list_price if p.invoice_policy == 'delivery' else 0 for (k, p) in self.products.items()]), 'Sale: second invoice total amount is wrong')
         self.assertTrue(so.invoice_status == 'invoiced', 'Sale: SO status after invoicing everything should be "invoiced"')
         self.assertTrue(len(so.invoice_ids) == 2, 'Sale: invoice is missing')
         # go over the sold quantity
@@ -71,7 +71,7 @@ class TestSaleOrder(TestSale):
             'partner_id': self.partner.id,
             'partner_invoice_id': self.partner.id,
             'partner_shipping_id': self.partner.id,
-            'order_line': [(0, 0, {'name': p.name, 'product_id': p.id, 'product_uom_qty': 2, 'product_uom': p.uom_id.id, 'price_unit': p.list_price}) for (_, p) in self.products.iteritems()],
+            'order_line': [(0, 0, {'name': p.name, 'product_id': p.id, 'product_uom_qty': 2, 'product_uom': p.uom_id.id, 'price_unit': p.list_price}) for (_, p) in self.products.items()],
             'pricelist_id': self.env.ref('product.list0').id,
         })
 

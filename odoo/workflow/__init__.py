@@ -63,7 +63,7 @@ def trg_validate(uid, res_type, res_id, signal, cr):
     :signal: the signal name to be fired
     :param cr: a database cursor
     """
-    assert isinstance(signal, basestring)
+    assert isinstance(signal, str)
     return WorkflowService.new(cr, uid, res_type, res_id).validate(signal)
 
 def trg_redirect(uid, res_type, res_id, new_rid, cr):
@@ -79,5 +79,5 @@ def trg_redirect(uid, res_type, res_id, new_rid, cr):
     :param new_rid: the model instance id to own the worfklow instance
     :param cr: a database cursor
     """
-    assert isinstance(new_rid, (long, int))
+    assert isinstance(new_rid, int)
     return WorkflowService.new(cr, uid, res_type, res_id).redirect(new_rid)

@@ -68,22 +68,22 @@ class TestAccountCustomerInvoice(AccountTestUsers):
         total_before_confirm = self.partner3.total_invoiced
 
         # I check that Initially customer invoice is in the "Draft" state
-        self.assertEquals(self.account_invoice_customer0.state, 'draft')
+        self.assertEqual(self.account_invoice_customer0.state, 'draft')
 
         # I change the state of invoice to "Proforma2" by clicking PRO-FORMA button
         self.account_invoice_customer0.action_invoice_proforma2()
 
         # I check that the invoice state is now "Proforma2"
-        self.assertEquals(self.account_invoice_customer0.state, 'proforma2')
+        self.assertEqual(self.account_invoice_customer0.state, 'proforma2')
 
         # I check that there is no move attached to the invoice
-        self.assertEquals(len(self.account_invoice_customer0.move_id), 0)
+        self.assertEqual(len(self.account_invoice_customer0.move_id), 0)
 
         # I validate invoice by creating on
         self.account_invoice_customer0.action_invoice_open()
 
         # I check that the invoice state is "Open"
-        self.assertEquals(self.account_invoice_customer0.state, 'open')
+        self.assertEqual(self.account_invoice_customer0.state, 'open')
 
         # I check that now there is a move attached to the invoice
         assert self.account_invoice_customer0.move_id, "Move not created for open invoice"
@@ -95,7 +95,7 @@ class TestAccountCustomerInvoice(AccountTestUsers):
         assert (self.account_invoice_customer0.state == 'paid'), "Invoice is not in Paid state"
 
         total_after_confirm = self.partner3.total_invoiced
-        self.assertEquals(total_after_confirm - total_before_confirm, self.account_invoice_customer0.amount_untaxed_signed)
+        self.assertEqual(total_after_confirm - total_before_confirm, self.account_invoice_customer0.amount_untaxed_signed)
 
         # I refund the invoice Using Refund Button
         invoice_refund_obj = self.env['account.invoice.refund']

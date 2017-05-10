@@ -119,7 +119,7 @@ class TestEventFlow(TestEventCommon):
             event_config.execute()
 
     def test_event_data(self):
-        self.assertEqual(self.event_0.registration_ids.get_date_range_str(), u'Tomorrow')
+        self.assertEqual(self.event_0.registration_ids.get_date_range_str(), 'Tomorrow')
 
     def test_event_date_range(self):
         self.patcher = patch('odoo.addons.event.models.event.fields.Datetime', wraps=Datetime)
@@ -128,19 +128,19 @@ class TestEventFlow(TestEventCommon):
         self.mock_datetime.now.return_value = Datetime.to_string(datetime.datetime(2015, 12, 31, 12, 0))
 
         self.event_0.registration_ids.event_begin_date = datetime.datetime(2015, 12, 31, 18, 0)
-        self.assertEqual(self.event_0.registration_ids.get_date_range_str(), u'Today')
+        self.assertEqual(self.event_0.registration_ids.get_date_range_str(), 'Today')
 
         self.event_0.registration_ids.event_begin_date = datetime.datetime(2016, 1, 1, 6, 0)
-        self.assertEqual(self.event_0.registration_ids.get_date_range_str(), u'Tomorrow')
+        self.assertEqual(self.event_0.registration_ids.get_date_range_str(), 'Tomorrow')
 
         self.event_0.registration_ids.event_begin_date = datetime.datetime(2016, 1, 2, 6, 0)
-        self.assertEqual(self.event_0.registration_ids.get_date_range_str(), u'This week')
+        self.assertEqual(self.event_0.registration_ids.get_date_range_str(), 'This week')
 
         self.event_0.registration_ids.event_begin_date = datetime.datetime(2016, 2, 1, 6, 0)
         self.assertTrue('T' in self.event_0.registration_ids.get_date_range_str())
 
         self.mock_datetime.now.return_value = Datetime.to_string(datetime.datetime(2015, 12, 15, 12, 0))
         self.event_0.registration_ids.event_begin_date = datetime.datetime(2015, 12, 31, 6, 0)
-        self.assertEqual(self.event_0.registration_ids.get_date_range_str(), u'This month')
+        self.assertEqual(self.event_0.registration_ids.get_date_range_str(), 'This month')
 
         self.patcher.stop()

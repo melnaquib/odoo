@@ -44,7 +44,7 @@ class CrmLead(models.Model):
                 if lead.partner_assigned_id and lead.partner_assigned_id.user_id != lead.user_id:
                     salesmans_leads.setdefault(lead.partner_assigned_id.user_id.id, []).append(lead.id)
 
-        for salesman_id, leads_ids in salesmans_leads.items():
+        for salesman_id, leads_ids in list(salesmans_leads.items()):
             leads = self.browse(leads_ids)
             leads.write({'user_id': salesman_id})
             for lead in leads:
@@ -220,7 +220,7 @@ class CrmLead(models.Model):
             if tag_spam and tag_spam not in self.tag_ids:
                 values['tag_ids'] = [(4, tag_spam.id, False)]
         if partner_ids:
-            values['partner_declined_ids'] = map(lambda p: (4, p, 0), partner_ids.ids)
+            values['partner_declined_ids'] = [(4, p, 0) for p in partner_ids.ids]
         self.sudo().write(values)
 
     @api.multi

@@ -466,10 +466,10 @@ class MarketingCampaignWorkitem(models.Model):
         matching_workitems = []
         for id, res_id, model in res:
             workitem_map.setdefault(model, {}).setdefault(res_id, set()).add(id)
-        for model, id_map in workitem_map.iteritems():
+        for model, id_map in workitem_map.items():
             Model = self.env[model]
             condition_name[0] = Model._rec_name
-            condition = [('id', 'in', id_map.keys()), condition_name]
+            condition = [('id', 'in', list(id_map.keys())), condition_name]
             for record in Model.search(condition):
                 matching_workitems.extend(id_map[record.id])
         return [('id', 'in', list(set(matching_workitems)))]

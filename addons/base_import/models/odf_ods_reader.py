@@ -60,7 +60,7 @@ class ODSReader(object):
                         repeat = spanned
 
                 ps = cell.getElementsByType(P)
-                textContent = u""
+                textContent = ""
 
                 # for each text/text:span node
                 for p in ps:
@@ -68,10 +68,10 @@ class ODSReader(object):
                         if n.nodeType == 1 and n.tagName == "text:span":
                             for c in n.childNodes:
                                 if c.nodeType == 3:
-                                    textContent = u'{}{}'.format(textContent, n.data)
+                                    textContent = '{}{}'.format(textContent, n.data)
 
                         if n.nodeType == 3:
-                            textContent = u'{}{}'.format(textContent, n.data)
+                            textContent = '{}{}'.format(textContent, n.data)
 
                 if textContent:
                     if not textContent.startswith("#"):  # ignore comments cells
@@ -95,4 +95,4 @@ class ODSReader(object):
         return self.SHEETS[name]
 
     def getFirstSheet(self):
-        return next(iter(self.SHEETS.itervalues()))
+        return next(iter(self.SHEETS.values()))

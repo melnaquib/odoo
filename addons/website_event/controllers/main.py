@@ -79,7 +79,7 @@ class WebsiteEventController(http.Controller):
 
         def dom_without(without):
             domain = [('state', "in", ['draft', 'confirm', 'done'])]
-            for key, search in domain_search.items():
+            for key, search in list(domain_search.items()):
                 if key != without:
                     domain += search
             return domain
@@ -235,16 +235,16 @@ class WebsiteEventController(http.Controller):
         ''' Process data posted from the attendee details form. '''
         registrations = {}
         global_values = {}
-        for key, value in details.iteritems():
+        for key, value in details.items():
             counter, field_name = key.split('-', 1)
             if counter == '0':
                 global_values[field_name] = value
             else:
                 registrations.setdefault(counter, dict())[field_name] = value
-        for key, value in global_values.iteritems():
-            for registration in registrations.values():
+        for key, value in global_values.items():
+            for registration in list(registrations.values()):
                 registration[key] = value
-        return registrations.values()
+        return list(registrations.values())
 
     @http.route(['/event/<model("event.event"):event>/registration/confirm'], type='http', auth="public", methods=['POST'], website=True)
     def registration_confirm(self, event, **post):

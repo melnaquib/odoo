@@ -14,7 +14,7 @@ class BusController(Controller):
 
     @route('/longpolling/send', type="json", auth="public")
     def send(self, channel, message):
-        if not isinstance(channel, basestring):
+        if not isinstance(channel, str):
             raise Exception("bus.Bus only string channels are allowed.")
         return request.env['bus.bus'].sendone(channel, message)
 
@@ -33,7 +33,7 @@ class BusController(Controller):
             options = {}
         if not dispatch:
             raise Exception("bus.Bus unavailable")
-        if [c for c in channels if not isinstance(c, basestring)]:
+        if [c for c in channels if not isinstance(c, str)]:
             raise Exception("bus.Bus only string channels are allowed.")
         if request.registry.in_test_mode():
             raise exceptions.UserError("bus.Bus not available in test mode")

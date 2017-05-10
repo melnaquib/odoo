@@ -7,7 +7,7 @@ import json
 import xml.etree.ElementTree as ET
 import logging
 import re
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import werkzeug.utils
 import werkzeug.wrappers
 
@@ -36,11 +36,11 @@ class QueryURL(object):
 
     def __call__(self, path=None, path_args=None, **kw):
         path = path or self.path
-        for key, value in self.args.items():
+        for key, value in list(self.args.items()):
             kw.setdefault(key, value)
         path_args = set(path_args or []).union(self.path_args)
         paths, fragments = [], []
-        for key, value in kw.items():
+        for key, value in list(kw.items()):
             if value and key in path_args:
                 if isinstance(value, browse_record):
                     paths.append((key, slug(value)))
@@ -116,7 +116,7 @@ class Website(Home):
 
         try:
             request.website.get_template(page)
-        except ValueError, e:
+        except ValueError as e:
             # page not found
             if request.website.is_publisher():
                 values.pop('deletable')
@@ -192,7 +192,7 @@ class Website(Home):
                 })
             else:
                 # TODO: in master/saas-15, move current_website_id in template directly
-                pages_with_website = map(lambda p: "%d-%d" % (current_website.id, p), range(1, pages + 1))
+                pages_with_website = ["%d-%d" % (current_website.id, p) for p in range(1, pages + 1)]
 
                 # Sitemaps must be split in several smaller files with a sitemap index
                 content = View.render_template('website.sitemap_index_xml', {
@@ -207,7 +207,7 @@ class Website(Home):
     def website_info(self):
         try:
             request.website.get_template('website.website_info').name
-        except Exception, e:
+        except Exception as e:
             return request.env['ir.http']._handle_exception(e, 404)
         Module = request.env['ir.module.module'].sudo()
         apps = Module.search([('state', '=', 'installed'), ('application', '=', True)])
@@ -303,10 +303,10 @@ class Website(Home):
         language = lang.split("_")
         url = "http://google.com/complete/search"
         try:
-            req = urllib2.Request("%s?%s" % (url, werkzeug.url_encode({
+            req = urllib.request.Request("%s?%s" % (url, werkzeug.url_encode({
                 'ie': 'utf8', 'oe': 'utf8', 'output': 'toolbar', 'q': keywords, 'hl': language[0], 'gl': language[1]})))
-            response = urllib2.urlopen(req)
-        except (urllib2.HTTPError, urllib2.URLError):
+            response = urllib.request.urlopen(req)
+        except (urllib.error.HTTPError, urllib.error.URLError):
             return []
         xmlroot = ET.fromstring(response.read())
         return json.dumps([sugg[0].attrib['data'] for sugg in xmlroot if len(sugg) and sugg[0].attrib['data']])
@@ -380,7 +380,7 @@ class Website(Home):
         action = action_id = None
 
         # find the action_id: either an xml_id, the path, or an ID
-        if isinstance(path_or_xml_id_or_id, basestring) and '.' in path_or_xml_id_or_id:
+        if isinstance(path_or_xml_id_or_id, str) and '.' in path_or_xml_id_or_id:
             action = request.env.ref(path_or_xml_id_or_id, raise_if_not_found=False)
         if not action:
             action = ServerActions.search([('website_path', '=', path_or_xml_id_or_id), ('website_published', '=', True)], limit=1)

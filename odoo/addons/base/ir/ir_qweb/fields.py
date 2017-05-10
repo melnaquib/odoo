@@ -3,7 +3,7 @@ import re
 from collections import OrderedDict
 from odoo import api, fields, models, _
 from PIL import Image
-from cStringIO import StringIO
+from io import StringIO
 import babel
 from odoo.tools import html_escape as escape, posix_to_ldml, safe_eval, float_utils
 from .qweb import unicodifier
@@ -19,7 +19,7 @@ def nl2br(string):
     :param str string:
     :rtype: unicode
     """
-    return unicodifier(string).replace(u'\n', u'<br>\n')
+    return unicodifier(string).replace('\n', '<br>\n')
 
 def html_escape(string, options):
     """ Automatically escapes content unless options['html-escape']
@@ -88,7 +88,7 @@ class FieldConverter(models.AbstractModel):
         Converts a single value to its HTML version/output
         :rtype: unicode
         """
-        return html_escape(unicodifier(value) or u'', options)
+        return html_escape(unicodifier(value) or '', options)
 
     @api.model
     def record_to_html(self, record, field_name, options):
@@ -122,7 +122,7 @@ class IntegerConverter(models.AbstractModel):
 
     @api.model
     def value_to_html(self, value, options):
-        return unicodifier(self.user_lang().format('%d', value, grouping=True).replace(r'-', u'\u2011'))
+        return unicodifier(self.user_lang().format('%d', value, grouping=True).replace(r'-', '\u2011'))
 
 
 class FloatConverter(models.AbstractModel):
@@ -142,7 +142,7 @@ class FloatConverter(models.AbstractModel):
             value = float_utils.float_round(value, precision_digits=precision)
             fmt = '%.{precision}f'.format(precision=precision)
 
-        formatted = self.user_lang().format(fmt, value, grouping=True).replace(r'-', u'\u2011')
+        formatted = self.user_lang().format(fmt, value, grouping=True).replace(r'-', '\u2011')
 
         # %f does not strip trailing zeroes. %g does but its precision causes
         # it to switch to scientific notation starting at a million *and* to
@@ -172,7 +172,7 @@ class DateConverter(models.AbstractModel):
         lang = self.user_lang()
         locale = babel.Locale.parse(lang.code)
 
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             value = fields.Datetime.from_string(value[:10])
 
         if options and 'format' in options:
@@ -195,7 +195,7 @@ class DateTimeConverter(models.AbstractModel):
         lang = self.user_lang()
         locale = babel.Locale.parse(lang.code)
 
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             value = fields.Datetime.from_string(value)
 
         value = fields.Datetime.context_timestamp(self, value)
@@ -203,7 +203,7 @@ class DateTimeConverter(models.AbstractModel):
         if options and 'format' in options:
             pattern = options['format']
         else:
-            strftime_pattern = (u"%s %s" % (lang.date_format, lang.time_format))
+            strftime_pattern = ("%s %s" % (lang.date_format, lang.time_format))
             pattern = posix_to_ldml(strftime_pattern, locale=locale)
 
         if options and options.get('hide_seconds'):
@@ -232,7 +232,7 @@ class SelectionConverter(models.AbstractModel):
     def value_to_html(self, value, options):
         if not value:
             return ''
-        return html_escape(unicodifier(options['selection'][value]) or u'', options)
+        return html_escape(unicodifier(options['selection'][value]) or '', options)
 
     @api.model
     def record_to_html(self, record, field_name, options):
@@ -261,7 +261,7 @@ class HTMLConverter(models.AbstractModel):
 
     @api.model
     def value_to_html(self, value, options):
-        return unicodifier(value) or u''
+        return unicodifier(value) or ''
 
 
 class ImageConverter(models.AbstractModel):
@@ -322,15 +322,15 @@ class MonetaryConverter(models.AbstractModel):
 
         lang = self.user_lang()
         formatted_amount = lang.format(fmt, display_currency.round(value),
-                                grouping=True, monetary=True).replace(r' ', u'\N{NO-BREAK SPACE}').replace(r'-', u'\u2011')
+                                grouping=True, monetary=True).replace(r' ', '\N{NO-BREAK SPACE}').replace(r'-', '\u2011')
 
-        pre = post = u''
+        pre = post = ''
         if display_currency.position == 'before':
-            pre = u'{symbol}\N{NO-BREAK SPACE}'.format(symbol=display_currency.symbol or '')
+            pre = '{symbol}\N{NO-BREAK SPACE}'.format(symbol=display_currency.symbol or '')
         else:
-            post = u'\N{NO-BREAK SPACE}{symbol}'.format(symbol=display_currency.symbol or '')
+            post = '\N{NO-BREAK SPACE}{symbol}'.format(symbol=display_currency.symbol or '')
 
-        return u'{pre}<span class="oe_currency_value">{0}</span>{post}'.format(formatted_amount, pre=pre, post=post)
+        return '{pre}<span class="oe_currency_value">{0}</span>{post}'.format(formatted_amount, pre=pre, post=post)
 
     @api.model
     def record_to_html(self, record, field_name, options):
@@ -396,7 +396,7 @@ class DurationConverter(models.AbstractModel):
                 v*secs_per_unit, threshold=1, locale=locale)
             if section:
                 sections.append(section)
-        return u' '.join(sections)
+        return ' '.join(sections)
 
 
 class RelativeDatetimeConverter(models.AbstractModel):
@@ -407,7 +407,7 @@ class RelativeDatetimeConverter(models.AbstractModel):
     def value_to_html(self, value, options):
         locale = babel.Locale.parse(self.user_lang().code)
 
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             value = fields.Datetime.from_string(value)
 
         # value should be a naive datetime in UTC. So is fields.Datetime.now()

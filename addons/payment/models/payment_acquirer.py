@@ -149,7 +149,7 @@ class PaymentAcquirer(models.Model):
         """ If the field has 'required_if_provider="<provider>"' attribute, then it
         required if record.provider is <provider>. """
         for acquirer in self:
-            if any(getattr(f, 'required_if_provider', None) == acquirer.provider and not acquirer[k] for k, f in self._fields.items()):
+            if any(getattr(f, 'required_if_provider', None) == acquirer.provider and not acquirer[k] for k, f in list(self._fields.items())):
                 return False
         return True
 

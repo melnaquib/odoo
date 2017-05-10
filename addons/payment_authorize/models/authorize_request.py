@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from lxml import etree, objectify
-from urllib2 import urlopen, Request
-from StringIO import StringIO
+from urllib.request import urlopen, Request
+from io import StringIO
 import xml.etree.ElementTree as ET
 from uuid import uuid4
 
@@ -62,7 +62,7 @@ class AuthorizeAPI():
         response = urlopen(request).read()
         response = strip_ns(response, XMLNS)
         if response.find('messages/resultCode').text == 'Error':
-            messages = map(lambda m: m.text, response.findall('messages/message/text'))
+            messages = [m.text for m in response.findall('messages/message/text')]
             raise ValidationError('Authorize.net Error Message(s):\n %s' % '\n'.join(messages))
         return response
 

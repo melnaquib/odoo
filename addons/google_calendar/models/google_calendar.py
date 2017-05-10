@@ -7,7 +7,7 @@ import json
 import logging
 import operator
 import pytz
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 from odoo import api, fields, models, tools, _
 from odoo.tools import exception_to_unicode
@@ -23,15 +23,15 @@ class Meta(type):
     """ This Meta class allow to define class as a structure, and so instancied variable
         in __init__ to avoid to have side effect alike 'static' variable """
     def __new__(typ, name, parents, attrs):
-        methods = dict((k, v) for k, v in attrs.iteritems()
+        methods = dict((k, v) for k, v in attrs.items()
                        if callable(v))
-        attrs = dict((k, v) for k, v in attrs.iteritems()
+        attrs = dict((k, v) for k, v in attrs.items()
                      if not callable(v))
 
         def init(self, **kw):
-            for key, val in attrs.iteritems():
+            for key, val in attrs.items():
                 setattr(self, key, val)
-            for key, val in kw.iteritems():
+            for key, val in kw.items():
                 assert key in attrs
                 setattr(self, key, val)
 
@@ -40,8 +40,8 @@ class Meta(type):
         return type.__new__(typ, name, parents, methods)
 
 
-class Struct(object):
-    __metaclass__ = Meta
+class Struct(object, metaclass=Meta):
+    pass
 
 
 class OdooEvent(Struct):
@@ -161,7 +161,7 @@ class SyncOperation(object):
     def __init__(self, src, info, **kw):
         self.src = src
         self.info = info
-        for key, val in kw.items():
+        for key, val in list(kw.items()):
             setattr(self, key, val)
 
     def __str__(self):
@@ -260,7 +260,7 @@ class GoogleCalendar(models.AbstractModel):
         """
         data = self.generate_data(event, isCreating=True)
 
-        url = "/calendar/v3/calendars/%s/events?fields=%s&access_token=%s" % ('primary', urllib2.quote('id,updated'), self.get_token())
+        url = "/calendar/v3/calendars/%s/events?fields=%s&access_token=%s" % ('primary', urllib.parse.quote('id,updated'), self.get_token())
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         data_json = json.dumps(data)
         return self.env['google.service']._do_request(url, data_json, headers, type='POST')
@@ -291,7 +291,7 @@ class GoogleCalendar(models.AbstractModel):
 
         try:
             status, content, ask_time = self.env['google.service']._do_request(url, params, headers, type='GET')
-        except urllib2.HTTPError, e:
+        except urllib.error.HTTPError as e:
             if e.code == 401:  # Token invalid / Acces unauthorized
                 error_msg = _("Your token is invalid or has been revoked !")
 
@@ -356,7 +356,7 @@ class GoogleCalendar(models.AbstractModel):
         url = "/calendar/v3/calendars/%s/events/%s" % ('primary', google_id)
         try:
             status, content, ask_time = self.env['google.service']._do_request(url, params, headers, type='GET')
-        except Exception, e:
+        except Exception as e:
             _logger.info("Calendar Synchro - In except of get_one_event_synchro")
             _logger.info(exception_to_unicode(e))
             return False
@@ -550,7 +550,7 @@ class GoogleCalendar(models.AbstractModel):
                     _logger.info("[%s] Calendar Synchro - Failed - NEED RESET  !", user_to_sync)
                 else:
                     _logger.info("[%s] Calendar Synchro - Done with status : %s  !", user_to_sync, resp.get("status"))
-            except Exception, e:
+            except Exception as e:
                 _logger.info("[%s] Calendar Synchro - Exception : %s !", user_to_sync, exception_to_unicode(e))
         _logger.info("Calendar Synchro - Ended by cron")
 
@@ -676,7 +676,7 @@ class GoogleCalendar(models.AbstractModel):
         if lastSync:
             try:
                 all_event_from_google = self.get_event_synchro_dict(lastSync=lastSync)
-            except urllib2.HTTPError, e:
+            except urllib.error.HTTPError as e:
                 if e.code == 410:  # GONE, Google is lost.
                     # we need to force the rollback from this cursor, because it locks my res_users but I need to write in this tuple before to raise.
                     self.env.cr.rollback()
@@ -689,7 +689,7 @@ class GoogleCalendar(models.AbstractModel):
 
             my_google_attendees = CalendarAttendee.with_context(context_novirtual).search([
                 ('partner_id', '=', my_partner_id),
-                ('google_internal_event_id', 'in', all_event_from_google.keys())
+                ('google_internal_event_id', 'in', list(all_event_from_google.keys()))
             ])
             my_google_att_ids = my_google_attendees.ids
 
@@ -753,7 +753,7 @@ class GoogleCalendar(models.AbstractModel):
             ev_to_sync.OE.status = event.active
             ev_to_sync.OE.synchro = att.oe_synchro_date
 
-        for event in all_event_from_google.values():
+        for event in list(all_event_from_google.values()):
             event_id = event.get('id')
             base_event_id = event_id.rsplit('_', 1)[0]
 
@@ -788,7 +788,7 @@ class GoogleCalendar(models.AbstractModel):
         #      DO ACTION     #
         ######################
         for base_event in event_to_synchronize:
-            event_to_synchronize[base_event] = sorted(event_to_synchronize[base_event].iteritems(), key=operator.itemgetter(0))
+            event_to_synchronize[base_event] = sorted(iter(event_to_synchronize[base_event].items()), key=operator.itemgetter(0))
             for current_event in event_to_synchronize[base_event]:
                 self.env.cr.commit()
                 event = current_event[1]  # event is an Sync Event !
@@ -842,7 +842,7 @@ class GoogleCalendar(models.AbstractModel):
                         try:
                             # if already deleted from gmail or never created
                             recs.delete_an_event(current_event[0])
-                        except Exception, e:
+                        except Exception as e:
                             if e.code in (401, 410,):
                                 pass
                             else:

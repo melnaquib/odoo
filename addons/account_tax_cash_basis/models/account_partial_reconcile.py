@@ -60,7 +60,7 @@ class AccountPartialReconcileCashBasis(models.Model):
                                 'tax_exigible': True,
                             }))
 
-        for k, v in tax_group.items():
+        for k, v in list(tax_group.items()):
             line_to_create.append((0, 0, {
                 'name': '/',
                 'debit': v if v > 0 else 0.0,
@@ -70,7 +70,7 @@ class AccountPartialReconcileCashBasis(models.Model):
             }))
 
         # Create counterpart vals
-        for key, v in total_by_cash_basis_account.items():
+        for key, v in list(total_by_cash_basis_account.items()):
             k, tax_id = key
             # Only entries with cash flow must be created
             if not self.company_id.currency_id.is_zero(v):

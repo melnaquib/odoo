@@ -3,7 +3,7 @@
 import json
 import logging
 from hashlib import sha256
-import urlparse
+import urllib.parse
 
 from odoo import models, fields, api
 from odoo.tools.float_utils import float_compare
@@ -58,7 +58,7 @@ class AcquirerSips(models.Model):
         data = values['Data']
 
         # Test key provided by Worldine
-        key = u'002001000000001_KEY1'
+        key = '002001000000001_KEY1'
 
         if self.environment == 'prod':
             key = getattr(self, 'sips_secret')
@@ -86,22 +86,22 @@ class AcquirerSips(models.Model):
 
         sips_tx_values = dict(values)
         sips_tx_values.update({
-            'Data': u'amount=%s|' % amount +
-                    u'currencyCode=%s|' % currency_code +
-                    u'merchantId=%s|' % merchant_id +
-                    u'normalReturnUrl=%s|' % urlparse.urljoin(base_url, SipsController._return_url) +
-                    u'automaticResponseUrl=%s|' % urlparse.urljoin(base_url, SipsController._return_url) +
-                    u'transactionReference=%s|' % values['reference'] +
-                    u'statementReference=%s|' % values['reference'] +
-                    u'keyVersion=%s' % key_version,
+            'Data': 'amount=%s|' % amount +
+                    'currencyCode=%s|' % currency_code +
+                    'merchantId=%s|' % merchant_id +
+                    'normalReturnUrl=%s|' % urllib.parse.urljoin(base_url, SipsController._return_url) +
+                    'automaticResponseUrl=%s|' % urllib.parse.urljoin(base_url, SipsController._return_url) +
+                    'transactionReference=%s|' % values['reference'] +
+                    'statementReference=%s|' % values['reference'] +
+                    'keyVersion=%s' % key_version,
             'InterfaceVersion': 'HP_2.3',
         })
 
         return_context = {}
         if sips_tx_values.get('return_url'):
-            return_context[u'return_url'] = u'%s' % sips_tx_values.pop('return_url')
-        return_context[u'reference'] = u'%s' % sips_tx_values['reference']
-        sips_tx_values['Data'] += u'|returnContext=%s' % (json.dumps(return_context))
+            return_context['return_url'] = '%s' % sips_tx_values.pop('return_url')
+        return_context['reference'] = '%s' % sips_tx_values['reference']
+        sips_tx_values['Data'] += '|returnContext=%s' % (json.dumps(return_context))
 
         shasign = self._sips_generate_shasign(sips_tx_values)
         sips_tx_values['Seal'] = shasign

@@ -50,7 +50,7 @@ class MakeProcurement(models.TransientModel):
     @api.onchange('product_id')
     def onchange_product_id(self):
         if self.product_id:
-            for key, value in self.onchange_product_id_dict(self.product_id.id).iteritems():
+            for key, value in self.onchange_product_id_dict(self.product_id.id).items():
                 setattr(self, key, value)
 
     @api.model

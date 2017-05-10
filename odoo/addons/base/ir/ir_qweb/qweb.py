@@ -8,8 +8,9 @@ from itertools import count
 from textwrap import dedent
 import werkzeug
 from werkzeug.utils import escape as _escape
-from itertools import izip, tee
-import __builtin__
+from itertools import tee
+import builtins
+from functools import reduce
 builtin_defaults = {name: getattr(__builtin__, name) for name in dir(__builtin__)}
 
 try:
@@ -73,7 +74,7 @@ class Contextifier(ast.NodeTransformer):
         return ast.copy_location(ast.Lambda(
             args=ast.arguments(
                 args=args.args,
-                defaults=map(self.visit, args.defaults),
+                defaults=list(map(self.visit, args.defaults)),
                 vararg=args.vararg,
                 kwarg=args.kwarg,
             ),
@@ -100,7 +101,7 @@ class Contextifier(ast.NodeTransformer):
         for field, value in ast.iter_fields(node):
             # map transformation of comprehensions
             if isinstance(value, list):
-                setattr(newnode, field, map(transformer.visit, value))
+                setattr(newnode, field, list(map(transformer.visit, value)))
             else: # set transformation of key/value/expr fields
                 setattr(newnode, field, transformer.visit(value))
         return newnode
@@ -149,24 +150,24 @@ escape = (lambda text: _escape(text, quote=True)) if getattr(werkzeug, '__versio
 
 def unicodifier(val):
     if val is None or val is False:
-        return u''
+        return ''
     if isinstance(val, str):
         return val.decode('utf-8')
-    return unicode(val)
+    return str(val)
 
 def foreach_iterator(base_ctx, enum, name):
     ctx = base_ctx.copy()
     if not enum:
         return
     if isinstance(enum, int):
-        enum = xrange(enum)
+        enum = range(enum)
     size = None
     if isinstance(enum, Sized):
         ctx["%s_size" % name] = size = len(enum)
     if isinstance(enum, Mapping):
-        enum = enum.iteritems()
+        enum = iter(enum.items())
     else:
-        enum = izip(*tee(enum))
+        enum = zip(*tee(enum))
     value_key = '%s_value' % name
     index_key = '%s_index' % name
     first_key = '%s_first' % name
@@ -192,7 +193,7 @@ def foreach_iterator(base_ctx, enum, name):
         yield ctx
     # copy changed items back into source context (?)
     # FIXME: maybe values could provide a ChainMap-style clone?
-    for k in base_ctx.keys():
+    for k in list(base_ctx.keys()):
         base_ctx[k] = ctx[k]
 
 _FORMAT_REGEX = re.compile(
@@ -217,7 +218,7 @@ class frozendict(dict):
     def update(self, *args, **kwargs):
         raise NotImplementedError("'update' not supported on frozendict")
     def __hash__(self):
-        return hash(frozenset((key, freehash(val)) for key, val in self.iteritems()))
+        return hash(frozenset((key, freehash(val)) for key, val in self.items()))
 
 
 ####################################
@@ -246,7 +247,7 @@ class QWeb(object):
         """
         body = []
         self.compile(template, options)(self, body.append, values or {})
-        return u''.join(body).encode('utf8')
+        return ''.join(body).encode('utf8')
 
     def compile(self, template, options):
         """ Compile the given template into a rendering function::
@@ -279,9 +280,9 @@ class QWeb(object):
             _options['ast_calls'] = []
             def_name = self._create_def(_options, body, prefix='template_%s' % name.replace('.', '_'))
             _options['ast_calls'] += ast_calls
-        except QWebException, e:
+        except QWebException as e:
             raise e
-        except Exception, e:
+        except Exception as e:
             path = _options['last_path_node']
             node = element.getroottree().xpath(path)
             raise QWebException("Error when compiling AST", e, path, etree.tostring(node[0]), name)
@@ -299,9 +300,9 @@ class QWeb(object):
             ns = {}
             unsafe_eval(compile(astmod, '<template>', 'exec'), ns)
             compiled = ns[def_name]
-        except QWebException, e:
+        except QWebException as e:
             raise e
-        except Exception, e:
+        except Exception as e:
             path = _options['last_path_node']
             node = element.getroottree().xpath(path)
             raise QWebException("Error when compiling AST", e, path, node and etree.tostring(node[0]), name)
@@ -313,9 +314,9 @@ class QWeb(object):
             values = dict(self.default_values(), **values)
             try:
                 return compiled(self, append, values, options, log)
-            except QWebException, e:
+            except QWebException as e:
                 raise e
-            except Exception, e:
+            except Exception as e:
                 path = log['last_path_node']
                 element, document = self.get_template(template, options)
                 node = element.getroottree().xpath(path)
@@ -339,9 +340,9 @@ class QWeb(object):
         else:
             try:
                 document = options.get('load', self.load)(template, options)
-            except QWebException, e:
+            except QWebException as e:
                 raise e
-            except Exception, e:
+            except Exception as e:
                 raise QWebException("load could not load template", name=template)
 
         if document is not None:
@@ -703,7 +704,7 @@ class QWeb(object):
         content = self._compile_directive_content(el, options)
         if el.tag == 't':
             return content
-        tag = u'<%s%s' % (el.tag, u''.join([u' %s="%s"' % (name, escape(unicodifier(value))) for name, value in el.attrib.iteritems()]))
+        tag = '<%s%s' % (el.tag, ''.join([' %s="%s"' % (name, escape(unicodifier(value))) for name, value in el.attrib.items()]))
         if el.tag in self._void_elements:
             return [self._append(ast.Str(tag + '/>'))] + content
         else:
@@ -713,7 +714,7 @@ class QWeb(object):
         """ Compile the static attributes of the given element into a list of
         pairs (name, expression AST). """
         nodes = []
-        for key, value in el.attrib.iteritems():
+        for key, value in el.attrib.items():
             if not key.startswith('t-'):
                 nodes.append((key, ast.Str(value)))
         return nodes
@@ -722,7 +723,7 @@ class QWeb(object):
         """ Compile the dynamic attributes of the given element into a list of
         pairs (name, expression AST). """
         nodes = []
-        for name, value in el.attrib.iteritems():
+        for name, value in el.attrib.items():
             if name.startswith('t-attf-'):
                 nodes.append((name[7:], self._compile_format(value)))
             elif name.startswith('t-att-'):
@@ -748,7 +749,7 @@ class QWeb(object):
     def _compile_all_attributes(self, el, options, attr_already_created=False):
         """ Compile the attributes of the given elements into a list of AST nodes. """
         body = []
-        if any(name.startswith('t-att') or not name.startswith('t-') for name, value in el.attrib.iteritems()):
+        if any(name.startswith('t-att') or not name.startswith('t-') for name, value in el.attrib.items()):
             if not attr_already_created:
                 attr_already_created = True
                 body.append(
@@ -824,9 +825,9 @@ class QWeb(object):
                         ]
                     ),
                     body=[
-                        self._append(ast.Str(u' ')),
+                        self._append(ast.Str(' ')),
                         self._append(ast.Name(id='name', ctx=ast.Load())),
-                        self._append(ast.Str(u'="')),
+                        self._append(ast.Str('="')),
                         self._append(ast.Call(
                             func=ast.Name(id='escape', ctx=ast.Load()),
                             args=[ast.Call(
@@ -836,7 +837,7 @@ class QWeb(object):
                             )], keywords=[],
                             starargs=None, kwargs=None
                         )),
-                        self._append(ast.Str(u'"')),
+                        self._append(ast.Str('"')),
                     ],
                     orelse=[]
                 )],
@@ -849,15 +850,15 @@ class QWeb(object):
         """ Compile the tag of the given element into a list of AST nodes. """
         if el.tag == 't':
             return content
-        body = [self._append(ast.Str(u'<%s' % el.tag))]
+        body = [self._append(ast.Str('<%s' % el.tag))]
         body.extend(self._compile_all_attributes(el, options, attr_already_created))
         if el.tag in self._void_elements:
-            body.append(self._append(ast.Str(u'/>')))
+            body.append(self._append(ast.Str('/>')))
             body.extend(content)
         else:
-            body.append(self._append(ast.Str(u'>')))
+            body.append(self._append(ast.Str('>')))
             body.extend(content)
-            body.append(self._append(ast.Str(u'</%s>' % el.tag)))
+            body.append(self._append(ast.Str('</%s>' % el.tag)))
         return body
 
     # compile directives
@@ -909,7 +910,7 @@ class QWeb(object):
                     ast.Assign(
                         targets=[self._values_var(ast.Str(varname), ctx=ast.Store())],
                         value=ast.Call(
-                            func=ast.Attribute(value=ast.Str(u''), attr='join', ctx=ast.Load()),
+                            func=ast.Attribute(value=ast.Str(''), attr='join', ctx=ast.Load()),
                             args=[ast.Name(id='content', ctx=ast.Load())], keywords=[],
                             starargs=None, kwargs=None
                         )
@@ -917,7 +918,7 @@ class QWeb(object):
                 ]
 
             else:
-                value = ast.Str(u'')
+                value = ast.Str('')
 
         # $varset = $value
         return [ast.Assign(
@@ -1194,7 +1195,7 @@ class QWeb(object):
                     targets=[ast.Name(id=default_content, ctx=ast.Store())],
                     value=ast.Call(
                         func=ast.Attribute(
-                            value=ast.Str(u''),
+                            value=ast.Str(''),
                             attr='join',
                             ctx=ast.Load()
                         ),
@@ -1413,7 +1414,7 @@ class QWeb(object):
                         ),
                         ast.Call(
                             func=ast.Attribute(
-                                value=ast.Str(u''),
+                                value=ast.Str(''),
                                 attr='join',
                                 ctx=ast.Load()
                             ),
@@ -1435,7 +1436,7 @@ class QWeb(object):
         for m in _FORMAT_REGEX.finditer(f):
             literal = f[base_idx:m.start()]
             if literal:
-                elts.append(ast.Str(literal if isinstance(literal, unicode) else literal.decode('utf-8')))
+                elts.append(ast.Str(literal if isinstance(literal, str) else literal.decode('utf-8')))
 
             expr = m.group(1) or m.group(2)
             elts.append(self._compile_strexpr(expr))
@@ -1443,7 +1444,7 @@ class QWeb(object):
         # string past last regex match
         literal = f[base_idx:]
         if literal:
-            elts.append(ast.Str(literal if isinstance(literal, unicode) else literal.decode('utf-8')))
+            elts.append(ast.Str(literal if isinstance(literal, str) else literal.decode('utf-8')))
 
         return reduce(lambda acc, it: ast.BinOp(
             left=acc,

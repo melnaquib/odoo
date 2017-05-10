@@ -97,7 +97,7 @@ class EmployeesYearlySalaryReport(models.AbstractModel):
 
     def salary_list(self, salaries):
         cat_salary_all = []
-        for category_name, amount in salaries.items():
+        for category_name, amount in list(salaries.items()):
             cat_salary = []
             total = 0.0
             cat_salary.append(category_name)

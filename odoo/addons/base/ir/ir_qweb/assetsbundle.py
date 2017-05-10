@@ -246,7 +246,7 @@ class AssetsBundle(object):
             matches = []
             css = re.sub(self.rx_css_import, lambda matchobj: matches.append(matchobj.group(0)) and '', css)
             matches.append(css)
-            css = u'\n'.join(matches)
+            css = '\n'.join(matches)
 
             # split for browser max file size and browser max expression
             re_rules = '([^{]+\{(?:[^{}]|\{[^{}]*\})*\})'
@@ -288,7 +288,7 @@ class AssetsBundle(object):
             outdated = False
             assets = dict((asset.html_url, asset) for asset in self.stylesheets if isinstance(asset, atype))
             if assets:
-                assets_domain = [('url', 'in', assets.keys())]
+                assets_domain = [('url', 'in', list(assets.keys()))]
                 attachments = self.env['ir.attachment'].sudo().search(assets_domain)
                 for attachment in attachments:
                     asset = assets[attachment.url]
@@ -300,7 +300,7 @@ class AssetsBundle(object):
                         if not asset._content and attachment.file_size > 0:
                             asset._content = None # file missing, force recompile
 
-                if any(asset._content is None for asset in assets.itervalues()):
+                if any(asset._content is None for asset in assets.values()):
                     outdated = True
 
                 if outdated:
@@ -432,7 +432,7 @@ class WebAsset(object):
 
     def stat(self):
         if not (self.inline or self._filename or self._ir_attach):
-            path = filter(None, self.url.split('/'))
+            path = [_f for _f in self.url.split('/') if _f]
             self._filename = get_resource_path(*path)
             if self._filename:
                 return
@@ -503,7 +503,7 @@ class JavascriptAsset(WebAsset):
     def _fetch_content(self):
         try:
             return super(JavascriptAsset, self)._fetch_content()
-        except AssetError, e:
+        except AssetError as e:
             return "console.error(%s);" % json.dumps(e.message)
 
     def to_html(self):
@@ -552,7 +552,7 @@ class StylesheetAsset(WebAsset):
                 content = self.rx_charset.sub('', content)
 
             return content
-        except AssetError, e:
+        except AssetError as e:
             self.bundle.css_errors.append(e.message)
             return ''
 

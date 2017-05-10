@@ -13,7 +13,7 @@ import pytz
 import re
 import socket
 import time
-import xmlrpclib
+import xmlrpc.client
 
 from collections import namedtuple
 from email.message import Message
@@ -234,10 +234,10 @@ class MailThread(models.AbstractModel):
 
         # auto_subscribe: take values and defaults into account
         create_values = dict(values)
-        for key, val in self._context.iteritems():
+        for key, val in self._context.items():
             if key.startswith('default_') and key[8:] not in create_values:
                 create_values[key[8:]] = val
-        thread.message_auto_subscribe(create_values.keys(), values=create_values)
+        thread.message_auto_subscribe(list(create_values.keys()), values=create_values)
 
         # track values
         if not self._context.get('mail_notrack'):
@@ -245,7 +245,7 @@ class MailThread(models.AbstractModel):
                 track_thread = thread.with_context(lang=self.env.user.lang)
             else:
                 track_thread = thread
-            tracked_fields = track_thread._get_tracked_fields(values.keys())
+            tracked_fields = track_thread._get_tracked_fields(list(values.keys()))
             if tracked_fields:
                 initial_values = {thread.id: dict.fromkeys(tracked_fields, False)}
                 track_thread.message_track(tracked_fields, initial_values)
@@ -265,7 +265,7 @@ class MailThread(models.AbstractModel):
 
         tracked_fields = None
         if not self._context.get('mail_notrack'):
-            tracked_fields = track_self._get_tracked_fields(values.keys())
+            tracked_fields = track_self._get_tracked_fields(list(values.keys()))
         if tracked_fields:
             initial_values = dict((record.id, dict((key, getattr(record, key)) for key in tracked_fields))
                                   for record in track_self)
@@ -274,7 +274,7 @@ class MailThread(models.AbstractModel):
         result = super(MailThread, self).write(values)
 
         # update followers
-        self.message_auto_subscribe(values.keys(), values=values)
+        self.message_auto_subscribe(list(values.keys()), values=values)
 
         # Perform the tracking
         if tracked_fields:
@@ -386,7 +386,7 @@ class MailThread(models.AbstractModel):
                 always tracked fields and modified on_change fields
         """
         tracked_fields = []
-        for name, field in self._fields.items():
+        for name, field in list(self._fields.items()):
             if getattr(field, 'track_visibility', False):
                 tracked_fields.append(name)
 
@@ -414,13 +414,13 @@ class MailThread(models.AbstractModel):
 
     @api.multi
     def _message_track_post_template(self, tracking):
-        if not any(change for rec_id, (change, tracking_value_ids) in tracking.iteritems()):
+        if not any(change for rec_id, (change, tracking_value_ids) in tracking.items()):
             return True
         templates = self._track_template(tracking)
-        for field_name, (template, post_kwargs) in templates.iteritems():
+        for field_name, (template, post_kwargs) in templates.items():
             if not template:
                 continue
-            if isinstance(template, basestring):
+            if isinstance(template, str):
                 self.message_post_with_view(template, **post_kwargs)
             else:
                 self.message_post_with_template(template.id, **post_kwargs)
@@ -448,7 +448,7 @@ class MailThread(models.AbstractModel):
         display_values_ids = []
 
         # generate tracked_values data structure: {'col_name': {col_info, new_value, old_value}}
-        for col_name, col_info in tracked_fields.items():
+        for col_name, col_info in list(tracked_fields.items()):
             track_visibility = getattr(self._fields[col_name], 'track_visibility', 'onchange')
             initial_value = initial[col_name]
             new_value = getattr(self, col_name)
@@ -768,7 +768,7 @@ class MailThread(models.AbstractModel):
                         aliases[alias.alias_parent_thread_id] = '%s@%s' % (alias.alias_name, alias_domain)
                 doc_names.update(
                     dict((ng_res[0], ng_res[1])
-                         for ng_res in self.env[model_name].sudo().browse(aliases.keys()).name_get()))
+                         for ng_res in self.env[model_name].sudo().browse(list(aliases.keys())).name_get()))
             # left ids: use catchall
             left_ids = set(res_ids).difference(set(aliases.keys()))
             if left_ids:
@@ -777,7 +777,7 @@ class MailThread(models.AbstractModel):
                     aliases.update(dict((res_id, '%s@%s' % (catchall_alias, alias_domain)) for res_id in left_ids))
             # compute name of reply-to
             company_name = self.env.user.company_id.name
-            for res_id in aliases.keys():
+            for res_id in list(aliases.keys()):
                 email_name = '%s%s' % (company_name, doc_names.get(res_id) and (' ' + doc_names[res_id]) or '')
                 email_addr = aliases[res_id]
                 res[res_id] = formataddr((email_name, email_addr))
@@ -816,7 +816,7 @@ class MailThread(models.AbstractModel):
     def message_capable_models(self):
         """ Used by the plugin addon, based for plugin_outlook and others. """
         ret_dict = {}
-        for model_name, model in self.env.iteritems():
+        for model_name, model in self.env.items():
             if hasattr(model, "message_process") and hasattr(model, "message_post"):
                 ret_dict[model_name] = model._description
         return ret_dict
@@ -826,7 +826,7 @@ class MailThread(models.AbstractModel):
 
             :param string message: an email.message instance """
         s = ', '.join([tools.decode_smtp_header(message.get(h)) for h in header_fields if message.get(h)])
-        return filter(lambda x: x, self._find_partner_from_emails(tools.email_split(s)))
+        return [x for x in self._find_partner_from_emails(tools.email_split(s)) if x]
 
     def _routing_warn(self, error_message, warn_suffix, message_id, route, raise_exception):
         """ Tools method used in message_route_verify: whether to log a warning or raise an error """
@@ -1257,11 +1257,11 @@ class MailThread(models.AbstractModel):
         # extract message bytes - we are forced to pass the message as binary because
         # we don't know its encoding until we parse its headers and hence can't
         # convert it to utf-8 for transport between the mailgate script and here.
-        if isinstance(message, xmlrpclib.Binary):
+        if isinstance(message, xmlrpc.client.Binary):
             message = str(message.data)
         # Warning: message_from_string doesn't always work correctly on unicode,
         # we must use utf-8 strings here :-(
-        if isinstance(message, unicode):
+        if isinstance(message, str):
             message = message.encode('utf-8')
         msg_txt = email.message_from_string(message)
 
@@ -1382,7 +1382,7 @@ class MailThread(models.AbstractModel):
     def _message_extract_payload(self, message, save_original=False):
         """Extract body as HTML and attachments from the mail message"""
         attachments = []
-        body = u''
+        body = ''
         if save_original:
             attachments.append(self._Attachment('original_email.eml', message.as_string(), {}))
 
@@ -1398,11 +1398,11 @@ class MailThread(models.AbstractModel):
             body = tools.ustr(body, encoding, errors='replace')
             if message.get_content_type() == 'text/plain':
                 # text/plain -> <pre/>
-                body = tools.append_content_to_html(u'', body, preserve=True)
+                body = tools.append_content_to_html('', body, preserve=True)
         else:
             alternative = False
             mixed = False
-            html = u''
+            html = ''
             for part in message.walk():
                 if part.get_content_type() == 'multipart/alternative':
                     alternative = True
@@ -1485,7 +1485,7 @@ class MailThread(models.AbstractModel):
             'message_type': 'email',
         }
         if not isinstance(message, Message):
-            if isinstance(message, unicode):
+            if isinstance(message, str):
                 # Warning: message_from_string doesn't always work correctly on unicode,
                 # we must use utf-8 strings here :-(
                 message = message.encode('utf-8')
@@ -1716,7 +1716,7 @@ class MailThread(models.AbstractModel):
                 cid = info and info.get('cid')
             else:
                 continue
-            if isinstance(content, unicode):
+            if isinstance(content, str):
                 content = content.encode('utf-8')
             data_attach = {
                 'name': name,
@@ -1809,7 +1809,7 @@ class MailThread(models.AbstractModel):
                 partner_ids.add(partner_id[1])
             if isinstance(partner_id, (list, tuple)) and partner_id[0] == 6 and len(partner_id) == 3:
                 partner_ids |= set(partner_id[2])
-            elif isinstance(partner_id, (int, long)):
+            elif isinstance(partner_id, int):
                 partner_ids.add(partner_id)
             else:
                 pass  # we do not manage anything else
@@ -1833,7 +1833,7 @@ class MailThread(models.AbstractModel):
         if self._context.get('mail_post_autofollow') and self.ids and partner_ids:
             partner_to_subscribe = partner_ids
             if self._context.get('mail_post_autofollow_partner_ids'):
-                partner_to_subscribe = filter(lambda item: item in self._context.get('mail_post_autofollow_partner_ids'), partner_ids)
+                partner_to_subscribe = [item for item in partner_ids if item in self._context.get('mail_post_autofollow_partner_ids')]
             self.message_subscribe(list(partner_to_subscribe), force=False)
 
         # _mail_flat_thread: automatically set free messages to the first posted message
@@ -1906,7 +1906,7 @@ class MailThread(models.AbstractModel):
             values['slug'] = slug
         except ImportError:
             values['slug'] = lambda self: self.id
-        if isinstance(views_or_xmlid, basestring):
+        if isinstance(views_or_xmlid, str):
             views = self.env.ref(views_or_xmlid, raise_if_not_found=False)
         else:
             views = views_or_xmlid
@@ -2036,7 +2036,7 @@ class MailThread(models.AbstractModel):
         if auto_follow_fields is None:
             auto_follow_fields = ['user_id']
         user_field_lst = []
-        for name, field in self._fields.items():
+        for name, field in list(self._fields.items()):
             if name in auto_follow_fields and name in updated_fields and getattr(field, 'track_visibility', False) and field.comodel_name == 'res.users':
                 user_field_lst.append(name)
         return user_field_lst
@@ -2142,10 +2142,10 @@ class MailThread(models.AbstractModel):
         for partner_id in user_pids:
             new_partners.setdefault(partner_id, None)
 
-        for pid, subtypes in new_partners.items():
+        for pid, subtypes in list(new_partners.items()):
             subtypes = list(subtypes) if subtypes is not None else None
             self.message_subscribe(partner_ids=[pid], subtype_ids=subtypes, force=(subtypes != None))
-        for cid, subtypes in new_channels.items():
+        for cid, subtypes in list(new_channels.items()):
             subtypes = list(subtypes) if subtypes is not None else None
             self.message_subscribe(channel_ids=[cid], subtype_ids=subtypes, force=(subtypes != None))
 

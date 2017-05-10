@@ -96,7 +96,7 @@ class ReportController(Controller):
                     response = self.report_routes(reportname, docids=docids, converter='pdf')
                 else:
                     # Particular report:
-                    data = url_decode(url.split('?')[1]).items()  # decoding the args represented in JSON
+                    data = list(url_decode(url.split('?')[1]).items())  # decoding the args represented in JSON
                     response = self.report_routes(reportname, converter='pdf', **dict(data))
 
                 report = request.env['report']._get_report_from_name(reportname)
@@ -116,7 +116,7 @@ class ReportController(Controller):
                 return response
             else:
                 return
-        except Exception, e:
+        except Exception as e:
             se = _serialize_exception(e)
             error = {
                 'code': 200,

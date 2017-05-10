@@ -116,7 +116,7 @@ class Partner(models.Model):
     def _notify_send(self, body, subject, recipients, **mail_values):
         emails = self.env['mail.mail']
         recipients_nbr, recipients_max = len(recipients), 50
-        email_chunks = [recipients[x:x + recipients_max] for x in xrange(0, len(recipients), recipients_max)]
+        email_chunks = [recipients[x:x + recipients_max] for x in range(0, len(recipients), recipients_max)]
         for email_chunk in email_chunks:
             # TDE FIXME: missing message parameter. So we will find mail_message_id
             # in the mail_values and browse it. It should already be in the
@@ -194,7 +194,7 @@ class Partner(models.Model):
 
         emails = self.env['mail.mail']
         recipients_nbr, recipients_max = 0, 50
-        for email_type, recipient_template_values in recipients.iteritems():
+        for email_type, recipient_template_values in recipients.items():
             if recipient_template_values['followers']:
                 # generate notification email content
                 template_fol_values = dict(base_template_ctx, **recipient_template_values)  # fixme: set button_unfollow to none

@@ -31,7 +31,7 @@ class IrUiMenu(models.Model):
                     if subtree:
                         return subtree
 
-        for menu_id, menu_xmlid in xmlids.iteritems():
+        for menu_id, menu_xmlid in xmlids.items():
             _find_subtree(menu_root, menu_id)['xmlid'] = menu_xmlid
 
         return menu_root

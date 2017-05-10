@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-import cStringIO
+import io
 import io
 import json
 import logging
@@ -36,7 +36,7 @@ class Web_Editor(http.Controller):
             debug=request.debug)
 
         for k in kwargs:
-            if isinstance(kwargs[k], basestring) and kwargs[k].isdigit():
+            if isinstance(kwargs[k], str) and kwargs[k].isdigit():
                 kwargs[k] = int(kwargs[k])
 
         trans = dict(
@@ -92,7 +92,7 @@ class Web_Editor(http.Controller):
         font_obj = ImageFont.truetype(addons_path + font, size)
 
         # if received character is not a number, keep old behaviour (icon is character)
-        icon = unichr(int(icon)) if icon.isdigit() else icon
+        icon = chr(int(icon)) if icon.isdigit() else icon
 
         # Determine the dimensions of the icon
         image = Image.new("RGBA", (size, size), color=(0, 0, 0, 0))
@@ -161,15 +161,15 @@ class Web_Editor(http.Controller):
                 for c_file in request.httprequest.files.getlist('upload'):
                     data = c_file.read()
                     try:
-                        image = Image.open(cStringIO.StringIO(data))
+                        image = Image.open(io.StringIO(data))
                         w, h = image.size
                         if w*h > 42e6: # Nokia Lumia 1020 photo resolution
                             raise ValueError(
-                                u"Image size excessive, uploaded images must be smaller "
-                                u"than 42 million pixel")
+                                "Image size excessive, uploaded images must be smaller "
+                                "than 42 million pixel")
                         if not disable_optimization and image.format in ('PNG', 'JPEG'):
                             data = tools.image_save_for_web(image)
-                    except IOError, e:
+                    except IOError as e:
                         pass
 
                     attachment = Attachments.create({
@@ -181,9 +181,9 @@ class Web_Editor(http.Controller):
                     })
                     attachments += attachment
                 uploads += attachments.read(['name', 'mimetype', 'checksum', 'url'])
-            except Exception, e:
+            except Exception as e:
                 logger.exception("Failed to upload image to attachment")
-                message = unicode(e)
+                message = str(e)
 
         return """<script type='text/javascript'>
             window.parent['%s'](%s, %s);

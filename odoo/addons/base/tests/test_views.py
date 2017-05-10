@@ -2,7 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from functools import partial
-from itertools import izip_longest
+from itertools import zip_longest
 
 from lxml import etree
 from lxml.builder import E
@@ -37,7 +37,7 @@ class ViewCase(common.TransactionCase):
         # equality (!?!?!?!)
         self.assertEqual(dict(n1.attrib), dict(n2.attrib), msg)
 
-        for c1, c2 in izip_longest(n1, n2):
+        for c1, c2 in zip_longest(n1, n2):
             self.assertEqual(c1, c2, msg)
 
 
@@ -444,7 +444,7 @@ class TestNoModel(ViewCase):
         self.env['res.lang'].load_lang('fr_FR')
         ARCH = '<template name="foo">%s</template>'
         TEXT_EN = "Copyright copyrighter"
-        TEXT_FR = u"Copyrighter, tous droits réservés"
+        TEXT_FR = "Copyrighter, tous droits réservés"
         view = self.View.create({
             'name': 'dummy',
             'arch': ARCH % TEXT_EN,

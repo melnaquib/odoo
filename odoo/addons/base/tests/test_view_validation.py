@@ -2,7 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from lxml import etree
-from StringIO import StringIO
+from io import StringIO
 import unittest
 
 from odoo.tools.view_validation import (

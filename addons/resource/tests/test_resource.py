@@ -492,7 +492,7 @@ class TestWorkDays(TransactionCase):
 
         self._days = [
             date.fromordinal(o)
-            for o in xrange(
+            for o in range(
                 WAR_START.toordinal(),
                 WAR_END.toordinal() + 1
             )

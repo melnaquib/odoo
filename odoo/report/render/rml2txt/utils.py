@@ -61,7 +61,7 @@ def _process_text(self, txt):
                     txt2 = ''
                 if isinstance(txt2, (int, float)):
                     txt2 = str(txt2)
-                if isinstance(txt2, basestring):
+                if isinstance(txt2, str):
                     result += txt2
         return result
 

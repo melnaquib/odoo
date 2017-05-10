@@ -77,7 +77,7 @@ class MailChannel(models.Model):
                 last_msg = self.env['mail.message'].search([("channel_ids", "in", [channel.id])], limit=1)
                 if last_msg:
                     channel_infos_dict[channel.id]['last_message_date'] = last_msg.date
-        return channel_infos_dict.values()
+        return list(channel_infos_dict.values())
 
     @api.model
     def channel_fetch_slot(self):

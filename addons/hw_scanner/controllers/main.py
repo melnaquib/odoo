@@ -5,7 +5,7 @@ import logging
 import time
 from os import listdir
 from os.path import join
-from Queue import Queue, Empty
+from queue import Queue, Empty
 from select import select
 from threading import Thread, Lock
 

@@ -166,7 +166,7 @@ class TestMatchHeadersMultiple(TransactionCase):
                 {'headers': True}),
             (
                 ['foo', 'bar', 'baz', 'qux'],
-                dict.fromkeys(range(4))
+                dict.fromkeys(list(range(4)))
             )
         )
 
@@ -196,7 +196,7 @@ class TestPreview(TransactionCase):
     def make_import(self):
         import_wizard = self.env['base_import.import'].create({
             'res_model': 'res.users',
-            'file': u"로그인,언어\nbob,1\n".encode('euc_kr'),
+            'file': "로그인,언어\nbob,1\n".encode('euc_kr'),
             'file_type': 'text/csv',
             'file_name': 'kr_data.csv',
         })
@@ -260,7 +260,7 @@ class TestPreview(TransactionCase):
             ['qux', '5', '6'],
         ])
         # Ensure we only have the response fields we expect
-        self.assertItemsEqual(result.keys(), ['matches', 'headers', 'fields', 'preview', 'headers_type', 'options', 'advanced_mode', 'debug'])
+        self.assertItemsEqual(list(result.keys()), ['matches', 'headers', 'fields', 'preview', 'headers_type', 'options', 'advanced_mode', 'debug'])
 
     @unittest.skipUnless(can_import('xlrd'), "XLRD module not available")
     def test_xls_success(self):
@@ -290,7 +290,7 @@ class TestPreview(TransactionCase):
             ['qux', '5', '6'],
         ])
         # Ensure we only have the response fields we expect
-        self.assertItemsEqual(result.keys(), ['matches', 'headers', 'fields', 'preview', 'headers_type', 'options', 'advanced_mode', 'debug'])
+        self.assertItemsEqual(list(result.keys()), ['matches', 'headers', 'fields', 'preview', 'headers_type', 'options', 'advanced_mode', 'debug'])
 
     @unittest.skipUnless(can_import('xlrd.xlsx'), "XLRD/XLSX not available")
     def test_xlsx_success(self):
@@ -320,7 +320,7 @@ class TestPreview(TransactionCase):
             ['qux', '5', '6'],
         ])
         # Ensure we only have the response fields we expect
-        self.assertItemsEqual(result.keys(), ['matches', 'headers', 'fields', 'preview', 'headers_type', 'options','advanced_mode', 'debug'])
+        self.assertItemsEqual(list(result.keys()), ['matches', 'headers', 'fields', 'preview', 'headers_type', 'options','advanced_mode', 'debug'])
 
     @unittest.skipUnless(can_import('odf'), "ODFPY not available")
     def test_ods_success(self):
@@ -350,7 +350,7 @@ class TestPreview(TransactionCase):
             ['aux', '5', '6'],
         ])
         # Ensure we only have the response fields we expect
-        self.assertItemsEqual(result.keys(), ['matches', 'headers', 'fields', 'preview', 'headers_type', 'options', 'advanced_mode', 'debug'])
+        self.assertItemsEqual(list(result.keys()), ['matches', 'headers', 'fields', 'preview', 'headers_type', 'options', 'advanced_mode', 'debug'])
 
 
 class test_convert_import_data(TransactionCase):
@@ -528,11 +528,11 @@ class test_failures(TransactionCase):
         Ensure big fields (e.g. b64-encoded image data) can be imported and
         we're not hitting limits of the default CSV parser config
         """
-        import csv, cStringIO
+        import csv, io
         from PIL import Image
 
         im = Image.new('RGB', (1920, 1080))
-        fout = cStringIO.StringIO()
+        fout = io.StringIO()
 
         writer = csv.writer(fout, dialect=None)
         writer.writerows([

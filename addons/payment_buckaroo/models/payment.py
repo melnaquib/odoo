@@ -1,8 +1,8 @@
 # coding: utf-8
 from hashlib import sha1
 import logging
-import urllib
-import urlparse
+import urllib.request, urllib.parse, urllib.error
+import urllib.parse
 
 from odoo import api, fields, models, _
 from odoo.addons.payment.models.payment_acquirer import ValidationError
@@ -19,7 +19,7 @@ def normalize_keys_upper(data):
     convert everything to upper case to be able to easily detected the presence
     of a parameter by checking the uppercase key only
     """
-    return dict((key.upper(), val) for key, val in data.items())
+    return dict((key.upper(), val) for key, val in list(data.items()))
 
 
 class AcquirerBuckaroo(models.Model):
@@ -65,21 +65,21 @@ class AcquirerBuckaroo(models.Model):
         values = dict(values or {})
 
         if inout == 'out':
-            for key in values.keys():
+            for key in list(values.keys()):
                 # case insensitive keys
                 if key.upper() == 'BRQ_SIGNATURE':
                     del values[key]
                     break
 
-            items = sorted(values.items(), key=lambda (x, y): x.lower())
-            sign = ''.join('%s=%s' % (k, urllib.unquote_plus(v)) for k, v in items)
+            items = sorted(list(values.items()), key=lambda x_y: x_y[0].lower())
+            sign = ''.join('%s=%s' % (k, urllib.parse.unquote_plus(v)) for k, v in items)
         else:
             sign = ''.join('%s=%s' % (k, get_value(k)) for k in keys)
         # Add the pre-shared secret key at the end of the signature
         sign = sign + self.brq_secretkey
         if isinstance(sign, str):
             # TODO: remove me? should not be used
-            sign = urlparse.parse_qsl(sign)
+            sign = urllib.parse.parse_qsl(sign)
         shasign = sha1(sign.encode('utf-8')).hexdigest()
         return shasign
 
@@ -93,10 +93,10 @@ class AcquirerBuckaroo(models.Model):
             'Brq_currency': values['currency'] and values['currency'].name or '',
             'Brq_invoicenumber': values['reference'],
             'brq_test': False if self.environment == 'prod' else True,
-            'Brq_return': '%s' % urlparse.urljoin(base_url, BuckarooController._return_url),
-            'Brq_returncancel': '%s' % urlparse.urljoin(base_url, BuckarooController._cancel_url),
-            'Brq_returnerror': '%s' % urlparse.urljoin(base_url, BuckarooController._exception_url),
-            'Brq_returnreject': '%s' % urlparse.urljoin(base_url, BuckarooController._reject_url),
+            'Brq_return': '%s' % urllib.parse.urljoin(base_url, BuckarooController._return_url),
+            'Brq_returncancel': '%s' % urllib.parse.urljoin(base_url, BuckarooController._cancel_url),
+            'Brq_returnerror': '%s' % urllib.parse.urljoin(base_url, BuckarooController._exception_url),
+            'Brq_returnreject': '%s' % urllib.parse.urljoin(base_url, BuckarooController._reject_url),
             'Brq_culture': (values.get('partner_lang') or 'en_US').replace('_', '-'),
             'add_returndata': buckaroo_tx_values.pop('return_url', '') or '',
         })

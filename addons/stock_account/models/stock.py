@@ -127,7 +127,7 @@ class StockQuant(models.Model):
             quant_cost_qty[quant.cost] += quant.qty
 
         AccountMove = self.env['account.move']
-        for cost, qty in quant_cost_qty.iteritems():
+        for cost, qty in quant_cost_qty.items():
             move_lines = move._prepare_account_move_line(qty, cost, credit_account_id, debit_account_id)
             if move_lines:
                 date = self._context.get('force_period_date', fields.Date.context_today(self))

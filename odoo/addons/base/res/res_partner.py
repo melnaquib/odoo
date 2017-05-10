@@ -6,8 +6,8 @@ import datetime
 import hashlib
 import pytz
 import threading
-import urllib2
-import urlparse
+import urllib.request, urllib.error, urllib.parse
+import urllib.parse
 
 from email.utils import formataddr
 from lxml import etree
@@ -48,7 +48,7 @@ class FormatAddress(object):
     @api.model
     def fields_view_get_address(self, arch):
         address_format = self.env.user.company_id.country_id.address_format or ''
-        for format_pattern, format_class in ADDRESS_FORMAT_CLASSES.iteritems():
+        for format_pattern, format_class in ADDRESS_FORMAT_CLASSES.items():
             if format_pattern in address_format:
                 doc = etree.fromstring(arch)
                 for address_node in doc.xpath("//div[@class='o_address_format']"):
@@ -475,11 +475,11 @@ class Partner(models.Model, FormatAddress):
             parent.update_address(addr_vals)
 
     def _clean_website(self, website):
-        (scheme, netloc, path, params, query, fragment) = urlparse.urlparse(website)
+        (scheme, netloc, path, params, query, fragment) = urllib.parse.urlparse(website)
         if not scheme:
             if not netloc:
                 netloc, path = path, ''
-            website = urlparse.urlunparse(('http', netloc, path, params, query, fragment))
+            website = urllib.parse.urlunparse(('http', netloc, path, params, query, fragment))
         return website
 
     @api.multi
@@ -672,7 +672,7 @@ class Partner(models.Model, FormatAddress):
                 query += ' limit %s'
                 where_clause_params.append(limit)
             self.env.cr.execute(query, where_clause_params)
-            partner_ids = map(lambda x: x[0], self.env.cr.fetchall())
+            partner_ids = [x[0] for x in self.env.cr.fetchall()]
 
             if partner_ids:
                 return self.browse(partner_ids).name_get()
@@ -699,7 +699,7 @@ class Partner(models.Model, FormatAddress):
         email_hash = hashlib.md5(email.lower()).hexdigest()
         url = "https://www.gravatar.com/avatar/" + email_hash
         try:
-            image_content = urllib2.urlopen(url + "?d=404&s=128", timeout=5).read()
+            image_content = urllib.request.urlopen(url + "?d=404&s=128", timeout=5).read()
             gravatar_image = base64.b64encode(image_content)
         except Exception:
             pass

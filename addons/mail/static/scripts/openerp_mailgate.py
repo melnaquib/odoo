@@ -9,7 +9,7 @@ import cgitb
 import time
 import optparse
 import sys
-import xmlrpclib
+import xmlrpc.client
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -66,7 +66,7 @@ class RPCProxy(object):
                  port=config.OPENERP_PORT,
                  path='object',
                  dbname=config.OPENERP_DEFAULT_DATABASE):
-        self.rpc = xmlrpclib.ServerProxy('http://%s:%s/xmlrpc/%s' % (host, port, path), allow_none=True)
+        self.rpc = xmlrpc.client.ServerProxy('http://%s:%s/xmlrpc/%s' % (host, port, path), allow_none=True)
         self.user_id = uid
         self.passwd = passwd
         self.dbname = dbname
@@ -93,7 +93,7 @@ class EmailParser(object):
         return self.rpc('mail.thread',
                         'message_process',
                         self.model,
-                        xmlrpclib.Binary(message),
+                        xmlrpc.client.Binary(message),
                         custom_values or {},
                         save_original or False)
 

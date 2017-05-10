@@ -10,6 +10,7 @@ from lxml import etree
 from odoo import api, models, registry, SUPERUSER_ID, _
 from odoo.exceptions import AccessError, RedirectWarning, UserError
 from odoo.tools import ustr
+from functools import reduce
 
 _logger = logging.getLogger(__name__)
 
@@ -79,7 +80,7 @@ class ResConfigConfigurable(models.TransientModel):
 
     @api.multi
     def start(self):
-        return self.next()
+        return next(self)
 
     @api.multi
     def next(self):
@@ -125,7 +126,7 @@ class ResConfigConfigurable(models.TransientModel):
         an action dictionary -- executes the action provided by calling
         ``next``.
         """
-        return self.execute() or self.next()
+        return self.execute() or next(self)
 
     @api.multi
     def action_skip(self):
@@ -136,7 +137,7 @@ class ResConfigConfigurable(models.TransientModel):
         an action dictionary -- executes the action provided by calling
         ``next``.
         """
-        return self.cancel() or self.next()
+        return self.cancel() or next(self)
 
     @api.multi
     def action_cancel(self):
@@ -150,7 +151,7 @@ class ResConfigConfigurable(models.TransientModel):
         an action dictionary -- executes the action provided by calling
         ``next``.
         """
-        return self.cancel() or self.next()
+        return self.cancel() or next(self)
 
 
 class ResConfigInstaller(models.TransientModel, ResConfigModuleInstallationMixin):
@@ -257,7 +258,7 @@ class ResConfigInstaller(models.TransientModel, ResConfigModuleInstallationMixin
                   installer
         :rtype: [str]
         """
-        return map(attrgetter('name'), self._already_installed())
+        return list(map(attrgetter('name'), self._already_installed()))
 
     def _already_installed(self):
         """ For each module (boolean fields in a res.config.installer),
@@ -267,7 +268,7 @@ class ResConfigInstaller(models.TransientModel, ResConfigModuleInstallationMixin
         :returns: a list of all installed modules in this installer
         :rtype: recordset (collection of Record)
         """
-        selectable = [name for name, field in self._fields.iteritems()
+        selectable = [name for name, field in self._fields.items()
                       if field.type == 'boolean']
         return self.env['ir.module.module'].search([('name', 'in', selectable),
                             ('state', 'in', ['to install', 'installed', 'to upgrade'])])
@@ -292,7 +293,7 @@ class ResConfigInstaller(models.TransientModel, ResConfigModuleInstallationMixin
         """
         base = set(module_name
                    for installer in self.read()
-                   for module_name, to_install in installer.iteritems()
+                   for module_name, to_install in installer.items()
                    if self._fields[module_name].type == 'boolean' and to_install)
 
         hooks_results = set()
@@ -302,7 +303,7 @@ class ResConfigInstaller(models.TransientModel, ResConfigModuleInstallationMixin
                 hooks_results.update(hook() or set())
 
         additionals = set(module
-                          for requirements, consequences in self._install_if.iteritems()
+                          for requirements, consequences in self._install_if.items()
                           if base.issuperset(requirements)
                           for module in consequences)
 
@@ -461,13 +462,13 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
         ref = self.env.ref
 
         defaults, groups, modules, others = [], [], [], []
-        for name, field in self._fields.iteritems():
+        for name, field in self._fields.items():
             if name.startswith('default_') and hasattr(field, 'default_model'):
                 defaults.append((name, field.default_model, name[8:]))
             elif name.startswith('group_') and field.type in ('boolean', 'selection') and \
                     hasattr(field, 'implied_group'):
                 field_group_xmlids = getattr(field, 'group', 'base.group_user').split(',')
-                field_groups = reduce(add, map(ref, field_group_xmlids))
+                field_groups = reduce(add, list(map(ref, field_group_xmlids)))
                 groups.append((name, field_groups, ref(field.implied_group)))
             elif name.startswith('module_') and field.type in ('boolean', 'selection'):
                 module = IrModule.sudo().search([('name', '=', name[7:])], limit=1)
@@ -559,7 +560,7 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
             # are no longer valid. So we reset the environment.
             self.env.reset()
             self = self.env()[self._name]
-        config = self.env['res.config'].next() or {}
+        config = next(self.env['res.config']) or {}
         if config.get('type') not in ('ir.actions.act_window_close',):
             return config
 

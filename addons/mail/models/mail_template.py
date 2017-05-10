@@ -8,9 +8,8 @@ import datetime
 import dateutil.relativedelta as relativedelta
 import logging
 import lxml
-import urlparse
-
-from urllib import urlencode, quote as quote
+import urllib.parse
+from urllib.parse import urlencode, quote as quote
 
 from odoo import _, api, fields, models, tools
 from odoo import report as odoo_report
@@ -303,13 +302,13 @@ class MailTemplate(models.Model):
             root = lxml.html.fromstring(html)
 
         base_url = self.env['ir.config_parameter'].get_param('web.base.url')
-        (base_scheme, base_netloc, bpath, bparams, bquery, bfragment) = urlparse.urlparse(base_url)
+        (base_scheme, base_netloc, bpath, bparams, bquery, bfragment) = urllib.parse.urlparse(base_url)
 
         def _process_link(url):
             new_url = url
-            (scheme, netloc, path, params, query, fragment) = urlparse.urlparse(url)
+            (scheme, netloc, path, params, query, fragment) = urllib.parse.urlparse(url)
             if not scheme and not netloc:
-                new_url = urlparse.urlunparse((base_scheme, base_netloc, path, params, query, fragment))
+                new_url = urllib.parse.urlunparse((base_scheme, base_netloc, path, params, query, fragment))
             return new_url
 
         # check all nodes, replace :
@@ -347,11 +346,11 @@ class MailTemplate(models.Model):
         :param int res_ids: list of ids of document records those mails are related to.
         """
         multi_mode = True
-        if isinstance(res_ids, (int, long)):
+        if isinstance(res_ids, int):
             multi_mode = False
             res_ids = [res_ids]
 
-        results = dict.fromkeys(res_ids, u"")
+        results = dict.fromkeys(res_ids, "")
 
         # try to load the template
         try:
@@ -362,7 +361,7 @@ class MailTemplate(models.Model):
             return multi_mode and results or results[res_ids[0]]
 
         # prepare template variables
-        records = self.env[model].browse(filter(None, res_ids))  # filter to avoid browsing [None]
+        records = self.env[model].browse([_f for _f in res_ids if _f])  # filter to avoid browsing [None]
         res_to_rec = dict.fromkeys(res_ids, None)
         for record in records:
             res_to_rec[record.id] = record
@@ -372,19 +371,19 @@ class MailTemplate(models.Model):
             'user': self.env.user,
             'ctx': self._context,  # context kw would clash with mako internals
         }
-        for res_id, record in res_to_rec.iteritems():
+        for res_id, record in res_to_rec.items():
             variables['object'] = record
             try:
                 render_result = template.render(variables)
             except Exception:
                 _logger.info("Failed to render template %r using values %r" % (template, variables), exc_info=True)
                 raise UserError(_("Failed to render template %r using values %r")% (template, variables))
-            if render_result == u"False":
-                render_result = u""
+            if render_result == "False":
+                render_result = ""
             results[res_id] = render_result
 
         if post_process:
-            for res_id, result in results.iteritems():
+            for res_id, result in results.items():
                 results[res_id] = self.render_post_process(result)
 
         return multi_mode and results or results[res_ids[0]]
@@ -392,7 +391,7 @@ class MailTemplate(models.Model):
     @api.multi
     def get_email_template(self, res_ids):
         multi_mode = True
-        if isinstance(res_ids, (int, long)):
+        if isinstance(res_ids, int):
             res_ids = [res_ids]
             multi_mode = False
 
@@ -405,7 +404,7 @@ class MailTemplate(models.Model):
         self.ensure_one()
 
         langs = self.render_template(self.lang, self.model, res_ids)
-        for res_id, lang in langs.iteritems():
+        for res_id, lang in langs.items():
             if lang:
                 template = self.with_context(lang=lang)
             else:
@@ -424,11 +423,11 @@ class MailTemplate(models.Model):
 
         if self.use_default_to or self._context.get('tpl_force_default_to'):
             default_recipients = self.env['mail.thread'].message_get_default_recipients(res_model=self.model, res_ids=res_ids)
-            for res_id, recipients in default_recipients.iteritems():
+            for res_id, recipients in default_recipients.items():
                 results[res_id].pop('partner_to', None)
                 results[res_id].update(recipients)
 
-        for res_id, values in results.iteritems():
+        for res_id, values in results.items():
             partner_ids = values.get('partner_ids', list())
             if self._context.get('tpl_partners_only'):
                 mails = tools.email_split(values.pop('email_to', '')) + tools.email_split(values.pop('email_cc', ''))
@@ -457,7 +456,7 @@ class MailTemplate(models.Model):
         """
         self.ensure_one()
         multi_mode = True
-        if isinstance(res_ids, (int, long)):
+        if isinstance(res_ids, int):
             res_ids = [res_ids]
             multi_mode = False
         if fields is None:
@@ -467,11 +466,11 @@ class MailTemplate(models.Model):
 
         # templates: res_id -> template; template -> res_ids
         templates_to_res_ids = {}
-        for res_id, template in res_ids_to_templates.iteritems():
+        for res_id, template in res_ids_to_templates.items():
             templates_to_res_ids.setdefault(template, []).append(res_id)
 
         results = dict()
-        for template, template_res_ids in templates_to_res_ids.iteritems():
+        for template, template_res_ids in templates_to_res_ids.items():
             Template = self.env['mail.template']
             # generate fields value for all res_ids linked to the current template
             if template.lang:
@@ -481,7 +480,7 @@ class MailTemplate(models.Model):
                 generated_field_values = Template.render_template(
                     getattr(template, field), template.model, template_res_ids,
                     post_process=(field == 'body_html'))
-                for res_id, field_value in generated_field_values.iteritems():
+                for res_id, field_value in generated_field_values.items():
                     results.setdefault(res_id, dict())[field] = field_value
             # compute recipients
             if any(field in fields for field in ['email_to', 'partner_to', 'email_cc']):

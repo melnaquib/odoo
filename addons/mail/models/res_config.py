@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-import urlparse
+import urllib.parse
 import datetime
 
 from odoo import api, fields, models, tools
@@ -29,7 +29,7 @@ class BaseConfiguration(models.TransientModel):
         if alias_domain is None:
             domain = self.env["ir.config_parameter"].get_param("web.base.url")
             try:
-                alias_domain = urlparse.urlsplit(domain).netloc.split(':')[0]
+                alias_domain = urllib.parse.urlsplit(domain).netloc.split(':')[0]
             except Exception:
                 pass
         return {'alias_domain': alias_domain or False}

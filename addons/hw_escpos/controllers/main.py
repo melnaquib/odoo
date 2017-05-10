@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-import commands
+import subprocess
 import logging
 import math
 import os
@@ -17,7 +17,7 @@ try:
 except ImportError:
     escpos = printer = None
 
-from Queue import Queue
+from queue import Queue
 from threading import Thread, Lock
 
 try:
@@ -170,13 +170,13 @@ class EscposDriver(Thread):
                 error = False
 
             except NoDeviceError as e:
-                print "No device found %s" %str(e)
+                print("No device found %s" %str(e))
             except HandleDeviceError as e:
-                print "Impossible to handle the device due to previous error %s" % str(e)
+                print("Impossible to handle the device due to previous error %s" % str(e))
             except TicketNotPrinted as e:
-                print "The ticket does not seems to have been fully printed %s" % str(e)
+                print("The ticket does not seems to have been fully printed %s" % str(e))
             except NoStatusError as e:
-                print "Impossible to get the status of the printer %s" % str(e)
+                print("Impossible to get the status of the printer %s" % str(e))
             except Exception as e:
                 self.set_status('error', str(e))
                 errmsg = str(e) + '\n' + '-'*60+'\n' + traceback.format_exc() + '-'*60 + '\n'
@@ -196,7 +196,7 @@ class EscposDriver(Thread):
         hosting_ap = os.system('pgrep hostapd') == 0
         ssid = subprocess.check_output('iwconfig 2>&1 | grep \'ESSID:"\' | sed \'s/.*"\\(.*\\)"/\\1/\'', shell=True).rstrip()
         mac = subprocess.check_output('ifconfig | grep -B 1 \'inet addr\' | grep -o \'HWaddr .*\' | sed \'s/HWaddr //\'', shell=True).rstrip()
-        ips =  [ c.split(':')[1].split(' ')[0] for c in commands.getoutput("/sbin/ifconfig").split('\n') if 'inet addr' in c ]
+        ips =  [ c.split(':')[1].split(' ')[0] for c in subprocess.getoutput("/sbin/ifconfig").split('\n') if 'inet addr' in c ]
         ips =  [ ip for ip in ips if ip not in localips ] 
         eprint.text('\n\n')
         eprint.set(align='center',type='b',height=2,width=2)

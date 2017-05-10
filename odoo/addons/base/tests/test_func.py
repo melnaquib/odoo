@@ -16,11 +16,11 @@ class TestCompose(unittest.TestCase):
     def test_decorator(self):
         """ ensure compose() can be partially applied as a decorator
         """
-        @functools.partial(compose, unicode)
+        @functools.partial(compose, str)
         def mul(a, b):
             return a * b
 
-        self.assertEqual(mul(5, 42), u"210")
+        self.assertEqual(mul(5, 42), "210")
 
 
 class TestFrozendict(unittest.TestCase):

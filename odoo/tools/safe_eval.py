@@ -156,10 +156,10 @@ def test_expr(expr, allowed_codes, mode="eval"):
         code_obj = compile(expr, "", mode)
     except (SyntaxError, TypeError, ValueError):
         raise
-    except Exception, e:
+    except Exception as e:
         import sys
         exc_info = sys.exc_info()
-        raise ValueError, '"%s" while compiling\n%r' % (ustr(e), expr), exc_info[2]
+        raise ValueError('"%s" while compiling\n%r' % (ustr(e), expr)).with_traceback(exc_info[2])
     assert_valid_codeobj(allowed_codes, code_obj, expr)
     return code_obj
 
@@ -222,11 +222,11 @@ _BUILTINS = {
     'False': False,
     'None': None,
     'str': str,
-    'unicode': unicode,
+    'unicode': str,
     'bool': bool,
     'int': int,
     'float': float,
-    'long': long,
+    'long': int,
     'enumerate': enumerate,
     'dict': dict,
     'list': list,
@@ -319,10 +319,10 @@ def safe_eval(expr, globals_dict=None, locals_dict=None, mode="eval", nocopy=Fal
         raise
     except odoo.exceptions.MissingError:
         raise
-    except Exception, e:
+    except Exception as e:
         import sys
         exc_info = sys.exc_info()
-        raise ValueError, '%s: "%s" while evaluating\n%r' % (ustr(type(e)), ustr(e), expr), exc_info[2]
+        raise ValueError('%s: "%s" while evaluating\n%r' % (ustr(type(e)), ustr(e), expr)).with_traceback(exc_info[2])
 def test_python_expr(expr, mode="eval"):
     try:
         test_expr(expr, _SAFE_OPCODES, mode=mode)

@@ -41,7 +41,7 @@ class website_form_model(models.Model):
             ])
         }
         return {
-            k: v for k, v in self.get_authorized_fields().iteritems()
+            k: v for k, v in self.get_authorized_fields().items()
             if k not in excluded
         }
 
@@ -50,16 +50,16 @@ class website_form_model(models.Model):
         model = self.env[self.model]
         fields_get = model.fields_get()
 
-        for key, val in model._inherits.iteritems():
+        for key, val in model._inherits.items():
             fields_get.pop(val,None)
 
         # Unrequire fields with default values
-        default_values = model.default_get(fields_get.keys())
+        default_values = model.default_get(list(fields_get.keys()))
         for field in [f for f in fields_get if f in default_values]:
             fields_get[field]['required'] = False
 
         # Remove readonly and magic fields
-        for field in fields_get.keys():
+        for field in list(fields_get.keys()):
             if fields_get[field]['readonly'] or field in MAGIC_FIELDS:
                 del fields_get[field]
 

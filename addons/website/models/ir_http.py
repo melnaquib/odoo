@@ -241,7 +241,7 @@ class Http(models.AbstractModel):
     def _postprocess_args(cls, arguments, rule):
         super(Http, cls)._postprocess_args(arguments, rule)
 
-        for key, val in arguments.items():
+        for key, val in list(arguments.items()):
             # Replace uid placeholder by the current request.uid
             if isinstance(val, models.BaseModel) and isinstance(val._uid, RequestUID):
                 arguments[key] = val.sudo(request.uid)
@@ -249,7 +249,7 @@ class Http(models.AbstractModel):
         try:
             _, path = rule.build(arguments)
             assert path is not None
-        except Exception, e:
+        except Exception as e:
             return cls._handle_exception(e, code=404)
 
         if getattr(request, 'website_multilang', False) and request.httprequest.method in ('GET', 'HEAD'):
@@ -276,7 +276,7 @@ class Http(models.AbstractModel):
                 else:
                     # if parent excplicitely returns a plain response, then we don't touch it
                     return response
-            except Exception, e:
+            except Exception as e:
                 if 'werkzeug' in config['dev_mode'] and (not isinstance(exception, QWebException) or not exception.qweb.get('cause')):
                     raise
                 exception = e

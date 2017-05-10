@@ -66,11 +66,11 @@ class GoalDefinition(models.Model):
             items = []
 
             if goal.monetary:
-                items.append(self.env.user.company_id.currency_id.symbol or u'¤')
+                items.append(self.env.user.company_id.currency_id.symbol or '¤')
             if goal.suffix:
                 items.append(goal.suffix)
 
-            goal.full_suffix = u' '.join(items)
+            goal.full_suffix = ' '.join(items)
 
     def _check_domain_validity(self):
         # take admin as should always be present
@@ -85,7 +85,7 @@ class GoalDefinition(models.Model):
                 })
                 # dummy search to make sure the domain is valid
                 Obj.search_count(domain)
-            except (ValueError, SyntaxError), e:
+            except (ValueError, SyntaxError) as e:
                 msg = e.message or (e.msg + '\n' + e.text)
                 raise exceptions.UserError(_("The domain for the definition %s seems incorrect, please check it.\n\n%s") % (definition.name, msg))
         return True
@@ -102,7 +102,7 @@ class GoalDefinition(models.Model):
                 if not (field and field.store):
                     raise exceptions.UserError(
                         _("The model configuration for the definition %s seems incorrect, please check it.\n\n%s not stored") % (definition.name, definition.field_id.name))
-            except KeyError, e:
+            except KeyError as e:
                 raise exceptions.UserError(
                     _("The model configuration for the definition %s seems incorrect, please check it.\n\n%s not found") % (definition.name, e.message))
 
@@ -259,7 +259,7 @@ class Goal(models.Model):
         for goal in self:
             goals_by_definition.setdefault(goal.definition_id, []).append(goal)
 
-        for definition, goals in goals_by_definition.items():
+        for definition, goals in list(goals_by_definition.items()):
             goals_to_write = {}
             if definition.computation_mode == 'manually':
                 for goal in goals:
@@ -281,7 +281,7 @@ class Goal(models.Model):
                     safe_eval(code, cxt, mode="exec", nocopy=True)
                     # the result of the evaluated codeis put in the 'result' local variable, propagated to the context
                     result = cxt.get('result')
-                    if result is not None and isinstance(result, (float, int, long)):
+                    if result is not None and isinstance(result, (float, int)):
                         goals_to_write.update(goal._get_write_values(result))
                     else:
                         _logger.error(
@@ -304,7 +304,7 @@ class Goal(models.Model):
                         subqueries.setdefault((start_date, end_date), {}).update({goal.id:safe_eval(definition.batch_user_expression, {'user': goal.user_id})})
 
                     # the global query should be split by time periods (especially for recurrent goals)
-                    for (start_date, end_date), query_goals in subqueries.items():
+                    for (start_date, end_date), query_goals in list(subqueries.items()):
                         subquery_domain = list(general_domain)
                         subquery_domain.append((field_name, 'in', list(set(query_goals.values()))))
                         if start_date:
@@ -322,7 +322,7 @@ class Goal(models.Model):
                         for goal in [g for g in goals if g.id in query_goals]:
                             for user_value in user_values:
                                 queried_value = field_name in user_value and user_value[field_name] or False
-                                if isinstance(queried_value, tuple) and len(queried_value) == 2 and isinstance(queried_value[0], (int, long)):
+                                if isinstance(queried_value, tuple) and len(queried_value) == 2 and isinstance(queried_value[0], int):
                                     queried_value = queried_value[0]
                                 if queried_value == query_goals[goal.id]:
                                     new_value = user_value.get(field_name+'_count', goal.current)
@@ -350,7 +350,7 @@ class Goal(models.Model):
 
                         goals_to_write.update(goal._get_write_values(new_value))
 
-            for goal, values in goals_to_write.iteritems():
+            for goal, values in goals_to_write.items():
                 if not values:
                     continue
                 goal.write(values)

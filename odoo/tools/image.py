@@ -2,9 +2,9 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 try:
-    import cStringIO as StringIO
+    import io as StringIO
 except ImportError:
-    import StringIO
+    import io
 
 from PIL import Image
 from PIL import ImageEnhance
@@ -53,7 +53,7 @@ def image_resize_image(base64_source, size=(1024, 1024), encoding='base64', file
         return False
     if size == (None, None):
         return base64_source
-    image_stream = StringIO.StringIO(base64_source.decode(encoding))
+    image_stream = io.StringIO(base64_source.decode(encoding))
     image = Image.open(image_stream)
     # store filetype here, as Image.new below will lose image.format
     filetype = (filetype or image.format).upper()
@@ -78,7 +78,7 @@ def image_resize_image(base64_source, size=(1024, 1024), encoding='base64', file
     if image.mode not in ["1", "L", "P", "RGB", "RGBA"]:
         image = image.convert("RGB")
 
-    background_stream = StringIO.StringIO()
+    background_stream = io.StringIO()
     image.save(background_stream, filetype)
     return background_stream.getvalue().encode(encoding)
 
@@ -128,7 +128,7 @@ def image_save_for_web(image, fp=None, format=None):
     if fp:
         image.save(fp, **opt)
     else:
-        img = StringIO.StringIO()
+        img = io.StringIO()
         image.save(img, **opt)
         return img.getvalue()
 
@@ -170,8 +170,8 @@ def crop_image(data, type='top', ratio=False, thumbnail_ratio=None, image_format
     """
     if not data:
         return False
-    image_stream = Image.open(StringIO.StringIO(data.decode('base64')))
-    output_stream = StringIO.StringIO()
+    image_stream = Image.open(io.StringIO(data.decode('base64')))
+    output_stream = io.StringIO()
     w, h = image_stream.size
     new_h = h
     new_w = w
@@ -197,7 +197,7 @@ def crop_image(data, type='top', ratio=False, thumbnail_ratio=None, image_format
         raise ValueError('ERROR: invalid value for crop_type')
     # TDE FIXME: should not have a ratio, makes no sense -> should have maximum width (std: 64; 256 px)
     if thumbnail_ratio:
-        thumb_image = Image.open(StringIO.StringIO(output_stream.getvalue()))
+        thumb_image = Image.open(io.StringIO(output_stream.getvalue()))
         thumb_image.thumbnail((new_w / thumbnail_ratio, new_h / thumbnail_ratio), Image.ANTIALIAS)
         thumb_image.save(output_stream, image_format)
     return output_stream.getvalue().encode('base64')
@@ -213,7 +213,7 @@ def image_colorize(original, randomize=True, color=(255, 255, 255)):
         :param color: background-color, if not randomize
     """
     # create a new image, based on the original one
-    original = Image.open(StringIO.StringIO(original))
+    original = Image.open(io.StringIO(original))
     image = Image.new('RGB', original.size)
     # generate the background color, past it as background
     if randomize:
@@ -221,7 +221,7 @@ def image_colorize(original, randomize=True, color=(255, 255, 255)):
     image.paste(color, box=(0, 0) + original.size)
     image.paste(original, mask=original)
     # return the new image
-    buffer = StringIO.StringIO()
+    buffer = io.StringIO()
     image.save(buffer, 'PNG')
     return buffer.getvalue()
 

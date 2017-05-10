@@ -80,7 +80,7 @@ class Blackbox(Thread):
 
     def _wrap_low_level_message_around(self, high_level_message):
         bcc = self._lrc(high_level_message)
-        high_level_message_bytes = map(ord, high_level_message)
+        high_level_message_bytes = list(map(ord, high_level_message))
 
         low_level_message = bytearray()
         low_level_message.append(0x02)

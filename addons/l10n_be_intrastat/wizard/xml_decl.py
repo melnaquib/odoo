@@ -264,18 +264,18 @@ class XmlDeclaration(models.TransientModel):
                 continue
             numlgn += 1
             item = ET.SubElement(datas, 'Item')
-            self._set_Dim(item, 'EXSEQCODE', unicode(numlgn))
-            self._set_Dim(item, 'EXTRF', unicode(linekey.EXTRF))
-            self._set_Dim(item, 'EXCNT', unicode(linekey.EXCNT))
-            self._set_Dim(item, 'EXTTA', unicode(linekey.EXTTA))
-            self._set_Dim(item, 'EXREG', unicode(linekey.EXREG))
-            self._set_Dim(item, 'EXTGO', unicode(linekey.EXGO))
+            self._set_Dim(item, 'EXSEQCODE', str(numlgn))
+            self._set_Dim(item, 'EXTRF', str(linekey.EXTRF))
+            self._set_Dim(item, 'EXCNT', str(linekey.EXCNT))
+            self._set_Dim(item, 'EXTTA', str(linekey.EXTTA))
+            self._set_Dim(item, 'EXREG', str(linekey.EXREG))
+            self._set_Dim(item, 'EXTGO', str(linekey.EXGO))
             if extendedmode:
-                self._set_Dim(item, 'EXTPC', unicode(linekey.EXTPC))
-                self._set_Dim(item, 'EXDELTRM', unicode(linekey.EXDELTRM))
-            self._set_Dim(item, 'EXTXVAL', unicode(round(amounts[0], 0)).replace(".", ","))
-            self._set_Dim(item, 'EXWEIGHT', unicode(round(amounts[1], 0)).replace(".", ","))
-            self._set_Dim(item, 'EXUNITS', unicode(round(amounts[2], 0)).replace(".", ","))
+                self._set_Dim(item, 'EXTPC', str(linekey.EXTPC))
+                self._set_Dim(item, 'EXDELTRM', str(linekey.EXDELTRM))
+            self._set_Dim(item, 'EXTXVAL', str(round(amounts[0], 0)).replace(".", ","))
+            self._set_Dim(item, 'EXWEIGHT', str(round(amounts[1], 0)).replace(".", ","))
+            self._set_Dim(item, 'EXUNITS', str(round(amounts[2], 0)).replace(".", ","))
 
         if numlgn == 0:
             #no datas

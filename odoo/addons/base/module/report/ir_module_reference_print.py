@@ -21,7 +21,7 @@ class IrModelReferenceReport(models.AbstractModel):
         if data:
             res_ids = data.mapped('res_id')
             fnames = self.env['ir.model.fields'].browse(res_ids).mapped('name')
-            return sorted(self.env[model].fields_get(fnames).iteritems())
+            return sorted(self.env[model].fields_get(fnames).items())
         return []
 
     @api.model

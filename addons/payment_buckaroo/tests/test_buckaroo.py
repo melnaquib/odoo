@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from lxml import objectify
-import urlparse
+import urllib.parse
 
 import odoo
 from odoo.addons.payment.models.payment_acquirer import ValidationError
@@ -41,10 +41,10 @@ class BuckarooForm(BuckarooCommon):
             'Brq_invoicenumber': 'SO004',
             'Brq_signature': '1b8c10074c622d965272a91a9e88b5b3777d2474',  # update me
             'brq_test': 'True',
-            'Brq_return': '%s' % urlparse.urljoin(base_url, BuckarooController._return_url),
-            'Brq_returncancel': '%s' % urlparse.urljoin(base_url, BuckarooController._cancel_url),
-            'Brq_returnerror': '%s' % urlparse.urljoin(base_url, BuckarooController._exception_url),
-            'Brq_returnreject': '%s' % urlparse.urljoin(base_url, BuckarooController._reject_url),
+            'Brq_return': '%s' % urllib.parse.urljoin(base_url, BuckarooController._return_url),
+            'Brq_returncancel': '%s' % urllib.parse.urljoin(base_url, BuckarooController._cancel_url),
+            'Brq_returnerror': '%s' % urllib.parse.urljoin(base_url, BuckarooController._exception_url),
+            'Brq_returnreject': '%s' % urllib.parse.urljoin(base_url, BuckarooController._reject_url),
             'Brq_culture': 'en-US',
         }
 
@@ -105,27 +105,27 @@ class BuckarooForm(BuckarooCommon):
 
         # typical data posted by buckaroo after client has successfully paid
         buckaroo_post_data = {
-            'BRQ_RETURNDATA': u'',
-            'BRQ_AMOUNT': u'2240.00',
-            'BRQ_CURRENCY': u'EUR',
-            'BRQ_CUSTOMER_NAME': u'Jan de Tester',
-            'BRQ_INVOICENUMBER': u'SO004',
-            'brq_payment': u'573311D081B04069BD6336001611DBD4',
-            'BRQ_PAYMENT_METHOD': u'paypal',
-            'BRQ_SERVICE_PAYPAL_PAYERCOUNTRY': u'NL',
-            'BRQ_SERVICE_PAYPAL_PAYEREMAIL': u'fhe@odoo.com',
-            'BRQ_SERVICE_PAYPAL_PAYERFIRSTNAME': u'Jan',
-            'BRQ_SERVICE_PAYPAL_PAYERLASTNAME': u'Tester',
-            'BRQ_SERVICE_PAYPAL_PAYERMIDDLENAME': u'de',
-            'BRQ_SERVICE_PAYPAL_PAYERSTATUS': u'verified',
-            'Brq_signature': u'175d82dd53a02bad393fee32cb1eafa3b6fbbd91',
-            'BRQ_STATUSCODE': u'190',
-            'BRQ_STATUSCODE_DETAIL': u'S001',
-            'BRQ_STATUSMESSAGE': u'Transaction successfully processed',
-            'BRQ_TEST': u'true',
-            'BRQ_TIMESTAMP': u'2014-05-08 12:41:21',
-            'BRQ_TRANSACTIONS': u'D6106678E1D54EEB8093F5B3AC42EA7B',
-            'BRQ_WEBSITEKEY': u'5xTGyGyPyl',
+            'BRQ_RETURNDATA': '',
+            'BRQ_AMOUNT': '2240.00',
+            'BRQ_CURRENCY': 'EUR',
+            'BRQ_CUSTOMER_NAME': 'Jan de Tester',
+            'BRQ_INVOICENUMBER': 'SO004',
+            'brq_payment': '573311D081B04069BD6336001611DBD4',
+            'BRQ_PAYMENT_METHOD': 'paypal',
+            'BRQ_SERVICE_PAYPAL_PAYERCOUNTRY': 'NL',
+            'BRQ_SERVICE_PAYPAL_PAYEREMAIL': 'fhe@odoo.com',
+            'BRQ_SERVICE_PAYPAL_PAYERFIRSTNAME': 'Jan',
+            'BRQ_SERVICE_PAYPAL_PAYERLASTNAME': 'Tester',
+            'BRQ_SERVICE_PAYPAL_PAYERMIDDLENAME': 'de',
+            'BRQ_SERVICE_PAYPAL_PAYERSTATUS': 'verified',
+            'Brq_signature': '175d82dd53a02bad393fee32cb1eafa3b6fbbd91',
+            'BRQ_STATUSCODE': '190',
+            'BRQ_STATUSCODE_DETAIL': 'S001',
+            'BRQ_STATUSMESSAGE': 'Transaction successfully processed',
+            'BRQ_TEST': 'true',
+            'BRQ_TIMESTAMP': '2014-05-08 12:41:21',
+            'BRQ_TRANSACTIONS': 'D6106678E1D54EEB8093F5B3AC42EA7B',
+            'BRQ_WEBSITEKEY': '5xTGyGyPyl',
         }
 
         # should raise error about unknown tx

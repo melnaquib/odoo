@@ -30,9 +30,9 @@ class TestMailFollowers(TestMail):
 
         self.assertEqual(set([generic[0][2]['res_model'], generic[1][2]['res_model']]),
                          set(['mail.channel']))
-        self.assertEqual(set(filter(None, [generic[0][2].get('channel_id'), generic[1][2].get('channel_id')])),
+        self.assertEqual(set([_f for _f in [generic[0][2].get('channel_id'), generic[1][2].get('channel_id')] if _f]),
                          set([test_channel.id]))
-        self.assertEqual(set(filter(None, [generic[0][2].get('partner_id'), generic[1][2].get('partner_id')])),
+        self.assertEqual(set([_f for _f in [generic[0][2].get('partner_id'), generic[1][2].get('partner_id')] if _f]),
                          set([self.user_employee.partner_id.id]))
         self.assertEqual(set(generic[0][2]['subtype_ids'][0][2] + generic[1][2]['subtype_ids'][0][2]),
                          set([self.mt_mg_nodef.id, self.mt_al_nodef.id]))
@@ -53,7 +53,7 @@ class TestMailFollowers(TestMail):
         self.assertEqual(generic[0][2]['channel_id'], test_channel.id)
         self.assertEqual(set(generic[0][2]['subtype_ids'][0][2]), set(self.default_group_subtypes.ids))
 
-        self.assertEqual(specific.keys(), [self.group_public.id])
+        self.assertEqual(list(specific.keys()), [self.group_public.id])
         self.assertEqual(specific[self.group_public.id][0][2]['res_model'], 'mail.channel')
         self.assertEqual(specific[self.group_public.id][0][2]['partner_id'], self.user_employee.partner_id.id)
         self.assertEqual(set(specific[self.group_public.id][0][2]['subtype_ids'][0][2]), set([self.mt_mg_nodef.id]))

@@ -6,7 +6,7 @@ import py2exe
 from distutils.core import setup
 
 
-execfile(os.path.join(os.path.dirname(__file__), '..', '..', 'odoo', 'release.py'))
+exec(compile(open(os.path.join(os.path.dirname(__file__), '..', '..', 'odoo', 'release.py')).read(), os.path.join(os.path.dirname(__file__), '..', '..', 'odoo', 'release.py'), 'exec'))
 
 
 def generate_files():
@@ -18,7 +18,7 @@ def generate_files():
     files = []
     if os.name == 'nt':
         files.append(("Microsoft.VC90.CRT", glob.glob('C:\Microsoft.VC90.CRT\*.*')))
-    for action, steps in actions.items():
+    for action, steps in list(actions.items()):
         fname = action + '.bat'
         files.append(fname)
         with open(fname, 'w') as fp:

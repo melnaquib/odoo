@@ -369,7 +369,7 @@ class AccountAssetAsset(models.Model):
         vals = self.onchange_category_id_values(self.category_id.id)
         # We cannot use 'write' on an object that doesn't exist yet
         if vals:
-            for k, v in vals['value'].iteritems():
+            for k, v in vals['value'].items():
                 setattr(self, k, v)
 
     def onchange_category_id_values(self, category_id):
@@ -578,7 +578,7 @@ class AccountAssetDepreciationLine(models.Model):
             message = ''
             if message_description:
                 message = '<span>%s</span>' % message_description
-            for name, values in tracked_values.iteritems():
+            for name, values in tracked_values.items():
                 message += '<div> &nbsp; &nbsp; &bull; <b>%s</b>: ' % name
                 message += '%s</div>' % values
             return message

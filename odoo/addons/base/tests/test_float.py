@@ -99,10 +99,10 @@ class TestFloatPrecision(TransactionCase):
         # Note: max precision for double floats is 53 bits of precision or
         # 17 significant decimal digits
         for magnitude in range(7):
-            for i in xrange(len(fractions)):
+            for i in range(len(fractions)):
                 frac, exp, prec = fractions[i], expecteds[i], precisions[i]
                 for sign in [-1,1]:
-                    for x in xrange(0,10000,97):
+                    for x in range(0,10000,97):
                         n = x * 10**magnitude
                         f = sign * (n + frac)
                         f_exp = ('-' if f != 0 and sign == -1 else '') + str(n) + exp 

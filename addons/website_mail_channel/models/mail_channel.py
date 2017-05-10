@@ -3,7 +3,7 @@
 
 import hmac
 
-from urlparse import urljoin
+from urllib.parse import urljoin
 
 from odoo import api, models
 from odoo.tools.safe_eval import safe_eval

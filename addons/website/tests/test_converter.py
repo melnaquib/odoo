@@ -23,7 +23,7 @@ class TestUnslug(unittest.TestCase):
             'foo1': (None, None),
         }
 
-        for slug, expected in tests.iteritems():
+        for slug, expected in tests.items():
             self.assertEqual(unslug(slug), expected)
 
 
@@ -36,31 +36,31 @@ class TestTitleToSlug(unittest.TestCase):
     def test_spaces(self):
         self.assertEqual(
             "spaces",
-            slugify(u"   spaces   ")
+            slugify("   spaces   ")
         )
 
     def test_unicode(self):
         self.assertEqual(
             "heterogeneite",
-            slugify(u"hétérogénéité")
+            slugify("hétérogénéité")
         )
 
     def test_underscore(self):
         self.assertEqual(
             "one-two",
-            slugify(u"one_two")
+            slugify("one_two")
         )
 
     def test_caps(self):
         self.assertEqual(
             "camelcase",
-            slugify(u"CamelCase")
+            slugify("CamelCase")
         )
 
     def test_special_chars(self):
         self.assertEqual(
             "o-d-o-o",
-            slugify(u"o!#d{|\o/@~o&%^?")
+            slugify("o!#d{|\o/@~o&%^?")
         )
 
     def test_str_to_unicode(self):
@@ -72,11 +72,11 @@ class TestTitleToSlug(unittest.TestCase):
     def test_numbers(self):
         self.assertEqual(
             "article-1",
-            slugify(u"Article 1")
+            slugify("Article 1")
         )
 
     def test_all(self):
         self.assertEqual(
             "do-you-know-martine-a-la-plage",
-            slugify(u"Do YOU know 'Martine à la plage' ?")
+            slugify("Do YOU know 'Martine à la plage' ?")
         )

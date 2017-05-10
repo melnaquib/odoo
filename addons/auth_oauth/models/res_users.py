@@ -2,8 +2,8 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 import werkzeug.urls
-import urlparse
-import urllib2
+import urllib.parse
+import urllib.request, urllib.error, urllib.parse
 import json
 
 from odoo import api, fields, models
@@ -25,11 +25,11 @@ class ResUsers(models.Model):
     @api.model
     def _auth_oauth_rpc(self, endpoint, access_token):
         params = werkzeug.url_encode({'access_token': access_token})
-        if urlparse.urlparse(endpoint)[4]:
+        if urllib.parse.urlparse(endpoint)[4]:
             url = endpoint + '&' + params
         else:
             url = endpoint + '?' + params
-        f = urllib2.urlopen(url)
+        f = urllib.request.urlopen(url)
         response = f.read()
         return json.loads(response)
 
@@ -79,7 +79,7 @@ class ResUsers(models.Model):
             assert len(oauth_user) == 1
             oauth_user.write({'oauth_access_token': params['access_token']})
             return oauth_user.login
-        except AccessDenied, access_denied_exception:
+        except AccessDenied as access_denied_exception:
             if self.env.context.get('no_user_creation'):
                 return None
             state = json.loads(params['state'])

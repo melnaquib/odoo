@@ -3,8 +3,8 @@
 import json
 import logging
 import pprint
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 import werkzeug
 
 from odoo import http
@@ -23,7 +23,7 @@ class PaypalController(http.Controller):
         """ Extract the return URL from the data coming from paypal. """
         return_url = post.pop('return_url', '')
         if not return_url:
-            custom = json.loads(urllib.unquote_plus(post.pop('custom', False) or post.pop('cm', False) or '{}'))
+            custom = json.loads(urllib.parse.unquote_plus(post.pop('custom', False) or post.pop('cm', False) or '{}'))
             return_url = custom.get('return_url', '/')
         return return_url
 
@@ -37,14 +37,14 @@ class PaypalController(http.Controller):
             :return: tuple containing the STATUS str and the key/value pairs
                      parsed as a dict
         """
-        lines = filter(None, response.split('\n'))
+        lines = [_f for _f in response.split('\n') if _f]
         status = lines.pop(0)
 
         pdt_post = {}
         for line in lines:
             split = line.split('=', 1)
             if len(split) == 2:
-                pdt_post[split[0]] = urllib.unquote_plus(split[1]).decode('utf8')
+                pdt_post[split[0]] = urllib.parse.unquote_plus(split[1]).decode('utf8')
             else:
                 _logger.warning('Paypal: error processing pdt response: %s', line)
 
@@ -75,8 +75,8 @@ class PaypalController(http.Controller):
             new_post['at'] = request.env['ir.config_parameter'].sudo().get_param('payment_paypal.pdt_token')
             new_post['cmd'] = '_notify-synch'  # command is different in PDT than IPN/DPN
         validate_url = paypal_urls['paypal_form_url']
-        urequest = urllib2.Request(validate_url, werkzeug.url_encode(new_post))
-        uopen = urllib2.urlopen(urequest)
+        urequest = urllib.request.Request(validate_url, werkzeug.url_encode(new_post))
+        uopen = urllib.request.urlopen(urequest)
         resp = uopen.read()
         if pdt_request:
             resp, post = self._parse_pdt_response(resp)

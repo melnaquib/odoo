@@ -178,7 +178,7 @@ class MailController(http.Controller):
             else:
                 # either a wrong message_id, either someone trying ids -> just go to messaging
                 return self._redirect_to_messaging()
-        elif res_id and isinstance(res_id, basestring):
+        elif res_id and isinstance(res_id, str):
             res_id = int(res_id)
 
         return self._redirect_to_record(model, res_id)

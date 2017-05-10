@@ -35,7 +35,7 @@ class WebsiteEventTrackController(http.Controller):
             # New TR, align all events
             if forcetr or (start_date>dates[-1][0]) or not location:
                 dates.append((start_date, {}, bool(location)))
-                for loc in locations.keys():
+                for loc in list(locations.keys()):
                     if locations[loc] and (locations[loc][-1][2] > start_date):
                         locations[loc][-1][3] += 1
                     elif not locations[loc] or locations[loc][-1][2] <= start_date:
@@ -63,13 +63,13 @@ class WebsiteEventTrackController(http.Controller):
 
         days = {}
         days_tracks_count = {}
-        for day, tracks in days_tracks.iteritems():
+        for day, tracks in days_tracks.items():
             days_tracks_count[day] = len(tracks)
             days[day] = self._prepare_calendar(event, tracks)
 
         speakers = {}
         for track in event.sudo().track_ids:
-            speakers_name = u" – ".join(track.speaker_ids.mapped('name'))
+            speakers_name = " – ".join(track.speaker_ids.mapped('name'))
             speakers[track.id] = speakers_name
 
         return request.render("website_event_track.agenda", {

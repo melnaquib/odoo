@@ -7,8 +7,8 @@ import logging
 import os
 import shutil
 import tempfile
-import urllib2
-import urlparse
+import urllib.request, urllib.error, urllib.parse
+import urllib.parse
 import zipfile
 
 from docutils import nodes
@@ -18,9 +18,9 @@ from docutils.writers.html4css1 import Writer
 import lxml.html
 
 try:
-    from cStringIO import StringIO
+    from io import StringIO
 except ImportError:
-    from StringIO import StringIO   # NOQA
+    from io import StringIO   # NOQA
 
 import odoo
 from odoo import api, fields, models, modules, tools, _
@@ -307,7 +307,7 @@ class Module(models.Model):
         terp = cls.get_module_info(module_name)
         try:
             cls._check_external_dependencies(terp)
-        except Exception, e:
+        except Exception as e:
             if newstate == 'to install':
                 msg = _('Unable to install module "%s" because an external dependency is not met: %s')
             elif newstate == 'to upgrade':
@@ -485,7 +485,7 @@ class Module(models.Model):
 
         self._cr.commit()
         env = api.Environment(self._cr, self._uid, self._context)
-        config = env['res.config'].next() or {}
+        config = next(env['res.config']) or {}
         if config.get('type') not in ('ir.actions.act_window_close',):
             return config
 
@@ -611,7 +611,7 @@ class Module(models.Model):
                 updated_values = {}
                 for key in values:
                     old = getattr(mod, key)
-                    updated = tools.ustr(values[key]) if isinstance(values[key], basestring) else values[key]
+                    updated = tools.ustr(values[key]) if isinstance(values[key], str) else values[key]
                     if (old or updated) and updated != old:
                         updated_values[key] = values[key]
                 if terp.get('installable', True) and mod.state == 'uninstallable':
@@ -652,24 +652,24 @@ class Module(models.Model):
             _logger.warning(msg)
             raise UserError(msg)
 
-        apps_server = urlparse.urlparse(self.get_apps_server())
+        apps_server = urllib.parse.urlparse(self.get_apps_server())
 
         OPENERP = odoo.release.product_name.lower()
         tmp = tempfile.mkdtemp()
         _logger.debug('Install from url: %r', urls)
         try:
             # 1. Download & unzip missing modules
-            for module_name, url in urls.iteritems():
+            for module_name, url in urls.items():
                 if not url:
                     continue    # nothing to download, local version is already the last one
 
-                up = urlparse.urlparse(url)
+                up = urllib.parse.urlparse(url)
                 if up.scheme != apps_server.scheme or up.netloc != apps_server.netloc:
                     raise AccessDenied()
 
                 try:
                     _logger.info('Downloading module `%s` from OpenERP Apps', module_name)
-                    content = urllib2.urlopen(url).read()
+                    content = urllib.request.urlopen(url).read()
                 except Exception:
                     _logger.exception('Failed to fetch module %s', module_name)
                     raise UserError(_('The `%s` module appears to be unavailable at the moment, please try again later.') % module_name)
@@ -678,7 +678,7 @@ class Module(models.Model):
                     assert os.path.isdir(os.path.join(tmp, module_name))
 
             # 2a. Copy/Replace module source in addons path
-            for module_name, url in urls.iteritems():
+            for module_name, url in urls.items():
                 if module_name == OPENERP or not url:
                     continue    # OPENERP is special case, handled below, and no URL means local module
                 module_path = modules.get_module_path(module_name, downloaded=True, display_warning=False)
@@ -710,11 +710,11 @@ class Module(models.Model):
 
             self.update_list()
 
-            with_urls = [module_name for module_name, url in urls.iteritems() if url]
+            with_urls = [module_name for module_name, url in urls.items() if url]
             downloaded = self.search([('name', 'in', with_urls)])
             installed = self.search([('id', 'in', downloaded.ids), ('state', '=', 'installed')])
 
-            to_install = self.search([('name', 'in', urls.keys()), ('state', '=', 'uninstalled')])
+            to_install = self.search([('name', 'in', list(urls.keys())), ('state', '=', 'uninstalled')])
             post_install_action = to_install.button_immediate_install()
 
             if installed or to_install:

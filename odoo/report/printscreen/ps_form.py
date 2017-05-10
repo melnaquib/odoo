@@ -20,7 +20,7 @@ class report_printscreen_list(report_int):
                 attrsa = node.attrib
                 attrs = {}
                 if not attrsa is None:
-                    for key,val in attrsa.items():
+                    for key,val in list(attrsa.items()):
                         attrs[key] = val
                 result.append(attrs['name'])
             else:

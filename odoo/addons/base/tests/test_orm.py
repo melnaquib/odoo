@@ -141,7 +141,7 @@ class TestORM(TransactionCase):
         partner_ids_by_year = defaultdict(list)
 
         partners = self.env['res.partner']
-        for name, date in partners_data.items():
+        for name, date in list(partners_data.items()):
             p = partners.create(dict(name=name, date=date))
             partner_ids.append(p.id)
             partner_ids_by_day[date].append(p.id)
@@ -193,7 +193,7 @@ class TestInherits(TransactionCase):
         """ `default_get` cannot return a dictionary or a new id """
         defaults = self.env['res.users'].default_get(['partner_id'])
         if 'partner_id' in defaults:
-            self.assertIsInstance(defaults['partner_id'], (bool, int, long))
+            self.assertIsInstance(defaults['partner_id'], (bool, int, int))
 
     def test_create(self):
         """ creating a user should automatically create a new partner """
@@ -297,7 +297,7 @@ class TestO2MSerialization(TransactionCase):
     def test_CREATE_commands(self):
         " returns the VALUES dict as-is "
         values = [{'foo': 'bar'}, {'foo': 'baz'}, {'foo': 'baq'}]
-        results = self.env['res.partner'].resolve_2many_commands('child_ids', map(CREATE, values))
+        results = self.env['res.partner'].resolve_2many_commands('child_ids', list(map(CREATE, values)))
         self.assertEqual(results, values)
 
     def test_LINK_TO_command(self):
@@ -307,7 +307,7 @@ class TestO2MSerialization(TransactionCase):
             self.env['res.partner'].create({'name': 'bar'}).id,
             self.env['res.partner'].create({'name': 'baz'}).id,
         ]
-        commands = map(LINK_TO, ids)
+        commands = list(map(LINK_TO, ids))
 
         results = self.env['res.partner'].resolve_2many_commands('child_ids', commands, ['name'])
         self.assertItemsEqual(results, [
@@ -356,7 +356,7 @@ class TestO2MSerialization(TransactionCase):
             self.env['res.partner'].create({'name': 'bar'}).id,
             self.env['res.partner'].create({'name': 'baz'}).id,
         ]
-        commands = map(DELETE, ids)
+        commands = list(map(DELETE, ids))
 
         results = self.env['res.partner'].resolve_2many_commands('child_ids', commands, ['name'])
         self.assertEqual(results, [])

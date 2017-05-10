@@ -2,11 +2,11 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 import base64
-import cStringIO
+import io
 import logging
 import os
 import re
-import StringIO
+import io
 import time
 import zipfile
 from datetime import datetime
@@ -193,7 +193,7 @@ class rml_parse(object):
             else:
                 digits = self.get_digits(value)
 
-        if isinstance(value, (str, unicode)) and not value:
+        if isinstance(value, str) and not value:
             return ''
 
         if not self.lang_dict_called:
@@ -210,7 +210,7 @@ class rml_parse(object):
                 value = value.split('.')[0]
                 date_format = date_format + " " + self.lang_dict['time_format']
                 parse_format = DEFAULT_SERVER_DATETIME_FORMAT
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 # FIXME: the trimming is probably unreliable if format includes day/month names
                 #        and those would need to be translated anyway.
                 date = datetime.strptime(value[:get_date_length(parse_format)], parse_format)
@@ -227,9 +227,9 @@ class rml_parse(object):
         res = self.lang_dict['lang_obj'].format('%.' + str(digits) + 'f', value, grouping=grouping, monetary=monetary)
         if currency_obj and currency_obj.symbol:
             if currency_obj.position == 'after':
-                res = u'%s\N{NO-BREAK SPACE}%s' % (res, currency_obj.symbol)
+                res = '%s\N{NO-BREAK SPACE}%s' % (res, currency_obj.symbol)
             elif currency_obj and currency_obj.position == 'before':
-                res = u'%s\N{NO-BREAK SPACE}%s' % (currency_obj.symbol, res)
+                res = '%s\N{NO-BREAK SPACE}%s' % (currency_obj.symbol, res)
         return res
 
     def display_address(self, address_record, without_company=False):
@@ -345,7 +345,7 @@ class report_sxw(report_rml, preprocess.report):
                 report_type= data.get('report_type', 'pdf')
                 class a(object):
                     def __init__(self, *args, **argv):
-                        for key,arg in argv.items():
+                        for key,arg in list(argv.items()):
                             setattr(self, key, arg)
                 report_xml = a(title=title, report_type=report_type, report_rml_content=rml, name=title, attachment=False, header=self.header)
             finally:
@@ -429,10 +429,10 @@ class report_sxw(report_rml, preprocess.report):
                     from pyPdf import PdfFileWriter, PdfFileReader
                     output = PdfFileWriter()
                     for r in results:
-                        reader = PdfFileReader(cStringIO.StringIO(r[0]))
+                        reader = PdfFileReader(io.StringIO(r[0]))
                         for page in range(reader.getNumPages()):
                             output.addPage(reader.getPage(page))
-                    s = cStringIO.StringIO()
+                    s = io.StringIO()
                     output.write(s)
                     return s.getvalue(), results[0][1]
         return self.create_single_pdf(cr, uid, ids, data, report_xml, context)
@@ -465,13 +465,13 @@ class report_sxw(report_rml, preprocess.report):
         context['parents'] = sxw_parents
         report_type = report_xml.report_type
         binary_report_content = report_xml.report_sxw_content
-        if isinstance(report_xml.report_sxw_content, unicode):
+        if isinstance(report_xml.report_sxw_content, str):
             # if binary content was passed as unicode, we must
             # re-encode it as a 8-bit string using the pass-through
             # 'latin1' encoding, to restore the original byte values.
             binary_report_content = report_xml.report_sxw_content.encode("latin1")
 
-        sxw_io = StringIO.StringIO(binary_report_content)
+        sxw_io = io.StringIO(binary_report_content)
         sxw_z = zipfile.ZipFile(sxw_io, mode='r')
         rml = sxw_z.read('content.xml')
         meta = sxw_z.read('meta.xml')
@@ -565,14 +565,14 @@ class report_sxw(report_rml, preprocess.report):
                 rml_file.close()
 
         #created empty zip writing sxw contents to avoid duplication
-        sxw_out = StringIO.StringIO()
+        sxw_out = io.StringIO()
         sxw_out_zip = zipfile.ZipFile(sxw_out, mode='w')
         sxw_template_zip = zipfile.ZipFile (sxw_io, 'r')
         for item in sxw_template_zip.infolist():
             if item.filename not in sxw_contents:
                 buffer = sxw_template_zip.read(item.filename)
                 sxw_out_zip.writestr(item.filename, buffer)
-        for item_filename, buffer in sxw_contents.iteritems():
+        for item_filename, buffer in sxw_contents.items():
             sxw_out_zip.writestr(item_filename, buffer)
         sxw_template_zip.close()
         sxw_out_zip.close()

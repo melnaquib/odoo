@@ -181,17 +181,17 @@ if __name__ == "__main__":
                             precision_digits=precision_digits)
         if result != expected:
             errors += 1
-            print '###!!! Rounding error: got %s , expected %s' % (result, expected)
+            print('###!!! Rounding error: got %s , expected %s' % (result, expected))
 
     # Extended float range test, inspired by Cloves Almeida's test on bug #882036.
     fractions = [.0, .015, .01499, .675, .67499, .4555, .4555, .45555]
     expecteds = ['.00', '.02', '.01', '.68', '.67', '.46', '.456', '.4556']
     precisions = [2, 2, 2, 2, 2, 2, 3, 4]
     for magnitude in range(7):
-        for i in xrange(len(fractions)):
+        for i in range(len(fractions)):
             frac, exp, prec = fractions[i], expecteds[i], precisions[i]
             for sign in [-1,1]:
-                for x in xrange(0,10000,97):
+                for x in range(0,10000,97):
                     n = x * 10**magnitude
                     f = sign * (n + frac)
                     f_exp = ('-' if f != 0 and sign == -1 else '') + str(n) + exp 
@@ -203,4 +203,4 @@ if __name__ == "__main__":
     # 47130 round calls in 0.422306060791 secs, with Python 2.6.7 on Core i3 x64
     # with decimal:
     # 47130 round calls in 6.612248100021 secs, with Python 2.6.7 on Core i3 x64
-    print count, " round calls, ", errors, "errors, done in ", (stop-start), 'secs'
+    print(count, " round calls, ", errors, "errors, done in ", (stop-start), 'secs')

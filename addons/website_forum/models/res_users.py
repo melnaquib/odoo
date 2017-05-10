@@ -4,7 +4,7 @@
 import hashlib
 
 from datetime import datetime
-from urllib import urlencode
+from urllib.parse import urlencode
 
 from odoo import api, fields, models
 

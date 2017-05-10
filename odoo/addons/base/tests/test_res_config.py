@@ -41,8 +41,8 @@ class TestResConfig(TransactionCase):
         # Check types
         self.assertIsInstance(res, tuple)
         self.assertEqual(len(res), 2, "The result should contain 2 elements")
-        self.assertIsInstance(res[0], basestring)
-        self.assertIsInstance(res[1], (int, long))
+        self.assertIsInstance(res[0], str)
+        self.assertIsInstance(res[1], (int, int))
 
         # Check returned values
         self.assertEqual(res[0], self.expected_path)
@@ -53,7 +53,7 @@ class TestResConfig(TransactionCase):
         res = self.ResConfig.get_option_name(self.full_field_name)
 
         # Check type
-        self.assertIsInstance(res, basestring)
+        self.assertIsInstance(res, str)
 
         # Check returned value
         self.assertEqual(res, self.expected_name)

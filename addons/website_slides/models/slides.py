@@ -2,14 +2,14 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from PIL import Image
-from urllib import urlencode
-from urlparse import urlparse
+from urllib.parse import urlencode
+from urllib.parse import urlparse
 
 import datetime
 import io
 import json
 import re
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 from odoo import api, fields, models, SUPERUSER_ID, _
 from odoo.tools import image
@@ -323,7 +323,7 @@ class Slide(models.Model):
             values = res['values']
             if not values.get('document_id'):
                 raise Warning(_('Please enter valid Youtube or Google Doc URL'))
-            for key, value in values.iteritems():
+            for key, value in values.items():
                 setattr(self, key, value)
 
     # website
@@ -386,7 +386,7 @@ class Slide(models.Model):
             values['date_published'] = datetime.datetime.now()
         if values.get('url'):
             doc_data = self._parse_document_url(values['url']).get('values', dict())
-            for key, value in doc_data.iteritems():
+            for key, value in doc_data.items():
                 values.setdefault(key, value)
         # Do not publish slide if user has not publisher rights
         if not self.user_has_groups('website.group_website_publisher'):
@@ -400,7 +400,7 @@ class Slide(models.Model):
     def write(self, values):
         if values.get('url'):
             doc_data = self._parse_document_url(values['url']).get('values', dict())
-            for key, value in doc_data.iteritems():
+            for key, value in doc_data.items():
                 values.setdefault(key, value)
         if values.get('channel_id'):
             custom_channels = self.env['slide.channel'].search([('custom_slide_id', '=', self.id), ('id', '!=', values.get('channel_id'))])
@@ -501,18 +501,18 @@ class Slide(models.Model):
             if data:
                 sep = '?' if not extra_params else '&'
                 base_url = base_url + '%s%s' % (sep, urlencode(data))
-            req = urllib2.Request(base_url)
-            content = urllib2.urlopen(req).read()
+            req = urllib.request.Request(base_url)
+            content = urllib.request.urlopen(req).read()
             if content_type == 'json':
                 result['values'] = json.loads(content)
             elif content_type in ('image', 'pdf'):
                 result['values'] = content.encode('base64')
             else:
                 result['values'] = content
-        except urllib2.HTTPError as e:
+        except urllib.error.HTTPError as e:
             result['error'] = e.read()
             e.close()
-        except urllib2.URLError as e:
+        except urllib.error.URLError as e:
             result['error'] = e.reason
         return result
 

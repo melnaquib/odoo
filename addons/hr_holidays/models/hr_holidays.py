@@ -144,7 +144,7 @@ class HolidaysType(models.Model):
         if not count and not order and self._context.get('employee_id'):
             leaves = self.browse(leave_ids)
             sort_key = lambda l: (not l.limit, l.virtual_remaining_leaves)
-            return map(int, leaves.sorted(key=sort_key, reverse=True))
+            return list(map(int, leaves.sorted(key=sort_key, reverse=True)))
         return leave_ids
 
 

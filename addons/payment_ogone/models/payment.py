@@ -4,13 +4,13 @@ from hashlib import sha1
 from lxml import etree, objectify
 from pprint import pformat
 from unicodedata import normalize
-from urllib import urlencode
+from urllib.parse import urlencode
 
 import datetime
 import logging
 import time
-import urllib2
-import urlparse
+import urllib.request, urllib.error, urllib.parse
+import urllib.parse
 
 from odoo import api, fields, models, _
 from odoo.addons.payment.models.payment_acquirer import ValidationError
@@ -143,7 +143,7 @@ class PaymentAcquirerOgone(models.Model):
                 ]
                 return key.upper() in keys
 
-        items = sorted((k.upper(), v) for k, v in values.items())
+        items = sorted((k.upper(), v) for k, v in list(values.items()))
         sign = ''.join('%s=%s%s' % (k, v, key) for k, v in items if v and filter_key(k))
         sign = sign.encode("utf-8")
         shasign = sha1(sign).hexdigest()
@@ -165,10 +165,10 @@ class PaymentAcquirerOgone(models.Model):
             'OWNERTOWN': values.get('partner_city'),
             'OWNERCTY': values.get('partner_country') and values.get('partner_country').code or '',
             'OWNERTELNO': values.get('partner_phone'),
-            'ACCEPTURL': '%s' % urlparse.urljoin(base_url, OgoneController._accept_url),
-            'DECLINEURL': '%s' % urlparse.urljoin(base_url, OgoneController._decline_url),
-            'EXCEPTIONURL': '%s' % urlparse.urljoin(base_url, OgoneController._exception_url),
-            'CANCELURL': '%s' % urlparse.urljoin(base_url, OgoneController._cancel_url),
+            'ACCEPTURL': '%s' % urllib.parse.urljoin(base_url, OgoneController._accept_url),
+            'DECLINEURL': '%s' % urllib.parse.urljoin(base_url, OgoneController._decline_url),
+            'EXCEPTIONURL': '%s' % urllib.parse.urljoin(base_url, OgoneController._exception_url),
+            'CANCELURL': '%s' % urllib.parse.urljoin(base_url, OgoneController._cancel_url),
             'PARAMPLUS': 'return_url=%s' % ogone_tx_values.pop('return_url') if ogone_tx_values.get('return_url') else False,
         }
         if self.save_token in ['ask', 'always']:
@@ -345,7 +345,7 @@ class PaymentTxOgone(models.Model):
             'USERID': account.ogone_userid,
             'PSWD': account.ogone_password,
             'ORDERID': reference,
-            'AMOUNT': long(self.amount * 100),
+            'AMOUNT': int(self.amount * 100),
             'CURRENCY': self.currency_id.name,
             'OPERATION': 'SAL',
             'ECI': 2,   # Recurring (from MOTO)
@@ -371,8 +371,8 @@ class PaymentTxOgone(models.Model):
         direct_order_url = 'https://secure.ogone.com/ncol/%s/orderdirect.asp' % (self.acquirer_id.environment)
 
         _logger.debug("Ogone data %s", pformat(data))
-        request = urllib2.Request(direct_order_url, urlencode(data))
-        result = urllib2.urlopen(request).read()
+        request = urllib.request.Request(direct_order_url, urlencode(data))
+        result = urllib.request.urlopen(request).read()
         _logger.debug('Ogone response = %s', result)
 
         try:
@@ -457,8 +457,8 @@ class PaymentTxOgone(models.Model):
         query_direct_url = 'https://secure.ogone.com/ncol/%s/querydirect.asp' % (self.acquirer_id.environment)
 
         _logger.debug("Ogone data %s", pformat(data))
-        request = urllib2.Request(query_direct_url, urlencode(data))
-        result = urllib2.urlopen(request).read()
+        request = urllib.request.Request(query_direct_url, urlencode(data))
+        result = urllib.request.urlopen(request).read()
         _logger.debug('Ogone response = %s', result)
 
         try:
@@ -499,9 +499,9 @@ class PaymentToken(models.Model):
             }
 
             url = 'https://secure.ogone.com/ncol/%s/AFU_agree.asp' % (acquirer.environment,)
-            request = urllib2.Request(url, urlencode(data))
+            request = urllib.request.Request(url, urlencode(data))
 
-            result = urllib2.urlopen(request).read()
+            result = urllib.request.urlopen(request).read()
 
             try:
                 tree = objectify.fromstring(result)

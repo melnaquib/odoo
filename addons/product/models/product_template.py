@@ -8,6 +8,7 @@ import odoo.addons.decimal_precision as dp
 
 from odoo import api, fields, models, tools, _
 from odoo.exceptions import ValidationError, except_orm
+from functools import reduce
 
 
 class ProductTemplate(models.Model):
@@ -163,9 +164,9 @@ class ProductTemplate(models.Model):
             quantity = self._context.get('quantity', 1.0)
 
             # Support context pricelists specified as display_name or ID for compatibility
-            if isinstance(pricelist_id_or_name, basestring):
+            if isinstance(pricelist_id_or_name, str):
                 pricelist = self.env['product.pricelist'].name_search(pricelist_id_or_name, operator='=', limit=1)
-            elif isinstance(pricelist_id_or_name, (int, long)):
+            elif isinstance(pricelist_id_or_name, int):
                 pricelist = self.env['product.pricelist'].browse(pricelist_id_or_name)
 
             if pricelist:
@@ -379,8 +380,8 @@ class ProductTemplate(models.Model):
             # list of values combination
             existing_variants = [set(variant.attribute_value_ids.ids) for variant in tmpl_id.product_variant_ids]
             variant_matrix = itertools.product(*(line.value_ids for line in tmpl_id.attribute_line_ids if line.value_ids and line.value_ids[0].attribute_id.create_variant))
-            variant_matrix = map(lambda record_list: reduce(lambda x, y: x+y, record_list, self.env['product.attribute.value']), variant_matrix)
-            to_create_variants = filter(lambda rec_set: set(rec_set.ids) not in existing_variants, variant_matrix)
+            variant_matrix = [reduce(lambda x, y: x+y, record_list, self.env['product.attribute.value']) for record_list in variant_matrix]
+            to_create_variants = [rec_set for rec_set in variant_matrix if set(rec_set.ids) not in existing_variants]
 
             # check product
             variants_to_activate = self.env['product.product']

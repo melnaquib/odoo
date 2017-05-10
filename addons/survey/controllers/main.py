@@ -356,7 +356,7 @@ class WebsiteSurvey(http.Controller):
     def page_range(self, total_record, limit):
         '''Returns number of pages required for pagination'''
         total = ceil(total_record / float(limit))
-        return range(1, int(total + 1))
+        return list(range(1, int(total + 1)))
 
     def get_graph_data(self, question, current_filters=None):
         '''Returns formatted data required by graph library on basis of filter'''

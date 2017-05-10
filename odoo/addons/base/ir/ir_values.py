@@ -213,7 +213,7 @@ class IrValues(models.Model):
                                     match)
            :return: the newly created ir.values entry
         """
-        if isinstance(value, unicode):
+        if isinstance(value, str):
             value = value.encode('utf8')
         if company_id is True:
             # should be company-specific, need to get company id
@@ -308,7 +308,7 @@ class IrValues(models.Model):
         for row in self._cr.dictfetchall():
             value = pickle.loads(row['value'].encode('utf-8'))
             defaults.setdefault(row['name'], (row['id'], row['name'], value))
-        return defaults.values()
+        return list(defaults.values())
 
     # use ormcache: this is called a lot by BaseModel.default_get()!
     @api.model
@@ -340,7 +340,7 @@ class IrValues(models.Model):
                               specific record of the model, not all records.
            :return: the newly created ir.values entry
         """
-        assert isinstance(action, basestring) and ',' in action, \
+        assert isinstance(action, str) and ',' in action, \
                'Action definition must be an action reference, e.g. "ir.actions.act_window,42"'
         assert action_slot in ACTION_SLOTS, \
                'Action slot (%s) must be one of: %r' % (action_slot, ACTION_SLOTS)

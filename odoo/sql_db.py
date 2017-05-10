@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from functools import wraps
 import logging
 import time
-import urlparse
+import urllib.parse
 import uuid
 
 import psycopg2
@@ -41,13 +41,13 @@ def undecimalize(symb, cr):
         return None
     return float(symb)
 
-for name, typeoid in types_mapping.items():
+for name, typeoid in list(types_mapping.items()):
     psycopg2.extensions.register_type(psycopg2.extensions.new_type(typeoid, name, lambda x, cr: x))
 psycopg2.extensions.register_type(psycopg2.extensions.new_type((700, 701, 1700,), 'float', undecimalize))
 
 
-import tools
-from tools.func import frame_codeinfo
+from . import tools
+from .tools.func import frame_codeinfo
 from datetime import timedelta
 import threading
 from inspect import currentframe
@@ -184,9 +184,9 @@ class Cursor(object):
         row = self._obj.fetchone()
         return row and self.__build_dict(row)
     def dictfetchmany(self, size):
-        return map(self.__build_dict, self._obj.fetchmany(size))
+        return list(map(self.__build_dict, self._obj.fetchmany(size)))
     def dictfetchall(self):
-        return map(self.__build_dict, self._obj.fetchall())
+        return list(map(self.__build_dict, self._obj.fetchall()))
 
     def __del__(self):
         if not self._closed and not self._cnx.closed:
@@ -254,7 +254,7 @@ class Cursor(object):
             sqllogs = {'from': self.sql_from_log, 'into': self.sql_into_log}
             sum = 0
             if sqllogs[type]:
-                sqllogitems = sqllogs[type].items()
+                sqllogitems = list(sqllogs[type].items())
                 sqllogitems.sort(key=lambda k: k[1][1])
                 _logger.debug("SQL LOG %s:", type)
                 sqllogitems.sort(lambda x, y: cmp(x[1][0], y[1][0]))
@@ -469,7 +469,7 @@ class LazyCursor(object):
         if cr is None:
             from odoo import registry
             cr = self._cursor = registry(self.dbname).cursor()
-            for _ in xrange(self._depth):
+            for _ in range(self._depth):
                 cr.__enter__()
         return getattr(cr, name)
 
@@ -629,7 +629,7 @@ class Connection(object):
     # serialized_cursor is deprecated - cursors are serialized by default
     serialized_cursor = cursor
 
-    def __nonzero__(self):
+    def __bool__(self):
         """Check if connection is possible"""
         try:
             _logger.info("__nonzero__() is deprecated. (It is too expensive to test a connection.)")
@@ -652,7 +652,7 @@ def connection_info_for(db_or_uri):
     """
     if db_or_uri.startswith(('postgresql://', 'postgres://')):
         # extract db from uri
-        us = urlparse.urlsplit(db_or_uri)
+        us = urllib.parse.urlsplit(db_or_uri)
         if len(us.path) > 1:
             db_name = us.path[1:]
         elif us.username:

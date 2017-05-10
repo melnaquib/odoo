@@ -43,7 +43,7 @@ class IrConfigParameter(models.Model):
         Initializes the parameters listed in _default_parameters.
         It overrides existing parameters if force is ``True``.
         """
-        for key, func in _default_parameters.iteritems():
+        for key, func in _default_parameters.items():
             # force=True skips search and always performs the 'if' body (because ids=False)
             params = self.sudo().search([('key', '=', key)])
             if force or not params:

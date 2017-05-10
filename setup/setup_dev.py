@@ -28,7 +28,7 @@ if re.search('github.com[:/]odoo/odoo.git$', sys.argv[2]):
 """
 
 def printf(f,*l):
-    print "odoo:" + f % l
+    print("odoo:" + f % l)
 
 def run(*l):
     if isinstance(l[0], list):
@@ -76,7 +76,7 @@ def cmd_setup_git():
         run('git','config','alias.pl','pull --ff-only')
         pre_push_path = os.path.join(git_dir, '.git/hooks/pre-push')
         open(pre_push_path,'w').write(GIT_HOOKS_PRE_PUSH.strip())
-        os.chmod(pre_push_path, 0755)
+        os.chmod(pre_push_path, 0o755)
         # setup odoo remote
         run('git','config','remote.odoo.url','https://github.com/odoo/odoo.git')
         run('git','config','remote.odoo.pushurl','git@github.com:odoo/odoo.git')
@@ -153,7 +153,7 @@ def main():
     elif len(sys.argv) == 2 and sys.argv[1] in cmds:
         cmds[sys.argv[1]]()
     else:
-        sys.exit('Unknow command. Command available: %r' % (cmds.keys(),))
+        sys.exit('Unknow command. Command available: %r' % (list(cmds.keys()),))
 
 if __name__ == "__main__":
     main()

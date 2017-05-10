@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
-import urlparse
+import urllib.parse
 
 from odoo import http
 from odoo.http import request
@@ -36,7 +36,7 @@ class WebsiteMailController(WebsiteMail):
         response = super(WebsiteMailController, self).chatter_post(res_model=res_model, res_id=res_id, message=message, redirect=redirect, **params)
         if kw.get('rating') and res_model == 'product.template':  # restrict rating only for product template
             try:
-                fragment = urlparse.urlparse(response.location).fragment
+                fragment = urllib.parse.urlparse(response.location).fragment
                 message_id = int(fragment.replace('message-', ''))
                 request.env['rating.rating'].create({
                     'rating': float(kw.get('rating')),

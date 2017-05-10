@@ -14,7 +14,7 @@ def get(col_str):
     if col_str is None:
         col_str = ''
     global allcols
-    if col_str in allcols.keys():
+    if col_str in list(allcols.keys()):
         return allcols[col_str]
     res = regex_t.search(col_str, 0)
     if res:

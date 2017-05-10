@@ -145,9 +145,9 @@ class IrUiMenu(models.Model):
             if not self._context.get('ir.ui.menu.full_list'):
                 menus = menus._filter_visible_menus()
             if offset:
-                menus = menus[long(offset):]
+                menus = menus[int(offset):]
             if limit:
-                menus = menus[:long(limit)]
+                menus = menus[:int(limit)]
         return len(menus) if count else menus
 
     @api.multi

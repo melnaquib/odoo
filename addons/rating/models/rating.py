@@ -4,6 +4,7 @@
 import uuid
 
 from odoo import api, fields, models, tools
+from functools import reduce
 
 
 class Rating(models.Model):
@@ -156,7 +157,7 @@ class RatingMixin(models.AbstractModel):
             base_domain += domain
         data = self.env['rating.rating'].read_group(base_domain, ['rating'], ['rating', 'res_id'])
         # init dict with all posible rate value, except 0 (no value for the rating)
-        values = dict.fromkeys(range(1, 11), 0)
+        values = dict.fromkeys(list(range(1, 11)), 0)
         values.update((d['rating'], d['rating_count']) for d in data)
         # add other stats
         if add_stats:
@@ -202,7 +203,7 @@ class RatingMixin(models.AbstractModel):
         result = {
             'avg': data['avg'],
             'total': data['total'],
-            'percent': dict.fromkeys(range(1, 11), 0),
+            'percent': dict.fromkeys(list(range(1, 11)), 0),
         }
         for rate in data['repartition']:
             result['percent'][rate] = (data['repartition'][rate] * 100) / data['total'] if data['total'] > 0 else 0

@@ -254,7 +254,7 @@ class Report(models.Model):
         # Get paperformat arguments set in the root html tag. They are prioritized over
         # paperformat-record arguments.
         specific_paperformat_args = {}
-        for attribute in root.items():
+        for attribute in list(root.items()):
             if attribute[0].startswith('data-report-'):
                 specific_paperformat_args[attribute[0]] = attribute[1]
 

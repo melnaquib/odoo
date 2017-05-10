@@ -2,7 +2,7 @@
 
 from lxml import objectify
 import time
-import urlparse
+import urllib.parse
 
 from odoo.addons.payment.models.payment_acquirer import ValidationError
 from odoo.addons.payment.tests.common import PaymentAcquirerCommon
@@ -40,10 +40,10 @@ class OgonePayment(PaymentAcquirerCommon):
             'OWNERTOWN': 'Sin City',
             'OWNERTELNO': '0032 12 34 56 78',
             'SHASIGN': '815f67b8ff70d234ffcf437c13a9fa7f807044cc',
-            'ACCEPTURL': '%s' % urlparse.urljoin(base_url, OgoneController._accept_url),
-            'DECLINEURL': '%s' % urlparse.urljoin(base_url, OgoneController._decline_url),
-            'EXCEPTIONURL': '%s' % urlparse.urljoin(base_url, OgoneController._exception_url),
-            'CANCELURL': '%s' % urlparse.urljoin(base_url, OgoneController._cancel_url),
+            'ACCEPTURL': '%s' % urllib.parse.urljoin(base_url, OgoneController._accept_url),
+            'DECLINEURL': '%s' % urllib.parse.urljoin(base_url, OgoneController._decline_url),
+            'EXCEPTIONURL': '%s' % urllib.parse.urljoin(base_url, OgoneController._exception_url),
+            'CANCELURL': '%s' % urllib.parse.urljoin(base_url, OgoneController._cancel_url),
         }
 
         # render the button
@@ -101,21 +101,21 @@ class OgonePayment(PaymentAcquirerCommon):
 
         # typical data posted by ogone after client has successfully paid
         ogone_post_data = {
-            'orderID': u'test_ref_2',
-            'STATUS': u'9',
-            'CARDNO': u'XXXXXXXXXXXX0002',
-            'PAYID': u'25381582',
-            'CN': u'Norbert Buyer',
-            'NCERROR': u'0',
-            'TRXDATE': u'11/15/13',
-            'IP': u'85.201.233.72',
-            'BRAND': u'VISA',
-            'ACCEPTANCE': u'test123',
-            'currency': u'EUR',
-            'amount': u'1.95',
-            'SHASIGN': u'7B7B0ED9CBC4A85543A9073374589033A62A05A5',
-            'ED': u'0315',
-            'PM': u'CreditCard'
+            'orderID': 'test_ref_2',
+            'STATUS': '9',
+            'CARDNO': 'XXXXXXXXXXXX0002',
+            'PAYID': '25381582',
+            'CN': 'Norbert Buyer',
+            'NCERROR': '0',
+            'TRXDATE': '11/15/13',
+            'IP': '85.201.233.72',
+            'BRAND': 'VISA',
+            'ACCEPTANCE': 'test123',
+            'currency': 'EUR',
+            'amount': '1.95',
+            'SHASIGN': '7B7B0ED9CBC4A85543A9073374589033A62A05A5',
+            'ED': '0315',
+            'PM': 'CreditCard'
         }
 
         # should raise error about unknown tx

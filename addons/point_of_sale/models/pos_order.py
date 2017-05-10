@@ -306,7 +306,7 @@ class PosOrder(models.Model):
 
             # round tax lines per order
             if rounding_method == 'round_globally':
-                for group_key, group_value in grouped_data.iteritems():
+                for group_key, group_value in grouped_data.items():
                     if group_key[0] == 'tax':
                         for line in group_value:
                             line['credit'] = cur.round(line['credit'])
@@ -324,7 +324,7 @@ class PosOrder(models.Model):
             order.write({'state': 'done', 'account_move': move.id})
 
         all_lines = []
-        for group_key, group_data in grouped_data.iteritems():
+        for group_key, group_data in grouped_data.items():
             for value in group_data:
                 all_lines.append((0, 0, value),)
         if move:  # In case no order was changed
@@ -689,7 +689,7 @@ class PosOrder(models.Model):
                             pack_lots.append({'lot_id': stock_production_lot.id, 'qty': qty})
                 else:
                     qty_done = pack_operation.product_qty
-                pack_operation.write({'pack_lot_ids': map(lambda x: (0, 0, x), pack_lots), 'qty_done': qty_done})
+                pack_operation.write({'pack_lot_ids': [(0, 0, x) for x in pack_lots], 'qty_done': qty_done})
 
     def add_payment(self, data):
         """Create a new payment for the order"""
@@ -965,7 +965,7 @@ class ReportSaleDetails(models.AbstractModel):
             'total_paid': user_currency.round(total),
             'payments': payments,
             'company_name': self.env.user.company_id.name,
-            'taxes': taxes.values(),
+            'taxes': list(taxes.values()),
             'products': sorted([{
                 'product_id': product.id,
                 'product_name': product.name,
@@ -974,7 +974,7 @@ class ReportSaleDetails(models.AbstractModel):
                 'price_unit': price_unit,
                 'discount': discount,
                 'uom': product.uom_id.name
-            } for (product, price_unit, discount), qty in products_sold.items()], key=lambda l: l['product_name'])
+            } for (product, price_unit, discount), qty in list(products_sold.items())], key=lambda l: l['product_name'])
         }
 
     @api.multi

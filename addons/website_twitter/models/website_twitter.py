@@ -5,7 +5,8 @@ import base64
 import json
 import logging
 import werkzeug
-from urllib2 import urlopen, Request, HTTPError
+from urllib.request import urlopen, Request
+from urllib.error import HTTPError
 from odoo import api, fields, models
 
 API_ENDPOINT = 'https://api.twitter.com'
@@ -35,7 +36,7 @@ class WebsiteTwitter(models.Model):
             request = Request(url)
             request.add_header('Authorization', 'Bearer %s' % access_token)
             return json.load(urlopen(request, timeout=URLOPEN_TIMEOUT))
-        except HTTPError, e:
+        except HTTPError as e:
             _logger.debug("Twitter API request failed with code: %r, msg: %r, content: %r",
                           e.code, e.msg, e.fp.read())
             raise

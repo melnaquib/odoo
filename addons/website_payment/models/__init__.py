@@ -1,3 +1,3 @@
-import res_config
-import payment
-import website
+from . import res_config
+from . import payment
+from . import website

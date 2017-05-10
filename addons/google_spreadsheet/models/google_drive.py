@@ -6,7 +6,7 @@ import logging
 from lxml import etree
 import re
 import werkzeug.urls
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 from odoo import api, models
 from odoo.addons.google_account import TIMEOUT
@@ -72,12 +72,12 @@ class GoogleDrive(models.Model):
 </feed>''' .format(key=spreadsheet_key, formula=cgi.escape(formula, quote=True), config=cgi.escape(config_formula, quote=True))
 
         try:
-            req = urllib2.Request(
+            req = urllib.request.Request(
                 'https://spreadsheets.google.com/feeds/cells/%s/od6/private/full/batch?%s' % (spreadsheet_key, werkzeug.url_encode({'v': 3, 'access_token': access_token})),
                 data=request,
                 headers={'content-type': 'application/atom+xml', 'If-Match': '*'})
-            urllib2.urlopen(req, timeout=TIMEOUT)
-        except (urllib2.HTTPError, urllib2.URLError):
+            urllib.request.urlopen(req, timeout=TIMEOUT)
+        except (urllib.error.HTTPError, urllib.error.URLError):
             _logger.warning("An error occured while writting the formula on the Google Spreadsheet.")
 
         description = '''

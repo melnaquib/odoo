@@ -14,4 +14,4 @@ def choice_colors(n):
     return []
 
 if __name__=='__main__':
-    print choice_colors(10)
+    print(choice_colors(10))

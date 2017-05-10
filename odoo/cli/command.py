@@ -16,9 +16,8 @@ class CommandType(type):
         if name != 'command':
             commands[name] = cls
 
-class Command(object):
+class Command(object, metaclass=CommandType):
     """Subclass this class to define new odoo subcommands """
-    __metaclass__ = CommandType
 
     def run(self, args):
         pass
@@ -26,14 +25,14 @@ class Command(object):
 class Help(Command):
     """Display the list of available commands"""
     def run(self, args):
-        print "Available commands:\n"
-        names = commands.keys()
+        print("Available commands:\n")
+        names = list(commands.keys())
         padding = max([len(k) for k in names]) + 2
         for k in sorted(names):
             name = k.ljust(padding, ' ')
             doc = (commands[k].__doc__ or '').strip()
-            print "    %s%s" % (name, doc)
-        print "\nUse '%s <command> --help' for individual command help." % sys.argv[0].split(os.path.sep)[-1]
+            print("    %s%s" % (name, doc))
+        print("\nUse '%s <command> --help' for individual command help." % sys.argv[0].split(os.path.sep)[-1])
 
 def main():
     args = sys.argv[1:]

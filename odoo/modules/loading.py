@@ -295,15 +295,15 @@ def load_modules(db, force_demo=False, status=None, update_module=False):
                 _logger.info('updating modules list')
                 Module.update_list()
 
-            _check_module_names(cr, itertools.chain(tools.config['init'].keys(), tools.config['update'].keys()))
+            _check_module_names(cr, itertools.chain(list(tools.config['init'].keys()), list(tools.config['update'].keys())))
 
-            module_names = [k for k, v in tools.config['init'].items() if v]
+            module_names = [k for k, v in list(tools.config['init'].items()) if v]
             if module_names:
                 modules = Module.search([('state', '=', 'uninstalled'), ('name', 'in', module_names)])
                 if modules:
                     modules.button_install()
 
-            module_names = [k for k, v in tools.config['update'].items() if v]
+            module_names = [k for k, v in list(tools.config['update'].items()) if v]
             if module_names:
                 modules = Module.search([('state', '=', 'installed'), ('name', 'in', module_names)])
                 if modules:
@@ -390,7 +390,7 @@ def load_modules(db, force_demo=False, status=None, update_module=False):
                         getattr(py_module, uninstall_hook)(cr, registry)
 
                 Module = env['ir.module.module']
-                Module.browse(modules_to_remove.values()).module_uninstall()
+                Module.browse(list(modules_to_remove.values())).module_uninstall()
                 # Recursive reload, should only happen once, because there should be no
                 # modules to remove next time
                 cr.commit()
@@ -413,7 +413,7 @@ def load_modules(db, force_demo=False, status=None, update_module=False):
             _logger.info('Modules loaded.')
 
         # STEP 8: call _register_hook on every model
-        for model in env.values():
+        for model in list(env.values()):
             model._register_hook()
 
         # STEP 9: Run the post-install tests

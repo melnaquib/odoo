@@ -75,7 +75,7 @@ class WebsiteMembership(http.Controller):
                     'country_id_count': 0,
                     'country_id': (country_id, current_country["name"])
                 })
-                countries = filter(lambda d:d['country_id'], countries)
+                countries = [d for d in countries if d['country_id']]
                 countries.sort(key=lambda d: d['country_id'][1])
 
         countries.insert(0, {

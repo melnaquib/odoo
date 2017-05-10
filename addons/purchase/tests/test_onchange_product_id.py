@@ -70,4 +70,4 @@ class TestOnchangeProductId(TransactionCase):
 
         po_line = po.order_line[0]
         po_line.onchange_product_id()
-        self.assertEquals(100, po_line.price_unit, "The included tax must be subtracted to the price")
+        self.assertEqual(100, po_line.price_unit, "The included tax must be subtracted to the price")

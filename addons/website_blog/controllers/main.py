@@ -108,7 +108,7 @@ class WebsiteBlog(http.Controller):
         # build the domain for blog post to display
         domain = []
         # retrocompatibility to accept tag as slug
-        active_tag_ids = tag and map(int, [unslug(t)[1] for t in tag.split(',')]) or []
+        active_tag_ids = tag and list(map(int, [unslug(t)[1] for t in tag.split(',')])) or []
         if active_tag_ids:
             domain += [('tag_ids', 'in', active_tag_ids)]
         if blog:

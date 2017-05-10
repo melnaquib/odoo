@@ -7,7 +7,7 @@ import smtplib
 import email, mimetypes
 from email.header import decode_header
 from email.mime.text import MIMEText
-import xmlrpclib
+import xmlrpc.client
 
 warn_msg = """
 Bonjour,
@@ -36,7 +36,7 @@ class CommandDispatcher(object):
 class RPCProxy(object):
 
     def __init__(self, uid, passwd, host='localhost', port=8069, path='object'):
-        self.rpc = xmlrpclib.ServerProxy('http://%s:%s/%s' % (host, port, path))
+        self.rpc = xmlrpc.client.ServerProxy('http://%s:%s/%s' % (host, port, path))
         self.user_id = uid
         self.passwd = passwd
     
@@ -62,7 +62,7 @@ class ReceiverEmail2Event(object):
     
     def get_addresses(self, headers, msg):
         hcontent = ''
-        for header in [h for h in headers if msg.has_key(h)]:
+        for header in [h for h in headers if h in msg]:
             hcontent += msg[header]
         return self.email_re.findall(hcontent)
 
@@ -75,12 +75,12 @@ class ReceiverEmail2Event(object):
     def __call__(self, request):
         headers, msg = request
         partners = self.get_partners(headers, msg)
-        subject = u''
+        subject = ''
         for string, charset in decode_header(msg['Subject']):
             if charset:
                 subject += string.decode(charset)
             else:
-                subject += unicode(string)
+                subject += str(string)
         if partners:
             self.save_mail(msg, subject, partners)
         else:
@@ -98,7 +98,7 @@ class ReceiverEmail2Event(object):
                 self((headers, message.get_payload()[0]))
     
     def save_mail(self, msg, subject, partners):
-        counter, description = 1, u''
+        counter, description = 1, ''
         if msg.is_multipart():
             for part in msg.get_payload():
                 stockdir = os.path.join('emails', msg['Message-Id'][1:-1])
@@ -115,10 +115,10 @@ class ReceiverEmail2Event(object):
                 elif part.get_content_maintype() == 'text':
                     if part.get_content_subtype() == 'plain':
                         description += part.get_payload(decode=1).decode(part.get_charsets()[0])
-                        description += u'\n\nVous trouverez les éventuels fichiers dans le répertoire: %s' % stockdir
+                        description += '\n\nVous trouverez les éventuels fichiers dans le répertoire: %s' % stockdir
                         continue
                     else:
-                        description += u'\n\nCe message est en "%s", vous trouverez ce texte dans le répertoire: %s' % (part.get_content_type(), stockdir)
+                        description += '\n\nCe message est en "%s", vous trouverez ce texte dans le répertoire: %s' % (part.get_content_type(), stockdir)
                 elif part.get_content_type() == 'message/rfc822':
                     continue
                 if not os.path.isdir(newdir):

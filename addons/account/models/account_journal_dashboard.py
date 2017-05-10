@@ -160,7 +160,7 @@ class account_journal(models.Model):
             all_lines = self.env.cr.fetchone()[0]
             number_to_reconcile = all_lines - already_reconciled
             # optimization to read sum of balance from account_move_line
-            account_ids = tuple(filter(None, [self.default_debit_account_id.id, self.default_credit_account_id.id]))
+            account_ids = tuple([_f for _f in [self.default_debit_account_id.id, self.default_credit_account_id.id] if _f])
             if account_ids:
                 amount_field = 'balance' if not self.currency_id else 'amount_currency'
                 query = """SELECT sum(%s) FROM account_move_line WHERE account_id in %%s;""" % (amount_field,)

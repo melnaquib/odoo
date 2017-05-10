@@ -873,12 +873,12 @@ class AccountBankStatementLine(models.Model):
         for aml_dict in counterpart_aml_dicts:
             if aml_dict['move_line'].reconciled:
                 raise UserError(_('A selected move line was already reconciled.'))
-            if isinstance(aml_dict['move_line'], (int, long)):
+            if isinstance(aml_dict['move_line'], int):
                 aml_dict['move_line'] = aml_obj.browse(aml_dict['move_line'])
         for aml_dict in (counterpart_aml_dicts + new_aml_dicts):
-            if aml_dict.get('tax_ids') and aml_dict['tax_ids'] and isinstance(aml_dict['tax_ids'][0], (int, long)):
+            if aml_dict.get('tax_ids') and aml_dict['tax_ids'] and isinstance(aml_dict['tax_ids'][0], int):
                 # Transform the value in the format required for One2many and Many2many fields
-                aml_dict['tax_ids'] = map(lambda id: (4, id, None), aml_dict['tax_ids'])
+                aml_dict['tax_ids'] = [(4, id, None) for id in aml_dict['tax_ids']]
         if any(line.journal_entry_ids for line in self):
             raise UserError(_('A selected statement line was already reconciled with an account move.'))
 

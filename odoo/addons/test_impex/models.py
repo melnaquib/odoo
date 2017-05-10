@@ -47,7 +47,7 @@ for name, field in MODELS:
 
         @api.model
         def name_search(self, name='', args=None, operator='ilike', limit=100):
-            if isinstance(name, basestring) and name.split(':')[0] == self._name:
+            if isinstance(name, str) and name.split(':')[0] == self._name:
                 records = self.search([('value', operator, int(name.split(':')[1]))])
                 return records.name_get()
             else:
@@ -69,7 +69,7 @@ class One2ManyChild(models.Model):
 
     @api.model
     def name_search(self, name='', args=None, operator='ilike', limit=100):
-        if isinstance(name, basestring) and name.split(':')[0] == self._name:
+        if isinstance(name, str) and name.split(':')[0] == self._name:
             records = self.search([('value', operator, int(name.split(':')[1]))])
             return records.name_get()
         else:
@@ -123,7 +123,7 @@ class Many2ManyChild(models.Model):
 
     @api.model
     def name_search(self, name='', args=None, operator='ilike', limit=100):
-        if isinstance(name, basestring) and name.split(':')[0] == self._name:
+        if isinstance(name, str) and name.split(':')[0] == self._name:
             records = self.search([('value', operator, int(name.split(':')[1]))])
             return records.name_get()
         else:

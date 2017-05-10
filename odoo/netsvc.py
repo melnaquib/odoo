@@ -6,15 +6,15 @@ import logging.handlers
 import os
 import platform
 import pprint
-import release
+from . import release
 import sys
 import threading
 
 import psycopg2
 
 import odoo
-import sql_db
-import tools
+from . import sql_db
+from . import tools
 
 _logger = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ class PostgreSQLHandler(logging.Handler):
                 VALUES (NOW() at time zone 'UTC', %s, %s, %s, %s, %s, %s, %s, %s)
             """, val)
 
-BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, _NOTHING, DEFAULT = range(10)
+BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, _NOTHING, DEFAULT = list(range(10))
 #The background is set with 40 plus the number of the color, and the foreground with 30
 #These are the sequences need to get colored ouput
 RESET_SEQ = "\033[0m"
@@ -116,7 +116,7 @@ def init_logger():
 
     logging.addLevelName(25, "INFO")
 
-    from tools.translate import resetlocale
+    from .tools.translate import resetlocale
     resetlocale()
 
     # create a format for log messages and dates

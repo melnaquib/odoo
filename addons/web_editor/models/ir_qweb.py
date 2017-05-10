@@ -9,13 +9,13 @@ Also, adds methods to convert values back to Odoo models.
 """
 
 import ast
-import cStringIO
+import io
 import itertools
 import json
 import logging
 import os
-import urllib2
-import urlparse
+import urllib.request, urllib.error, urllib.parse
+import urllib.parse
 import re
 import hashlib
 
@@ -46,8 +46,8 @@ class QWeb(models.AbstractModel):
         el.set('t-call', el.attrib.pop('t-snippet'))
         name = self.env['ir.ui.view'].search([('key', '=', el.attrib.get('t-call'))]).display_name
         thumbnail = el.attrib.pop('t-thumbnail', "oe-thumbnail")
-        div = u'<div name="%s" data-oe-type="snippet" data-oe-thumbnail="%s">' % (escape(ir_qweb.unicodifier(name)), escape(ir_qweb.unicodifier(thumbnail)))
-        return [self._append(ast.Str(div))] + self._compile_node(el, options) + [self._append(ast.Str(u'</div>'))]
+        div = '<div name="%s" data-oe-type="snippet" data-oe-thumbnail="%s">' % (escape(ir_qweb.unicodifier(name)), escape(ir_qweb.unicodifier(thumbnail)))
+        return [self._append(ast.Str(div))] + self._compile_node(el, options) + [self._append(ast.Str('</div>'))]
 
     def _compile_directive_tag(self, el, options):
         if el.get('t-placeholder'):
@@ -187,7 +187,7 @@ class DateTime(models.AbstractModel):
     def attributes(self, record, field_name, options, values):
         attrs = super(DateTime, self).attributes(record, field_name, options, values)
         value = record[field_name]
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             value = fields.Datetime.from_string(value)
         if value:
             # convert from UTC (server timezone) to user timezone
@@ -247,7 +247,7 @@ class Selection(models.AbstractModel):
             if value == v:
                 return k
 
-        raise ValueError(u"No value found for label %s in selection %s" % (
+        raise ValueError("No value found for label %s in selection %s" % (
                          value, selection))
 
 
@@ -283,7 +283,7 @@ class Image(models.AbstractModel):
             "hose again."
 
         aclasses = ['img', 'img-responsive'] + options.get('class', '').split()
-        classes = ' '.join(itertools.imap(escape, aclasses))
+        classes = ' '.join(map(escape, aclasses))
 
         max_size = None
         if options.get('resize'):
@@ -319,11 +319,11 @@ class Image(models.AbstractModel):
     def from_html(self, model, field, element):
         url = element.find('img').get('src')
 
-        url_object = urlparse.urlsplit(url)
+        url_object = urllib.parse.urlsplit(url)
         if url_object.path.startswith('/web/image'):
             # url might be /web/image/<model>/<id>[_<checksum>]/<field>[/<width>x<height>]
             fragments = url_object.path.split('/')
-            query = dict(urlparse.parse_qsl(url_object.query))
+            query = dict(urllib.parse.parse_qsl(url_object.query))
             if fragments[3].isdigit():
                 model = 'ir.attachment'
                 oid = fragments[3]
@@ -341,7 +341,7 @@ class Image(models.AbstractModel):
         return self.load_remote_url(url)
 
     def load_local_url(self, url):
-        match = self.local_url_re.match(urlparse.urlsplit(url).path)
+        match = self.local_url_re.match(urllib.parse.urlsplit(url).path)
 
         rest = match.group('rest')
         for sep in os.sep, os.altsep:
@@ -374,9 +374,9 @@ class Image(models.AbstractModel):
             #   linking to HTTP images
             # implement drag & drop image upload to mitigate?
 
-            req = urllib2.urlopen(url, timeout=REMOTE_CONNECTION_TIMEOUT)
+            req = urllib.request.urlopen(url, timeout=REMOTE_CONNECTION_TIMEOUT)
             # PIL needs a seekable file-like image, urllib result is not seekable
-            image = I.open(cStringIO.StringIO(req.read()))
+            image = I.open(io.StringIO(req.read()))
             # force a complete load of the image data to validate it
             image.load()
         except Exception:
@@ -385,7 +385,7 @@ class Image(models.AbstractModel):
 
         # don't use original data in case weird stuff was smuggled in, with
         # luck PIL will remove some of it?
-        out = cStringIO.StringIO()
+        out = io.StringIO()
         image.save(out, image.format)
         return out.getvalue().encode('base64')
 
@@ -510,7 +510,7 @@ def _realize_padding(it):
     # leftover padding irrelevant as the output will be stripped
 
 
-def _wrap(element, output, wrapper=u''):
+def _wrap(element, output, wrapper=''):
     """ Recursively extracts text from ``element`` (via _element_to_text), and
     wraps it all in ``wrapper``. Extracted text is added to ``output``
 
@@ -526,7 +526,7 @@ def _wrap(element, output, wrapper=u''):
 
 def _element_to_text(e, output):
     if e.tag == 'br':
-        output.append(u'\n')
+        output.append('\n')
     elif e.tag in _PADDED_BLOCK:
         _wrap(e, output, 2)
     elif e.tag in _MISC_BLOCK:

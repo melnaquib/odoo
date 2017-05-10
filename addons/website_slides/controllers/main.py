@@ -263,10 +263,10 @@ class WebsiteSlides(http.Controller):
                 'caption': slide.name,
                 'url': slide.website_url
             }
-        vals = map(slide_mapped_dict, slide.get_related_slides(slides_to_suggest))
+        vals = list(map(slide_mapped_dict, slide.get_related_slides(slides_to_suggest)))
         add_more_slide = slides_to_suggest - len(vals)
         if max(add_more_slide, 0):
-            vals += map(slide_mapped_dict, slide.get_most_viewed_slides(add_more_slide))
+            vals += list(map(slide_mapped_dict, slide.get_most_viewed_slides(add_more_slide)))
         return vals
 
     # --------------------------------------------------

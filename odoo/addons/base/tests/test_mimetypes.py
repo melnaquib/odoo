@@ -43,7 +43,7 @@ class test_guess_mimetype(unittest.TestCase):
         content = base64.b64decode(BMP)
         mimetype = guess_mimetype(content, default='test')
         # mimetype should match image/bmp, image/x-ms-bmp, ...
-        self.assertRegexpMatches(mimetype, r'image/.*\bbmp')
+        self.assertRegex(mimetype, r'image/.*\bbmp')
 
     def test_mimetype_jpg(self):
         content = base64.b64decode(JPG)

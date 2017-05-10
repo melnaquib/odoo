@@ -122,11 +122,11 @@ class TestMailMessage(TestMail):
             'partner_ids': [(4, self.user_employee.partner_id.id)]
         })
         self.email_to_list.extend(itertools.chain.from_iterable(sent_email['email_to'] for sent_email in self._mails if sent_email.get('email_to')))
-        self.assertNotIn(u'Ernest Employee <e.e@example.com>', self.email_to_list)
+        self.assertNotIn('Ernest Employee <e.e@example.com>', self.email_to_list)
         mail.send()
         self.email_to_list.extend(itertools.chain.from_iterable(sent_email['email_to'] for sent_email in self._mails if sent_email.get('email_to')))
-        self.assertNotIn(u'Ernest Employee <e.e@example.com>', self.email_to_list)
-        self.assertIn(u'test@example.com', self.email_to_list)
+        self.assertNotIn('Ernest Employee <e.e@example.com>', self.email_to_list)
+        self.assertIn('test@example.com', self.email_to_list)
 
     @mute_logger('odoo.addons.mail.models.mail_mail')
     def test_mail_message_access_search(self):

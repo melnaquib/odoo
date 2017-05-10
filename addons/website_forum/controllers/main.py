@@ -9,7 +9,8 @@ import werkzeug.urls
 import werkzeug.wrappers
 
 from datetime import datetime
-from urllib2 import urlopen, URLError
+from urllib.request import urlopen
+from urllib.error import URLError
 
 from odoo import http, modules, SUPERUSER_ID, tools, _
 from odoo.addons.web.controllers.main import binary_content
@@ -656,8 +657,8 @@ class WebsiteForum(http.Controller):
         posts = {}
         for act in activities:
             posts[act.res_id] = True
-        posts_ids = Post.search([('id', 'in', posts.keys())])
-        posts = dict(map(lambda x: (x.id, (x.parent_id or x, x.parent_id and x or False)), posts_ids))
+        posts_ids = Post.search([('id', 'in', list(posts.keys()))])
+        posts = dict([(x.id, (x.parent_id or x, x.parent_id and x or False)) for x in posts_ids])
 
         # TDE CLEANME MASTER: couldn't it be rewritten using a 'menu' key instead of one key for each menu ?
         if user == request.env.user:

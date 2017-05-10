@@ -6,7 +6,7 @@ from odoo.addons.payment_paypal.controllers.main import PaypalController
 from odoo.tools import mute_logger
 
 from lxml import objectify
-import urlparse
+import urllib.parse
 
 
 class PaypalCommon(PaymentAcquirerCommon):
@@ -60,9 +60,9 @@ class PaypalForm(PaypalCommon):
             'zip': '1000',
             'country': 'BE',
             'email': 'norbert.buyer@example.com',
-            'return': '%s' % urlparse.urljoin(base_url, PaypalController._return_url),
-            'notify_url': '%s' % urlparse.urljoin(base_url, PaypalController._notify_url),
-            'cancel_return': '%s' % urlparse.urljoin(base_url, PaypalController._cancel_url),
+            'return': '%s' % urllib.parse.urljoin(base_url, PaypalController._return_url),
+            'notify_url': '%s' % urllib.parse.urljoin(base_url, PaypalController._notify_url),
+            'cancel_return': '%s' % urllib.parse.urljoin(base_url, PaypalController._cancel_url),
         }
 
         # check form result
@@ -112,46 +112,46 @@ class PaypalForm(PaypalCommon):
 
         # typical data posted by paypal after client has successfully paid
         paypal_post_data = {
-            'protection_eligibility': u'Ineligible',
-            'last_name': u'Poilu',
-            'txn_id': u'08D73520KX778924N',
-            'receiver_email': u'dummy',
-            'payment_status': u'Pending',
-            'payment_gross': u'',
-            'tax': u'0.00',
-            'residence_country': u'FR',
-            'address_state': u'Alsace',
-            'payer_status': u'verified',
-            'txn_type': u'web_accept',
-            'address_street': u'Av. de la Pelouse, 87648672 Mayet',
-            'handling_amount': u'0.00',
-            'payment_date': u'03:21:19 Nov 18, 2013 PST',
-            'first_name': u'Norbert',
-            'item_name': u'test_ref_2',
-            'address_country': u'France',
-            'charset': u'windows-1252',
-            'custom': u'',
-            'notify_version': u'3.7',
-            'address_name': u'Norbert Poilu',
-            'pending_reason': u'multi_currency',
-            'item_number': u'test_ref_2',
-            'receiver_id': u'dummy',
-            'transaction_subject': u'',
-            'business': u'dummy',
-            'test_ipn': u'1',
-            'payer_id': u'VTDKRZQSAHYPS',
-            'verify_sign': u'An5ns1Kso7MWUdW4ErQKJJJ4qi4-AVoiUf-3478q3vrSmqh08IouiYpM',
-            'address_zip': u'75002',
-            'address_country_code': u'FR',
-            'address_city': u'Paris',
-            'address_status': u'unconfirmed',
-            'mc_currency': u'EUR',
-            'shipping': u'0.00',
-            'payer_email': u'tde+buyer@odoo.com',
-            'payment_type': u'instant',
-            'mc_gross': u'1.95',
-            'ipn_track_id': u'866df2ccd444b',
-            'quantity': u'1'
+            'protection_eligibility': 'Ineligible',
+            'last_name': 'Poilu',
+            'txn_id': '08D73520KX778924N',
+            'receiver_email': 'dummy',
+            'payment_status': 'Pending',
+            'payment_gross': '',
+            'tax': '0.00',
+            'residence_country': 'FR',
+            'address_state': 'Alsace',
+            'payer_status': 'verified',
+            'txn_type': 'web_accept',
+            'address_street': 'Av. de la Pelouse, 87648672 Mayet',
+            'handling_amount': '0.00',
+            'payment_date': '03:21:19 Nov 18, 2013 PST',
+            'first_name': 'Norbert',
+            'item_name': 'test_ref_2',
+            'address_country': 'France',
+            'charset': 'windows-1252',
+            'custom': '',
+            'notify_version': '3.7',
+            'address_name': 'Norbert Poilu',
+            'pending_reason': 'multi_currency',
+            'item_number': 'test_ref_2',
+            'receiver_id': 'dummy',
+            'transaction_subject': '',
+            'business': 'dummy',
+            'test_ipn': '1',
+            'payer_id': 'VTDKRZQSAHYPS',
+            'verify_sign': 'An5ns1Kso7MWUdW4ErQKJJJ4qi4-AVoiUf-3478q3vrSmqh08IouiYpM',
+            'address_zip': '75002',
+            'address_country_code': 'FR',
+            'address_city': 'Paris',
+            'address_status': 'unconfirmed',
+            'mc_currency': 'EUR',
+            'shipping': '0.00',
+            'payer_email': 'tde+buyer@odoo.com',
+            'payment_type': 'instant',
+            'mc_gross': '1.95',
+            'ipn_track_id': '866df2ccd444b',
+            'quantity': '1'
         }
 
         # should raise error about unknown tx

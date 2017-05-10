@@ -11,7 +11,7 @@ from types import NoneType
 import json
 import logging
 import pytz
-import xmlrpclib
+import xmlrpc.client
 
 import psycopg2
 
@@ -115,7 +115,7 @@ class MetaField(type):
                 cls.description_attrs.append((attr[13:], attr))
 
 
-class Field(object):
+class Field(object, metaclass=MetaField):
     """ The field descriptor contains the field definition, and manages accesses
         and assignments of the corresponding field on records. The following
         attributes may be provided when instanciating a field:
@@ -288,7 +288,6 @@ class Field(object):
                 state = fields.Selection(help="Blah blah blah")
 
     """
-    __metaclass__ = MetaField
 
     type = None                         # type of the field (string)
     relational = False                  # whether the field is a relational one
@@ -343,7 +342,7 @@ class Field(object):
 
     def __init__(self, string=Default, **kwargs):
         kwargs['string'] = string
-        args = {key: val for key, val in kwargs.iteritems() if val is not Default}
+        args = {key: val for key, val in kwargs.items() if val is not Default}
         self.args = args or EMPTY_DICT
         self._setup_done = None
 
@@ -372,7 +371,7 @@ class Field(object):
         """ Set all field attributes at once (with slot defaults). """
         # optimization: we assign slots only
         assign = object.__setattr__
-        for key, val in self._slots.iteritems():
+        for key, val in self._slots.items():
             assign(self, key, attrs.pop(key, val))
         if attrs:
             assign(self, '_attrs', attrs)
@@ -500,7 +499,7 @@ class Field(object):
         def make_depends(deps):
             return tuple(deps(model) if callable(deps) else deps)
 
-        if isinstance(self.compute, basestring):
+        if isinstance(self.compute, str):
             # if the compute method has been overridden, concatenate all their _depends
             self.depends = ()
             for method in resolve_mro(model, self.compute, callable):
@@ -519,7 +518,7 @@ class Field(object):
     def _setup_related_full(self, model):
         """ Setup the attributes of a related field. """
         # fix the type of self.related if necessary
-        if isinstance(self.related, basestring):
+        if isinstance(self.related, str):
             self.related = tuple(self.related.split('.'))
 
         # determine the chain of fields, and make sure they are all set up
@@ -549,7 +548,7 @@ class Field(object):
             if not getattr(self, attr):
                 setattr(self, attr, getattr(field, prop))
 
-        for attr, value in field._attrs.iteritems():
+        for attr, value in field._attrs.items():
             if attr not in self._attrs:
                 setattr(self, attr, value)
 
@@ -682,7 +681,7 @@ class Field(object):
                 model = model0.env.get(field.comodel_name)
 
         # add self's model dependencies
-        for mname, fnames in model0._depends.iteritems():
+        for mname, fnames in model0._depends.items():
             model = model0.env[mname]
             for fname in fnames:
                 field = model._fields[fname]
@@ -772,7 +771,7 @@ class Field(object):
         """ Convert ``value`` from the ``write`` format to the SQL format. """
         if value is None or value == False:
             return None
-        if isinstance(value, unicode):
+        if isinstance(value, str):
             return value.encode('utf8')
         return str(value)
 
@@ -923,7 +922,7 @@ class Field(object):
         for field in fields:
             for record in records:
                 record._cache[field] = field.convert_to_cache(False, record, validate=False)
-        if isinstance(self.compute, basestring):
+        if isinstance(self.compute, str):
             getattr(records, self.compute)()
         else:
             self.compute(records)
@@ -996,14 +995,14 @@ class Field(object):
 
     def determine_inverse(self, records):
         """ Given the value of ``self`` on ``records``, inverse the computation. """
-        if isinstance(self.inverse, basestring):
+        if isinstance(self.inverse, str):
             getattr(records, self.inverse)()
         else:
             self.inverse(records)
 
     def determine_domain(self, records, operator, value):
         """ Return a domain representing a condition on ``self``. """
-        if isinstance(self.search, basestring):
+        if isinstance(self.search, str):
             return getattr(records, self.search)(operator, value)
         else:
             return self.search(records, operator, value)
@@ -1026,8 +1025,8 @@ class Field(object):
         for field, path in records._field_triggers[self]:
             bymodel[field.model_name][path].append(field)
 
-        for model_name, bypath in bymodel.iteritems():
-            for path, fields in bypath.iteritems():
+        for model_name, bypath in bymodel.items():
+            for path, fields in bypath.items():
                 if path and any(field.compute and field.store for field in fields):
                     # process stored fields
                     stored = set(field for field in fields if field.compute and field.store)
@@ -1127,7 +1126,7 @@ class Integer(Field):
     def convert_to_read(self, value, record, use_name_get=True):
         # Integer values greater than 2^31-1 are not supported in pure XMLRPC,
         # so we have to pass them as floats :-(
-        if value and value > xmlrpclib.MAXINT:
+        if value and value > xmlrpc.client.MAXINT:
             return float(value)
         return value
 
@@ -1485,7 +1484,7 @@ class Date(Field):
     def convert_to_cache(self, value, record, validate=True):
         if not value:
             return False
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             if validate:
                 # force parsing for validation
                 self.from_string(value)
@@ -1554,7 +1553,7 @@ class Datetime(Field):
     def convert_to_cache(self, value, record, validate=True):
         if not value:
             return False
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             if validate:
                 # force parsing for validation
                 self.from_string(value)
@@ -1599,7 +1598,7 @@ class Binary(Field):
     def convert_to_cache(self, value, record, validate=True):
         if isinstance(value, buffer):
             return str(value)
-        if isinstance(value, (int, long)) and \
+        if isinstance(value, int) and \
                 (record._context.get('bin_size') or
                  record._context.get('bin_size_' + self.name)):
             # If the client requests only the size of the field, we return that
@@ -1699,14 +1698,14 @@ class Selection(Field):
             if 'selection_add' in field.args:
                 # use an OrderedDict to update existing values
                 selection_add = field.args['selection_add']
-                self.selection = OrderedDict(self.selection + selection_add).items()
+                self.selection = list(OrderedDict(self.selection + selection_add).items())
 
     def _description_selection(self, env):
         """ return the selection list (pairs (value, label)); labels are
             translated according to context language
         """
         selection = self.selection
-        if isinstance(selection, basestring):
+        if isinstance(selection, str):
             return getattr(env[self.model_name], selection)()
         if callable(selection):
             return selection(env[self.model_name])
@@ -1723,7 +1722,7 @@ class Selection(Field):
     def get_values(self, env):
         """ return a list of the possible values """
         selection = self.selection
-        if isinstance(selection, basestring):
+        if isinstance(selection, str):
             selection = getattr(env[self.model_name], selection)()
         elif callable(selection):
             selection = selection(env[self.model_name])
@@ -1751,7 +1750,7 @@ class Selection(Field):
         """ Convert ``value`` from the ``write`` format to the SQL format. """
         if value is None or value is False:
             return None
-        if isinstance(value, unicode):
+        if isinstance(value, str):
             return value.encode('utf8')
         return str(value)
 
@@ -1772,7 +1771,7 @@ class Reference(Selection):
         if isinstance(value, BaseModel):
             if not validate or (value._name in self.get_values(record.env) and len(value) <= 1):
                 return process(value._name, value.id) if value else False
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             res_model, res_id = value.split(',')
             if record.env[res_model].browse(int(res_id)).exists():
                 return process(res_model, int(res_id))
@@ -1878,7 +1877,7 @@ class Many2one(_Relational):
         super(Many2one, self)._setup_attrs(model, name)
         # determine self.delegate
         if not self.delegate:
-            self.delegate = name in model._inherits.values()
+            self.delegate = name in list(model._inherits.values())
 
     def _update(self, records, value):
         """ Update the cached value of ``self`` for ``records`` with ``value``.
@@ -2074,7 +2073,7 @@ class _RelationalMulti(_Relational):
             self.depends += tuple(
                 self.name + '.' + arg[0]
                 for arg in self.domain
-                if isinstance(arg, (tuple, list)) and isinstance(arg[0], basestring)
+                if isinstance(arg, (tuple, list)) and isinstance(arg[0], str)
             )
 
 

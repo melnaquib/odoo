@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-import cStringIO
+import io
 import csv
 import logging
 import os.path
@@ -98,7 +98,7 @@ def _eval_xml(self, node, env):
             q = safe_eval(f_search, idref2)
             ids = env[f_model].search(q).ids
             if f_use != 'id':
-                ids = map(lambda x: x[f_use], env[f_model].browse(ids).read([f_use]))
+                ids = [x[f_use] for x in env[f_model].browse(ids).read([f_use])]
             _fields = env[f_model]._fields
             if (f_name in _fields) and _fields[f_name].type == 'many2many':
                 return ids
@@ -682,7 +682,7 @@ form: module.record_id""" % (xml_id,)
                 _fields = self.env[rec_model]._fields
                 # if the current field is many2many
                 if (f_name in _fields) and _fields[f_name].type == 'many2many':
-                    f_val = [(6, 0, map(lambda x: x[f_use], s))]
+                    f_val = [(6, 0, [x[f_use] for x in s])]
                 elif len(s):
                     # otherwise (we are probably in a many2one field),
                     # take the first element of the search
@@ -700,7 +700,7 @@ form: module.record_id""" % (xml_id,)
                         f_val = int(f_val)
                     elif model._fields[f_name].type in ['float', 'monetary']:
                         f_val = float(f_val)
-                    elif model._fields[f_name].type == 'boolean' and isinstance(f_val, basestring):
+                    elif model._fields[f_name].type == 'boolean' and isinstance(f_val, str):
                         f_val = str2bool(f_val)
             res[f_name] = f_val
 
@@ -730,7 +730,7 @@ form: module.record_id""" % (xml_id,)
             'model': 'ir.ui.view',
         }
         for att in ['forcecreate', 'context']:
-            if att in el.keys():
+            if att in list(el.keys()):
                 record_attrs[att] = el.attrib.pop(att)
 
         Field = builder.E.field
@@ -756,7 +756,7 @@ form: module.record_id""" % (xml_id,)
             record.append(Field(name='customize_show', eval=el.get('customize_show')))
         groups = el.attrib.pop('groups', None)
         if groups:
-            grp_lst = map(lambda x: "ref('%s')" % x, groups.split(','))
+            grp_lst = ["ref('%s')" % x for x in groups.split(',')]
             record.append(Field(name="groups_id", eval="[(6, 0, ["+', '.join(grp_lst)+"])]"))
         if el.attrib.pop('page', None) == 'True':
             record.append(Field(name="page", eval="True"))
@@ -797,10 +797,10 @@ form: module.record_id""" % (xml_id,)
             elif rec.tag in self._tags:
                 try:
                     self._tags[rec.tag](rec, de, mode=mode)
-                except Exception, e:
+                except Exception as e:
                     self.cr.rollback()
                     exc_info = sys.exc_info()
-                    raise ParseError, (ustr(e), etree.tostring(rec).rstrip(), rec.getroottree().docinfo.URL, rec.sourceline), exc_info[2]
+                    raise ParseError(ustr(e), etree.tostring(rec).rstrip(), rec.getroottree().docinfo.URL, rec.sourceline).with_traceback(exc_info[2])
         return True
 
     def __init__(self, cr, module, idref, mode, report=None, noupdate=False, xml_filename=None):
@@ -865,9 +865,9 @@ def convert_csv_import(cr, module, fname, csvcontent, idref=None, mode='init',
     #remove folder path from model
     head, model = os.path.split(model)
 
-    input = cStringIO.StringIO(csvcontent) #FIXME
+    input = io.StringIO(csvcontent) #FIXME
     reader = csv.reader(input, quotechar='"', delimiter=',')
-    fields = reader.next()
+    fields = next(reader)
 
     if not (mode == 'init' or 'id' in fields):
         _logger.error("Import specification does not contain 'id' and we are in init mode, Cannot continue.")
@@ -878,7 +878,7 @@ def convert_csv_import(cr, module, fname, csvcontent, idref=None, mode='init',
         if not (line and any(line)):
             continue
         try:
-            datas.append(map(ustr, line))
+            datas.append(list(map(ustr, line)))
         except Exception:
             _logger.error("Cannot import the line: %s", line)
 
@@ -899,7 +899,7 @@ def convert_xml_import(cr, module, xmlfile, idref=None, mode='init', noupdate=Fa
     relaxng = etree.RelaxNG(
         etree.parse(os.path.join(config['root_path'],'import_xml.rng' )))
     try:
-        relaxng.assert_(doc)
+        relaxng.assertTrue(doc)
     except Exception:
         _logger.info('The XML file does not fit the required schema !', exc_info=True)
         _logger.info(ustr(relaxng.error_log.last_error))

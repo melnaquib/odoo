@@ -22,7 +22,7 @@ import werkzeug.utils
 import werkzeug.wrappers
 import zlib
 from xml.etree import ElementTree
-from cStringIO import StringIO
+from io import StringIO
 
 
 import odoo
@@ -68,7 +68,7 @@ def serialize_exception(f):
     def wrap(*args, **kwargs):
         try:
             return f(*args, **kwargs)
-        except Exception, e:
+        except Exception as e:
             _logger.exception("An exception occured during an http request")
             se = _serialize_exception(e)
             error = {
@@ -146,7 +146,7 @@ def ensure_db(redirect='/web/database/selector'):
 
 def module_installed(environment):
     # Candidates module the current heuristic is the /static dir
-    loadable = http.addons_manifest.keys()
+    loadable = list(http.addons_manifest.keys())
 
     # Retrieve database installed modules
     # TODO The following code should move to ir.module.module.list_installed_modules()
@@ -403,7 +403,7 @@ def xml2json_from_elementtree(el, preserve_whitespaces=False):
     else:
         res["tag"] = el.tag
     res["attrs"] = {}
-    for k, v in el.items():
+    for k, v in list(el.items()):
         res["attrs"][k] = v
     kids = []
     if el.text and (preserve_whitespaces or el.text.strip() != ''):
@@ -656,7 +656,7 @@ class Database(http.Controller):
             dispatch_rpc('db', 'create_database', [master_pwd, name, bool(post.get('demo')), lang, password, post['login'], country_code])
             request.session.authenticate(name, post['login'], password)
             return http.local_redirect('/web/')
-        except Exception, e:
+        except Exception as e:
             error = "Database creation error: %s" % e
         return self._render_template(error=error)
 
@@ -667,7 +667,7 @@ class Database(http.Controller):
                 raise Exception(_('Invalid database name. Only alphanumerical characters, underscore, hyphen and dot are allowed.'))
             dispatch_rpc('db', 'duplicate_database', [master_pwd, name, new_name])
             return http.local_redirect('/web/database/manager')
-        except Exception, e:
+        except Exception as e:
             error = "Database duplication error: %s" % e
             return self._render_template(error=error)
 
@@ -677,7 +677,7 @@ class Database(http.Controller):
             dispatch_rpc('db','drop', [master_pwd, name])
             request._cr = None  # dropping a database leads to an unusable cursor
             return http.local_redirect('/web/database/manager')
-        except Exception, e:
+        except Exception as e:
             error = "Database deletion error: %s" % e
             return self._render_template(error=error)
 
@@ -694,7 +694,7 @@ class Database(http.Controller):
             dump_stream = odoo.service.db.dump_db(name, None, backup_format)
             response = werkzeug.wrappers.Response(dump_stream, headers=headers, direct_passthrough=True)
             return response
-        except Exception, e:
+        except Exception as e:
             _logger.exception('Database.backup')
             error = "Database backup error: %s" % e
             return self._render_template(error=error)
@@ -705,7 +705,7 @@ class Database(http.Controller):
             data = base64.b64encode(backup_file.read())
             dispatch_rpc('db', 'restore', [master_pwd, name, data, str2bool(copy)])
             return http.local_redirect('/web/database/manager')
-        except Exception, e:
+        except Exception as e:
             error = "Database restore error: %s" % e
             return self._render_template(error=error)
 
@@ -714,7 +714,7 @@ class Database(http.Controller):
         try:
             dispatch_rpc('db', 'change_admin_password', [master_pwd, master_pwd_new])
             return http.local_redirect('/web/database/manager')
-        except Exception, e:
+        except Exception as e:
             error = "Master password update error: %s" % e
             return self._render_template(error=error)
 
@@ -744,7 +744,7 @@ class Session(http.Controller):
     @http.route('/web/session/change_password', type='json', auth="user")
     def change_password(self, fields):
         old_password, new_password,confirm_password = operator.itemgetter('old_pwd', 'new_password','confirm_pwd')(
-                dict(map(operator.itemgetter('name', 'value'), fields)))
+                dict(list(map(operator.itemgetter('name', 'value'), fields))))
         if not (old_password.strip() and new_password.strip() and confirm_password.strip()):
             return {'error':_('You cannot leave any password empty.'),'title': _('Change Password')}
         if new_password != confirm_password:
@@ -760,7 +760,7 @@ class Session(http.Controller):
     def get_lang_list(self):
         try:
             return dispatch_rpc('db', 'list_lang', []) or []
-        except Exception, e:
+        except Exception as e:
             return {"error": e, "title": _("Languages")}
 
     @http.route('/web/session/modules', type='json', auth="user")
@@ -946,7 +946,7 @@ class Binary(http.Controller):
     def force_contenttype(self, headers, contenttype='image/png'):
         dictheaders = dict(headers)
         dictheaders['Content-Type'] = contenttype
-        return dictheaders.items()
+        return list(dictheaders.items())
 
     @http.route(['/web/content',
         '/web/content/<string:xmlid>',
@@ -1042,7 +1042,7 @@ class Binary(http.Controller):
             data = ufile.read()
             args = [len(data), ufile.filename,
                     ufile.content_type, base64.b64encode(data)]
-        except Exception, e:
+        except Exception as e:
             args = [False, e.message]
         return out % (json.dumps(callback), json.dumps(args))
 
@@ -1193,7 +1193,7 @@ class Export(http.Controller):
         else:
             fields['.id'] = fields.pop('id', {'string': 'ID'})
 
-        fields_sequence = sorted(fields.iteritems(),
+        fields_sequence = sorted(iter(fields.items()),
             key=lambda field: odoo.tools.ustr(field[1].get('string', '')))
 
         records = []
@@ -1204,7 +1204,7 @@ class Export(http.Controller):
                 if field.get('readonly'):
                     # If none of the field's states unsets readonly, skip the field
                     if all(dict(attrs).get('readonly', True)
-                           for attrs in field.get('states', {}).values()):
+                           for attrs in list(field.get('states', {}).values())):
                         continue
             if not field.get('exportable', True):
                 continue
@@ -1236,7 +1236,7 @@ class Export(http.Controller):
         export_fields_list = request.env['ir.exports.line'].browse(export['export_fields']).read()
 
         fields_data = self.fields_info(
-            model, map(operator.itemgetter('name'), export_fields_list))
+            model, list(map(operator.itemgetter('name'), export_fields_list)))
 
         return [
             {'name': field['name'], 'label': fields_data[field['name']]}
@@ -1296,7 +1296,7 @@ class Export(http.Controller):
         export_fields = [field.split('/', 1)[1] for field in fields]
         return (
             (prefix + '/' + k, prefix_string + '/' + v)
-            for k, v in self.fields_info(model, export_fields).iteritems())
+            for k, v in self.fields_info(model, export_fields).items())
 
 class ExportFormat(object):
     raw_data = False
@@ -1334,7 +1334,7 @@ class ExportFormat(object):
         if not Model._is_an_ordinary_table():
             fields = [field for field in fields if field['name'] != 'id']
 
-        field_names = map(operator.itemgetter('name'), fields)
+        field_names = list(map(operator.itemgetter('name'), fields))
         import_data = records.export_data(field_names, self.raw_data).get('datas',[])
 
         if import_compat:
@@ -1372,7 +1372,7 @@ class CSVExport(ExportFormat, http.Controller):
         for data in rows:
             row = []
             for d in data:
-                if isinstance(d, unicode):
+                if isinstance(d, str):
                     try:
                         d = d.encode('utf-8')
                     except UnicodeError:
@@ -1422,7 +1422,7 @@ class ExcelExport(ExportFormat, http.Controller):
         for row_index, row in enumerate(rows):
             for cell_index, cell_value in enumerate(row):
                 cell_style = base_style
-                if isinstance(cell_value, basestring):
+                if isinstance(cell_value, str):
                     cell_value = re.sub("\r", " ", cell_value)
                 elif isinstance(cell_value, datetime.datetime):
                     cell_style = datetime_style
@@ -1517,7 +1517,7 @@ class Apps(http.Controller):
         if action and app_id:
             action['res_id'] = app_id
             action['view_mode'] = 'form'
-            action['views'] = [(False, u'form')]
+            action['views'] = [(False, 'form')]
 
         sakey = Session().save_session_action(action)
         debug = '?debug' if req.debug else ''

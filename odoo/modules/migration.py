@@ -89,8 +89,8 @@ class MigrationManager(object):
         def _get_migration_versions(pkg):
             versions = list(set(
                 ver
-                for lv in self.migrations[pkg.name].values()
-                for ver, lf in lv.items()
+                for lv in list(self.migrations[pkg.name].values())
+                for ver, lf in list(lv.items())
                 if lf
             ))
             versions.sort(key=lambda k: parse_version(convert_version(k)))
@@ -107,7 +107,7 @@ class MigrationManager(object):
                 'maintenance': opj('base', 'maintenance', 'migrations', pkg.name),
             }
 
-            for x in mapping.keys():
+            for x in list(mapping.keys()):
                 if version in m.get(x):
                     for f in m[x][version]:
                         if not f.startswith(stage + '-'):

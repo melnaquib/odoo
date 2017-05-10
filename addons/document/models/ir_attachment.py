@@ -5,7 +5,7 @@ import pyPdf
 import xml.dom.minidom
 import zipfile
 
-from StringIO import StringIO
+from io import StringIO
 
 from odoo import api, models
 
@@ -26,7 +26,7 @@ def toUnicode(s):
                 return s
 
 def textToString(element):
-    buff = u""
+    buff = ""
     for node in element.childNodes:
         if node.nodeType == xml.dom.Node.TEXT_NODE:
             buff += node.nodeValue
@@ -40,7 +40,7 @@ class IrAttachment(models.Model):
 
     def _index_docx(self, bin_data):
         '''Index Microsoft .docx documents'''
-        buf = u""
+        buf = ""
         f = StringIO(bin_data)
         if zipfile.is_zipfile(f):
             try:
@@ -56,7 +56,7 @@ class IrAttachment(models.Model):
     def _index_pptx(self, bin_data):
         '''Index Microsoft .pptx documents'''
 
-        buf = u""
+        buf = ""
         f = StringIO(bin_data)
         if zipfile.is_zipfile(f):
             try:
@@ -74,7 +74,7 @@ class IrAttachment(models.Model):
     def _index_xlsx(self, bin_data):
         '''Index Microsoft .xlsx documents'''
 
-        buf = u""
+        buf = ""
         f = StringIO(bin_data)
         if zipfile.is_zipfile(f):
             try:
@@ -90,7 +90,7 @@ class IrAttachment(models.Model):
     def _index_opendoc(self, bin_data):
         '''Index OpenDocument documents (.odt, .ods...)'''
 
-        buf = u""
+        buf = ""
         f = StringIO(bin_data)
         if zipfile.is_zipfile(f):
             try:
@@ -106,7 +106,7 @@ class IrAttachment(models.Model):
     def _index_pdf(self, bin_data):
         '''Index PDF documents'''
 
-        buf = u""
+        buf = ""
         if bin_data.startswith('%PDF-'):
             f = StringIO(bin_data)
             try:

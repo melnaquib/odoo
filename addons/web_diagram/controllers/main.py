@@ -45,7 +45,7 @@ class DiagramView(http.Controller):
         for blnk_node in graphs['blank_nodes']:
             isolate_nodes[blnk_node['id']] = blnk_node
         else:
-            y = map(lambda t: t['y'],filter(lambda x: x['y'] if x['x']==20 else None, nodes.values()))
+            y = [t['y'] for t in [x for x in list(nodes.values()) if x['y'] if x['x']==20 else None]]
             y_max = (y and max(y)) or 120
 
         connectors = {}
@@ -95,11 +95,11 @@ class DiagramView(http.Controller):
                 color='white',
                 options={}
             )
-            for color, expr in bgcolors.items():
+            for color, expr in list(bgcolors.items()):
                 if safe_eval(expr, act):
                     n['color'] = color
 
-            for shape, expr in shapes.items():
+            for shape, expr in list(shapes.items()):
                 if safe_eval(expr, act):
                     n['shape'] = shape
 

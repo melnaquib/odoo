@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import ast
-from urlparse import urlparse
+from urllib.parse import urlparse
 from lxml import html
 
 from .qweb import QWeb, Contextifier
@@ -89,7 +89,7 @@ class IrQWeb(models.AbstractModel, QWeb):
             view = self.env['ir.ui.view'].browse(view_id)
             return view.inherit_id is not None
 
-        if isinstance(name, (int, long)) or is_child_view(name):
+        if isinstance(name, int) or is_child_view(name):
             for node in etree.fromstring(template):
                 if node.get('t-name'):
                     node.set('t-name', str(name))
@@ -111,9 +111,9 @@ class IrQWeb(models.AbstractModel, QWeb):
     def _compile_directive_lang(self, el, options):
         lang = el.attrib.pop('t-lang', 'en_US')
         if el.get('t-call-options'):
-            el.set('t-call-options', el.get('t-call-options')[0:-1] + u', "lang": %s}' % lang)
+            el.set('t-call-options', el.get('t-call-options')[0:-1] + ', "lang": %s}' % lang)
         else:
-            el.set('t-call-options', u'{"lang": %s}' % lang)
+            el.set('t-call-options', '{"lang": %s}' % lang)
         return self._compile_node(el, options)
 
     def _compile_directive_call_assets(self, el, options):
@@ -165,8 +165,8 @@ class IrQWeb(models.AbstractModel, QWeb):
         if field_options and 'monetary' in field_options:
             try:
                 options = "{'widget': 'monetary'"
-                for k, v in json.loads(field_options).iteritems():
-                    print k, v
+                for k, v in json.loads(field_options).items():
+                    print(k, v)
                     if k in ('display_currency', 'from_currency'):
                         options = "%s, '%s': %s" % (options, k, v)
                     else:
@@ -215,7 +215,7 @@ class IrQWeb(models.AbstractModel, QWeb):
         files = []
         remains = []
         for el in html.fragments_fromstring(template):
-            if isinstance(el, basestring):
+            if isinstance(el, str):
                 remains.append(el)
             elif isinstance(el, html.HtmlElement):
                 href = el.get('href', '')
@@ -231,12 +231,12 @@ class IrQWeb(models.AbstractModel, QWeb):
                         atype = 'text/less'
                     if atype not in ('text/less', 'text/sass'):
                         atype = 'text/css'
-                    path = filter(None, href.split('/'))
+                    path = [_f for _f in href.split('/') if _f]
                     filename = get_resource_path(*path) if path else None
                     files.append({'atype': atype, 'url': href, 'filename': filename, 'content': el.text, 'media': media})
                 elif el.tag == 'script':
                     atype = 'text/javascript'
-                    path = filter(None, src.split('/'))
+                    path = [_f for _f in src.split('/') if _f]
                     filename = get_resource_path(*path) if path else None
                     files.append({'atype': atype, 'url': src, 'filename': filename, 'content': el.text, 'media': media})
                 else:

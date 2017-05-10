@@ -49,7 +49,7 @@ def keep_query(*keep_params, **additional_params):
     if not keep_params and not additional_params:
         keep_params = ('*',)
     params = additional_params.copy()
-    qs_keys = request.httprequest.args.keys()
+    qs_keys = list(request.httprequest.args.keys())
     for keep_param in keep_params:
         for param in fnmatch.filter(qs_keys, keep_param):
             if param not in additional_params and param in qs_keys:
@@ -432,7 +432,7 @@ actual arch.
             # not required. The root cause is the INNER JOIN
             # used to implement it.
             views = self.search(conditions + [('model_ids.module', 'in', tuple(self.pool._init_modules))])
-            views = self.search(conditions + [('id', 'in', list(self._context.get('check_view_ids') or (0,)) + map(int, views))])
+            views = self.search(conditions + [('id', 'in', list(self._context.get('check_view_ids') or (0,)) + list(map(int, views)))])
         else:
             views = self.search(conditions)
 
@@ -555,10 +555,10 @@ actual arch.
                             separator = child.get('separator', ',')
                             if separator == ' ':
                                 separator = None    # squash spaces
-                            to_add = filter(bool, map(str.strip, child.get('add', '').split(separator)))
-                            to_remove = map(str.strip, child.get('remove', '').split(separator))
-                            values = map(str.strip, node.get(attribute, '').split(separator))
-                            value = (separator or ' ').join(filter(lambda s: s not in to_remove, values) + to_add)
+                            to_add = list(filter(bool, list(map(str.strip, child.get('add', '').split(separator)))))
+                            to_remove = list(map(str.strip, child.get('remove', '').split(separator)))
+                            values = list(map(str.strip, node.get(attribute, '').split(separator)))
+                            value = (separator or ' ').join([s for s in values if s not in to_remove] + to_add)
                         if value:
                             node.set(attribute, value)
                         elif attribute in node.attrib:
@@ -800,7 +800,7 @@ actual arch.
 
         collect(arch, self.env[model_name])
 
-        for field, nodes in field_nodes.iteritems():
+        for field, nodes in field_nodes.items():
             # if field should trigger an onchange, add on_change="1" on the
             # nodes referring to field
             model = self.env[field.model_name]
@@ -892,7 +892,7 @@ actual arch.
                             node.set(action, 'false')
 
         arch = etree.tostring(node, encoding="utf-8").replace('\t', '')
-        for k in fields.keys():
+        for k in list(fields.keys()):
             if k not in fields_def:
                 del fields[k]
         for field in fields_def:
@@ -936,7 +936,7 @@ actual arch.
         view ID or an XML ID. Note that this method may be overridden for other
         kinds of template values.
         """
-        if isinstance(template, (int, long)):
+        if isinstance(template, int):
             return template
         if '.' not in template:
             raise ValueError('Invalid template id: %r' % template)
@@ -1037,7 +1037,7 @@ actual arch.
 
     @api.multi
     def render(self, values=None, engine='ir.qweb'):
-        assert isinstance(self.id, (int, long))
+        assert isinstance(self.id, int)
 
         qcontext = dict(
             env=self.env,
@@ -1083,12 +1083,12 @@ actual arch.
         Model = self.env[model]
         Node = self.env[node_obj]
 
-        for model_key, model_value in Model._fields.iteritems():
+        for model_key, model_value in Model._fields.items():
             if model_value.type == 'one2many':
                 if model_value.comodel_name == node_obj:
                     _Node_Field = model_key
                     _Model_Field = model_value.inverse_name
-                for node_key, node_value in Node._fields.iteritems():
+                for node_key, node_value in Node._fields.items():
                     if node_value.type == 'one2many':
                         if node_value.comodel_name == conn_obj:
                              # _Source_Field = "Incoming Arrows" (connected via des_node)
@@ -1151,7 +1151,7 @@ actual arch.
                  GROUP BY coalesce(v.inherit_id, v.id)"""
         self._cr.execute(query, [model])
 
-        rec = self.browse(map(itemgetter(0), self._cr.fetchall()))
+        rec = self.browse(list(map(itemgetter(0), self._cr.fetchall())))
         return rec.with_context({'load_all_views': True})._check_xml()
 
     @api.model
@@ -1165,7 +1165,7 @@ actual arch.
             xmlid_filter = "AND md.name IN %s"
             names = tuple(
                 name
-                for (xmod, name), (model, res_id) in self.pool.model_data_reference_ids.items()
+                for (xmod, name), (model, res_id) in list(self.pool.model_data_reference_ids.items())
                 if xmod == module and model == self._name
             )
             if not names:

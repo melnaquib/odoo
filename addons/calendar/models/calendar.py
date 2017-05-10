@@ -33,8 +33,8 @@ def calendar_id2real_id(calendar_id=None, with_date=False):
         :param with_date: if a value is passed to this param it will return dates based on value of withdate + calendar_id
         :return: real event id
     """
-    if calendar_id and isinstance(calendar_id, (basestring)):
-        res = filter(None, calendar_id.split('-'))
+    if calendar_id and isinstance(calendar_id, (str)):
+        res = [_f for _f in calendar_id.split('-') if _f]
         if len(res) == 2:
             real_id = res[0]
             if with_date:
@@ -47,7 +47,7 @@ def calendar_id2real_id(calendar_id=None, with_date=False):
 
 
 def get_real_ids(ids):
-    if isinstance(ids, (basestring, int, long)):
+    if isinstance(ids, (str, int)):
         return calendar_id2real_id(ids)
 
     if isinstance(ids, (list, tuple)):
@@ -114,7 +114,7 @@ class Attendee(models.Model):
     def create(self, values):
         if not values.get("email") and values.get("common_name"):
             common_nameval = values.get("common_name").split(':')
-            email = filter(lambda x: x.__contains__('@'), common_nameval)  # TODO JEM : should be refactored
+            email = [x for x in common_nameval if x.__contains__('@')]  # TODO JEM : should be refactored
             values['email'] = email and email[0] or ''
             values['common_name'] = values.get("common_name")
         return super(Attendee, self).create(values)
@@ -340,7 +340,7 @@ class AlarmManager(models.AbstractModel):
 
         all_meetings = self.get_next_potential_limit_alarm('email', seconds=cron_interval)
 
-        for meeting in self.env['calendar.event'].browse(all_meetings.keys()):
+        for meeting in self.env['calendar.event'].browse(list(all_meetings.keys())):
             max_delta = all_meetings[meeting.id]['max_duration']
 
             if meeting.recurrency:
@@ -454,7 +454,7 @@ class Alarm(models.Model):
     name = fields.Char('Name', required=True)
     type = fields.Selection([('notification', 'Notification'), ('email', 'Email')], 'Type', required=True, default='email')
     duration = fields.Integer('Amount', required=True, default=1)
-    interval = fields.Selection(list(_interval_selection.iteritems()), 'Unit', required=True, default='hours')
+    interval = fields.Selection(list(_interval_selection.items()), 'Unit', required=True, default='hours')
     duration_minutes = fields.Integer('Duration in minutes', compute='_compute_duration_minutes', store=True, help="Duration in minutes")
 
     @api.onchange('duration', 'interval')
@@ -527,7 +527,7 @@ class Meeting(models.Model):
         """ Get recurrent start and stop dates based on Rule string"""
         start_dates = self._get_recurrent_date_by_event(date_field='start')
         stop_dates = self._get_recurrent_date_by_event(date_field='stop')
-        return zip(start_dates, stop_dates)
+        return list(zip(start_dates, stop_dates))
 
     @api.multi
     def _get_recurrent_date_by_event(self, date_field='start'):
@@ -536,7 +536,7 @@ class Meeting(models.Model):
         date_field: the field containing the reference date information for recurrency computation
         """
         self.ensure_one()
-        if date_field in self._fields.keys() and self._fields[date_field].type in ('date', 'datetime'):
+        if date_field in list(self._fields.keys()) and self._fields[date_field].type in ('date', 'datetime'):
             reference_date = self[date_field]
         else:
             reference_date = self.start
@@ -1040,7 +1040,7 @@ class Meeting(models.Model):
                 pile.reverse()
                 new_pile = []
                 for item in pile:
-                    if not isinstance(item, basestring):
+                    if not isinstance(item, str):
                         res = item
                     elif str(item) == str('&'):
                         first = new_pile.pop()
@@ -1057,7 +1057,7 @@ class Meeting(models.Model):
                 result_data.append(meeting.get_search_fields(order_fields, r_date=r_start_date))
 
         if order_fields:
-            uniq = lambda it: collections.OrderedDict((id(x), x) for x in it).values()
+            uniq = lambda it: list(collections.OrderedDict((id(x), x) for x in it).values())
 
             def comparer(left, right):
                 for fn, mult in comparers:
@@ -1148,7 +1148,7 @@ class Meeting(models.Model):
         data['final_date'] = rule._until and rule._until.strftime(DEFAULT_SERVER_DATETIME_FORMAT)
         #repeat weekly
         if rule._byweekday:
-            for i in xrange(0, 7):
+            for i in range(0, 7):
                 if i in rule._byweekday:
                     data[day_list[i]] = True
             data['rrule_type'] = 'weekly'
@@ -1195,7 +1195,7 @@ class Meeting(models.Model):
 
         if interval == 'day':
             # Day number (1-31)
-            result = unicode(date.day)
+            result = str(date.day)
 
         elif interval == 'month':
             # Localized month name and year
@@ -1311,7 +1311,7 @@ class Meeting(models.Model):
     @api.returns('self', lambda value: value.id)
     def message_post(self, **kwargs):
         thread_id = self.id
-        if isinstance(self.id, basestring):
+        if isinstance(self.id, str):
             thread_id = get_real_ids(self.id)
         if self.env.context.get('default_date'):
             context = dict(self.env.context)
@@ -1347,7 +1347,7 @@ class Meeting(models.Model):
         for arg in args:
             if arg[0] == 'id':
                 for n, calendar_id in enumerate(arg[2]):
-                    if isinstance(calendar_id, basestring):
+                    if isinstance(calendar_id, str):
                         arg[2][n] = calendar_id.split('-')[0]
         return super(Meeting, self)._name_search(name=name, args=args, operator=operator, limit=limit, name_get_uid=name_get_uid)
 
@@ -1385,7 +1385,7 @@ class Meeting(models.Model):
             # set end_date for calendar searching
             if any(field in values for field in ['recurrency', 'end_type', 'count', 'rrule_type', 'start', 'stop']):
                 for real_meeting in real_meetings:
-                    if real_meeting.recurrency and real_meeting.end_type in ('count', unicode('count')):
+                    if real_meeting.recurrency and real_meeting.end_type in ('count', str('count')):
                         final_date = real_meeting._get_recurrency_end_date()
                         super(Meeting, real_meeting).write({'final_date': final_date})
 
@@ -1458,7 +1458,7 @@ class Meeting(models.Model):
             if fields and (f not in fields):
                 fields2.append(f)
 
-        select = map(lambda x: (x, calendar_id2real_id(x)), self.ids)
+        select = [(x, calendar_id2real_id(x)) for x in self.ids]
         real_events = self.browse([real_id for calendar_id, real_id in select])
         real_data = super(Meeting, real_events).read(fields=fields2, load=load)
         real_data = dict((d['id'], d) for d in real_data)
@@ -1467,7 +1467,7 @@ class Meeting(models.Model):
         for calendar_id, real_id in select:
             res = real_data[real_id].copy()
             ls = calendar_id2real_id(calendar_id, with_date=res and res.get('duration', 0) > 0 and res.get('duration') or 1)
-            if not isinstance(ls, (basestring, int, long)) and len(ls) >= 2:
+            if not isinstance(ls, (str, int)) and len(ls) >= 2:
                 res['start'] = ls[1]
                 res['stop'] = ls[2]
 
@@ -1491,7 +1491,7 @@ class Meeting(models.Model):
                 if user_id == self.env.user.id or partner_id in r.get("partner_ids", []):
                     continue
             if r['privacy'] == 'private':
-                for f in r.keys():
+                for f in list(r.keys()):
                     recurrent_fields = self._get_recurrent_fields()
                     public_fields = list(set(recurrent_fields + ['id', 'allday', 'start', 'stop', 'display_start', 'display_stop', 'duration', 'user_id', 'state', 'interval', 'count', 'recurrent_id_date', 'rrule']))
                     if f not in public_fields:

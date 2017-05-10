@@ -19,7 +19,7 @@ class IrQwebFieldBarcode(models.AbstractModel):
         barcode = self.env['report'].barcode(
             barcode_type,
             value,
-            **dict((key, value) for key, value in options.items() if key in ['width', 'height', 'humanreadable']))
+            **dict((key, value) for key, value in list(options.items()) if key in ['width', 'height', 'humanreadable']))
         return unicodifier('<img src="data:%s;base64,%s">' % ('png', barcode.encode('base64')))
 
     @api.model

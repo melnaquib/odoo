@@ -69,7 +69,7 @@ class MrpWorkcenter(models.Model):
             if res_group['state'] in ('pending', 'ready', 'progress'):
                 result_duration_expected[res_group['workcenter_id'][0]] += res_group['duration_expected']
         for workcenter in self:
-            workcenter.workorder_count = sum(count for state, count in result[workcenter.id].items() if state not in ('done', 'cancel'))
+            workcenter.workorder_count = sum(count for state, count in list(result[workcenter.id].items()) if state not in ('done', 'cancel'))
             workcenter.workorder_pending_count = result[workcenter.id].get('pending', 0)
             workcenter.workcenter_load = result_duration_expected[workcenter.id]
             workcenter.workorder_ready_count = result[workcenter.id].get('ready', 0)

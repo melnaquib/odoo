@@ -228,7 +228,7 @@ class Employee(models.Model):
         if auto_follow_fields is None:
             auto_follow_fields = ['user_id']
         user_field_lst = []
-        for name, field in self._fields.items():
+        for name, field in list(self._fields.items()):
             if name in auto_follow_fields and name in updated_fields and field.comodel_name == 'res.users':
                 user_field_lst.append(name)
         return user_field_lst

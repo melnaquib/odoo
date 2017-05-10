@@ -16,8 +16,8 @@ import threading
 import time
 import itertools
 import unittest
-import urllib2
-import xmlrpclib
+import urllib.request, urllib.error, urllib.parse
+import xmlrpc.client
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pprint import pformat
@@ -130,7 +130,7 @@ class BaseCase(unittest.TestCase):
 
     def shortDescription(self):
         doc = self._testMethodDoc
-        return doc and ' '.join(filter(None, map(str.strip, doc.splitlines()))) or None
+        return doc and ' '.join([_f for _f in map(str.strip, doc.splitlines()) if _f]) or None
 
 
 class TransactionCase(BaseCase):
@@ -209,7 +209,7 @@ class SavepointCase(SingleTransactionCase):
         self.registry.clear_caches()
 
 
-class RedirectHandler(urllib2.HTTPRedirectHandler):
+class RedirectHandler(urllib.request.HTTPRedirectHandler):
     """
     HTTPRedirectHandler is predicated upon HTTPErrorProcessor being used and
     works by intercepting 3xy "errors".
@@ -237,9 +237,9 @@ class HttpCase(TransactionCase):
         super(HttpCase, self).__init__(methodName)
         # v8 api with correct xmlrpc exception handling.
         self.xmlrpc_url = url_8 = 'http://%s:%d/xmlrpc/2/' % (HOST, PORT)
-        self.xmlrpc_common = xmlrpclib.ServerProxy(url_8 + 'common')
-        self.xmlrpc_db = xmlrpclib.ServerProxy(url_8 + 'db')
-        self.xmlrpc_object = xmlrpclib.ServerProxy(url_8 + 'object')
+        self.xmlrpc_common = xmlrpc.client.ServerProxy(url_8 + 'common')
+        self.xmlrpc_db = xmlrpc.client.ServerProxy(url_8 + 'db')
+        self.xmlrpc_object = xmlrpc.client.ServerProxy(url_8 + 'object')
 
     def setUp(self):
         super(HttpCase, self).setUp()
@@ -250,11 +250,11 @@ class HttpCase(TransactionCase):
         self.session.db = get_db_name()
         odoo.http.root.session_store.save(self.session)
         # setup an url opener helper
-        self.opener = urllib2.OpenerDirector()
-        self.opener.add_handler(urllib2.UnknownHandler())
-        self.opener.add_handler(urllib2.HTTPHandler())
-        self.opener.add_handler(urllib2.HTTPSHandler())
-        self.opener.add_handler(urllib2.HTTPCookieProcessor())
+        self.opener = urllib.request.OpenerDirector()
+        self.opener.add_handler(urllib.request.UnknownHandler())
+        self.opener.add_handler(urllib.request.HTTPHandler())
+        self.opener.add_handler(urllib.request.HTTPSHandler())
+        self.opener.add_handler(urllib.request.HTTPCookieProcessor())
         self.opener.add_handler(RedirectHandler())
         self.opener.addheaders.append(('Cookie', 'session_id=%s' % self.session_id))
 
@@ -313,7 +313,7 @@ class HttpCase(TransactionCase):
             # read a byte
             try:
                 ready, _, _ = select.select([phantom.stdout], [], [], 0.5)
-            except select.error, e:
+            except select.error as e:
                 # In Python 2, select.error has no relation to IOError or
                 # OSError, and no errno/strerror/filename, only a pair of
                 # unnamed arguments (matching errno and strerror)

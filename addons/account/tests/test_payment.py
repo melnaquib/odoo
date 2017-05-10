@@ -100,15 +100,15 @@ class TestPayment(AccountingTestCase):
                 for currency_diff_line in currency_diff_move.line_ids:
                     if aml_dict.get('currency_diff') > 0:
                         if currency_diff_line.account_id.id == aml_rec.account_id.id:
-                            self.assertAlmostEquals(currency_diff_line.debit, aml_dict.get('currency_diff'))
+                            self.assertAlmostEqual(currency_diff_line.debit, aml_dict.get('currency_diff'))
                         else:
-                            self.assertAlmostEquals(currency_diff_line.credit, aml_dict.get('currency_diff'))
+                            self.assertAlmostEqual(currency_diff_line.credit, aml_dict.get('currency_diff'))
                             self.assertIn(currency_diff_line.account_id.id, [self.diff_expense_account.id, self.diff_income_account.id])
                     else:
                         if currency_diff_line.account_id.id == aml_rec.account_id.id:
-                            self.assertAlmostEquals(currency_diff_line.credit, abs(aml_dict.get('currency_diff')))
+                            self.assertAlmostEqual(currency_diff_line.credit, abs(aml_dict.get('currency_diff')))
                         else:
-                            self.assertAlmostEquals(currency_diff_line.debit, abs(aml_dict.get('currency_diff')))
+                            self.assertAlmostEqual(currency_diff_line.debit, abs(aml_dict.get('currency_diff')))
                             self.assertIn(currency_diff_line.account_id.id, [self.diff_expense_account.id, self.diff_income_account.id])
 
     def test_full_payment_process(self):
@@ -125,7 +125,7 @@ class TestPayment(AccountingTestCase):
         register_payments.create_payment()
         payment = self.payment_model.search([], order="id desc", limit=1)
 
-        self.assertAlmostEquals(payment.amount, 300)
+        self.assertAlmostEqual(payment.amount, 300)
         self.assertEqual(payment.state, 'posted')
         self.assertEqual(inv_1.state, 'paid')
         self.assertEqual(inv_2.state, 'paid')

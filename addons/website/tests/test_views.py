@@ -11,7 +11,7 @@ from odoo.tests import common
 
 
 def attrs(**kwargs):
-    return dict(('data-oe-%s' % key, str(value)) for key, value in kwargs.iteritems())
+    return dict(('data-oe-%s' % key, str(value)) for key, value in kwargs.items())
 
 
 class TestViewSaving(common.TransactionCase):
@@ -21,7 +21,7 @@ class TestViewSaving(common.TransactionCase):
         self.assertEqual(a.attrib, b.attrib)
         self.assertEqual((a.text or '').strip(), (b.text or '').strip())
         self.assertEqual((a.tail or '').strip(), (b.tail or '').strip())
-        for ca, cb in itertools.izip_longest(a, b):
+        for ca, cb in itertools.zip_longest(a, b):
             self.eq(ca, cb)
 
     def setUp(self):
@@ -54,7 +54,7 @@ class TestViewSaving(common.TransactionCase):
             h.SPAN("My Company", attrs(model='res.company', id=1, field='name', type='char')),
             h.SPAN("+00 00 000 00 0 000", attrs(model='res.company', id=1, field='phone', type='char')),
         ]
-        for actual, expected in itertools.izip_longest(fields, expect):
+        for actual, expected in itertools.zip_longest(fields, expect):
             self.eq(actual, expected)
 
     def test_embedded_save(self):

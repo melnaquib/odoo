@@ -20,8 +20,8 @@ import sys
 import threading
 import time
 import traceback
-import urllib2
-import urlparse
+import urllib.request, urllib.error, urllib.parse
+import urllib.parse
 import warnings
 from os.path import join as opj
 from zlib import adler32
@@ -131,11 +131,11 @@ def dispatch_rpc(service_name, method, params):
         return result
     except NO_POSTMORTEM:
         raise
-    except odoo.exceptions.DeferredException, e:
+    except odoo.exceptions.DeferredException as e:
         _logger.exception(odoo.tools.exception_to_unicode(e))
         odoo.tools.debugger.post_mortem(odoo.tools.config, e.traceback)
         raise
-    except Exception, e:
+    except Exception as e:
         _logger.exception(odoo.tools.exception_to_unicode(e))
         odoo.tools.debugger.post_mortem(odoo.tools.config, sys.exc_info())
         raise
@@ -281,7 +281,7 @@ class WebRequest(object):
 
     def set_handler(self, endpoint, arguments, auth):
         # is this needed ?
-        arguments = dict((k, v) for k, v in arguments.iteritems()
+        arguments = dict((k, v) for k, v in arguments.items()
                          if not k.startswith("_ignored_"))
         self.endpoint_arguments = arguments
         self.endpoint = endpoint
@@ -344,7 +344,7 @@ class WebRequest(object):
             debug = self.httprequest.environ.get('HTTP_X_DEBUG_MODE')
 
         if not debug and self.httprequest.referrer:
-            debug = bool(urlparse.parse_qs(urlparse.urlparse(self.httprequest.referrer).query, keep_blank_values=True).get('debug'))
+            debug = bool(urllib.parse.parse_qs(urllib.parse.urlparse(self.httprequest.referrer).query, keep_blank_values=True).get('debug'))
         return debug
 
     @contextlib.contextmanager
@@ -505,7 +505,7 @@ def route(route=None, **kw):
             if isinstance(response, Response) or f.routing_type == 'json':
                 return response
 
-            if isinstance(response, basestring):
+            if isinstance(response, str):
                 return Response(response)
 
             if isinstance(response, werkzeug.exceptions.HTTPException):
@@ -687,7 +687,7 @@ class JsonRequest(WebRequest):
                     rpc_request.debug(logline)
 
             return self._json_response(result)
-        except Exception, e:
+        except Exception as e:
             return self._handle_exception(e)
 
 def serialize_exception(e):
@@ -717,15 +717,15 @@ def serialize_exception(e):
     return tmp
 
 def to_jsonable(o):
-    if isinstance(o, str) or isinstance(o,unicode) or isinstance(o, int) or isinstance(o, long) \
+    if isinstance(o, str) or isinstance(o,str) or isinstance(o, int) or isinstance(o, int) \
         or isinstance(o, bool) or o is None or isinstance(o, float):
         return o
     if isinstance(o, list) or isinstance(o, tuple):
         return [to_jsonable(x) for x in o]
     if isinstance(o, dict):
         tmp = {}
-        for k, v in o.items():
-            tmp[u"%s" % k] = to_jsonable(v)
+        for k, v in list(o.items()):
+            tmp["%s" % k] = to_jsonable(v)
         return tmp
     return ustr(o)
 
@@ -777,7 +777,7 @@ class HttpRequest(WebRequest):
                     'redirect': redirect,
                 })
                 return werkzeug.utils.redirect('/web/login?%s' % query)
-        except werkzeug.exceptions.HTTPException, e:
+        except werkzeug.exceptions.HTTPException as e:
             return e
 
     def dispatch(self):
@@ -843,7 +843,7 @@ more details.
         """
         response = Response(data, headers=headers)
         if cookies:
-            for k, v in cookies.iteritems():
+            for k, v in cookies.items():
                 response.set_cookie(k, v)
         return response
 
@@ -884,7 +884,7 @@ class ControllerType(type):
         super(ControllerType, cls).__init__(name, bases, attrs)
 
         # flag old-style methods with req as first argument
-        for k, v in attrs.items():
+        for k, v in list(attrs.items()):
             if inspect.isfunction(v) and hasattr(v, 'original_func'):
                 # Set routing type on original functions
                 routing_type = v.routing.get('type')
@@ -914,8 +914,8 @@ class ControllerType(type):
             return
         controllers_per_module[module].append(name_class)
 
-class Controller(object):
-    __metaclass__ = ControllerType
+class Controller(object, metaclass=ControllerType):
+    pass
 
 class EndPoint(object):
     def __init__(self, method, routing):
@@ -947,7 +947,7 @@ def routing_map(modules, nodb_only, converters=None):
             result = [klass]
         return result
 
-    uniq = lambda it: collections.OrderedDict((id(x), x) for x in it).values()
+    uniq = lambda it: list(collections.OrderedDict((id(x), x) for x in it).values())
 
     for module in modules:
         if module not in controllers_per_module:
@@ -966,8 +966,8 @@ def routing_map(modules, nodb_only, converters=None):
                     routing = dict(type='http', auth='user', methods=None, routes=None)
                     methods_done = list()
                     # update routing attributes from subclasses(auth, methods...)
-                    for claz in reversed(mv.im_class.mro()):
-                        fn = getattr(claz, mv.func_name, None)
+                    for claz in reversed(mv.__self__.__class__.mro()):
+                        fn = getattr(claz, mv.__name__, None)
                         if fn and hasattr(fn, 'routing') and fn not in methods_done:
                             methods_done.append(fn)
                             routing.update(fn.routing)
@@ -1056,7 +1056,7 @@ class OpenERPSession(werkzeug.contrib.sessions.Session):
         security.check(self.db, self.uid, self.password)
 
     def logout(self, keep_db=False):
-        for k in self.keys():
+        for k in list(self.keys()):
             if not (keep_db and k == 'db'):
                 del self[k]
         self._default_values()
@@ -1143,7 +1143,7 @@ class OpenERPSession(werkzeug.contrib.sessions.Session):
         # NOTE we do not store files in the session itself to avoid loading them in memory.
         #      By storing them in the session store, we ensure every worker (even ones on other
         #      servers) can access them. It also allow stale files to be deleted by `session_gc`.
-        for f in req.files.values():
+        for f in list(req.files.values()):
             storename = 'werkzeug_%s_%s.file' % (self.sid, uuid.uuid4().hex)
             path = os.path.join(root.session_store.path, storename)
             with open(path, 'w') as fp:
@@ -1161,7 +1161,7 @@ class OpenERPSession(werkzeug.contrib.sessions.Session):
         try:
             if data:
                 # regenerate files filenames with the current session store
-                for name, (storename, filename, content_type) in data['files'].iteritems():
+                for name, (storename, filename, content_type) in data['files'].items():
                     path = os.path.join(root.session_store.path, storename)
                     files.add(name, (path, filename, content_type))
                 yield werkzeug.datastructures.CombinedMultiDict([data['form'], files])
@@ -1169,7 +1169,7 @@ class OpenERPSession(werkzeug.contrib.sessions.Session):
                 yield None
         finally:
             # cleanup files
-            for f, _, _ in files.values():
+            for f, _, _ in list(files.values()):
                 try:
                     os.unlink(f)
                 except IOError:
@@ -1263,7 +1263,7 @@ class DisableCacheMiddleware(object):
     def __call__(self, environ, start_response):
         def start_wrapped(status, headers):
             referer = environ.get('HTTP_REFERER', '')
-            parsed = urlparse.urlparse(referer)
+            parsed = urllib.parse.urlparse(referer)
             debug = parsed.query.count('debug') >= 1
 
             new_headers = []
@@ -1391,13 +1391,13 @@ class Root(object):
         if isinstance(result, Response) and result.is_qweb:
             try:
                 result.flatten()
-            except(Exception), e:
+            except(Exception) as e:
                 if request.db:
                     result = request.registry['ir.http']._handle_exception(e)
                 else:
                     raise
 
-        if isinstance(result, basestring):
+        if isinstance(result, str):
             response = Response(result, mimetype='text/html')
         else:
             response = result
@@ -1448,7 +1448,7 @@ class Root(object):
             def _dispatch_nodb():
                 try:
                     func, arguments = self.nodb_routing_map.bind_to_environ(request.httprequest.environ).match()
-                except werkzeug.exceptions.HTTPException, e:
+                except werkzeug.exceptions.HTTPException as e:
                     return request._handle_exception(e)
                 request.set_handler(func, arguments, "none")
                 result = request.dispatch()
@@ -1483,7 +1483,7 @@ class Root(object):
                 response = self.get_response(httprequest, result, explicit_session)
             return response(environ, start_response)
 
-        except werkzeug.exceptions.HTTPException, e:
+        except werkzeug.exceptions.HTTPException as e:
             return e(environ, start_response)
 
     def get_db_router(self, db):
@@ -1565,7 +1565,7 @@ def send_file(filepath_or_fp, mimetype=None, as_attachment=False, filename=None,
 
     :param cache_timeout: the timeout in seconds for the headers.
     """
-    if isinstance(filepath_or_fp, (str, unicode)):
+    if isinstance(filepath_or_fp, str):
         if not filename:
             filename = os.path.basename(filepath_or_fp)
         file = open(filepath_or_fp, 'rb')
@@ -1615,7 +1615,7 @@ def send_file(filepath_or_fp, mimetype=None, as_attachment=False, filename=None,
             mtime,
             size,
             adler32(
-                filename.encode('utf-8') if isinstance(filename, unicode)
+                filename.encode('utf-8') if isinstance(filename, str)
                 else filename
             ) & 0xffffffff
         ))
@@ -1629,13 +1629,13 @@ def send_file(filepath_or_fp, mimetype=None, as_attachment=False, filename=None,
 
 def content_disposition(filename):
     filename = odoo.tools.ustr(filename)
-    escaped = urllib2.quote(filename.encode('utf8'))
+    escaped = urllib.parse.quote(filename.encode('utf8'))
     browser = request.httprequest.user_agent.browser
     version = int((request.httprequest.user_agent.version or '0').split('.')[0])
     if browser == 'msie' and version < 9:
         return "attachment; filename=%s" % escaped
     elif browser == 'safari' and version < 537:
-        return u"attachment; filename=%s" % filename.encode('ascii', 'replace')
+        return "attachment; filename=%s" % filename.encode('ascii', 'replace')
     else:
         return "attachment; filename*=UTF-8''%s" % escaped
 

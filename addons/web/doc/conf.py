@@ -46,8 +46,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'OpenERP Web Developers Documentation'
-copyright = u'2012, OpenERP s.a.'
+project = 'OpenERP Web Developers Documentation'
+copyright = '2012, OpenERP s.a.'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -193,8 +193,8 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'openerp-web-doc.tex', u'OpenERP Web Developers Documentation',
-   u'OpenERP s.a.', 'manual'),
+  ('index', 'openerp-web-doc.tex', 'OpenERP Web Developers Documentation',
+   'OpenERP s.a.', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -223,8 +223,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'openerp-web-doc', u'OpenERP Web Developers Documentation',
-     [u'OpenERP s.a.'], 1)
+    ('index', 'openerp-web-doc', 'OpenERP Web Developers Documentation',
+     ['OpenERP s.a.'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -237,8 +237,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'OpenERPWebDocumentation', u'OpenERP Web Developers Documentation',
-   u'OpenERP s.a.', 'OpenERPWebDocumentation', 'Developers documentation for the openerp-web project.',
+  ('index', 'OpenERPWebDocumentation', 'OpenERP Web Developers Documentation',
+   'OpenERP s.a.', 'OpenERPWebDocumentation', 'Developers documentation for the openerp-web project.',
    'Miscellaneous'),
 ]
 

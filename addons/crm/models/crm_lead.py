@@ -455,7 +455,7 @@ class Lead(FormatAddress, models.Model):
             return res.id if res else False
 
         def _concat_all(attr, opportunities):
-            return '\n\n'.join(filter(None, (opp[attr] for opp in opportunities)))
+            return '\n\n'.join([_f for _f in (opp[attr] for opp in opportunities) if _f])
 
         # process the fields' values
         data = {}

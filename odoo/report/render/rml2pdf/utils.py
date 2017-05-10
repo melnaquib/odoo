@@ -34,7 +34,7 @@ def _child_get(node, self=None, tagname=None):
                             safe_eval(n.get('rml_except'), {}, self.localcontext)
                         except GeneratorExit:
                             continue
-                        except Exception, e:
+                        except Exception as e:
                             _logger.info('rml_except: "%s"', n.get('rml_except',''), exc_info=True)
                             continue
                     if n.get('rml_tag'):
@@ -46,7 +46,7 @@ def _child_get(node, self=None, tagname=None):
                             yield n2
                         except GeneratorExit:
                             yield n
-                        except Exception, e:
+                        except Exception as e:
                             _logger.info('rml_tag: "%s"', n.get('rml_tag',''), exc_info=True)
                             yield n
                     else:
@@ -57,7 +57,7 @@ def _child_get(node, self=None, tagname=None):
                 safe_eval(n.get('rml_except'), {}, self.localcontext)
             except GeneratorExit:
                 continue
-            except Exception, e:
+            except Exception as e:
                 _logger.info('rml_except: "%s"', n.get('rml_except',''), exc_info=True)
                 continue
         if self and self.localcontext and n.get('rml_tag'):
@@ -70,7 +70,7 @@ def _child_get(node, self=None, tagname=None):
                 tagname = ''
             except GeneratorExit:
                 pass
-            except Exception, e:
+            except Exception as e:
                 _logger.info('rml_tag: "%s"', n.get('rml_tag',''), exc_info=True)
                 pass
         if (tagname is None) or (n.tag==tagname):
@@ -100,11 +100,11 @@ def _process_text(self, txt):
                 try:
                     expr = sps.pop(0)
                     txt = safe_eval(expr, self.localcontext)
-                    if txt and isinstance(txt, basestring):
+                    if txt and isinstance(txt, str):
                         txt = tools.ustr(txt)
                 except Exception:
                     _logger.info("Failed to evaluate expression [[ %s ]] with context %r while rendering report, ignored.", expr, self.localcontext)
-                if isinstance(txt, basestring):
+                if isinstance(txt, str):
                     result += txt
                 elif txt and (txt is not None) and (txt is not False):
                     result += ustr(txt)
@@ -141,7 +141,7 @@ def unit_get(size):
 def tuple_int_get(node, attr_name, default=None):
     if not node.get(attr_name):
         return default
-    return map(int, node.get(attr_name).split(','))
+    return list(map(int, node.get(attr_name).split(',')))
 
 def bool_get(value):
     return (str(value)=="1") or (value.lower()=='yes')

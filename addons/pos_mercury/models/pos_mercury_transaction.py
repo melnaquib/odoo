@@ -4,7 +4,7 @@
 from datetime import date, timedelta
 
 import cgi
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import ssl
 import werkzeug
 
@@ -61,11 +61,11 @@ class MercuryTransaction(models.Model):
             'SOAPAction': 'http://www.mercurypay.com/CreditTransaction',
         }
 
-        r = urllib2.Request('https://w1.mercurypay.com/ws/ws.asmx', data=xml_transaction, headers=headers)
+        r = urllib.request.Request('https://w1.mercurypay.com/ws/ws.asmx', data=xml_transaction, headers=headers)
         try:
-            u = urllib2.urlopen(r, timeout=65)
+            u = urllib.request.urlopen(r, timeout=65)
             response = werkzeug.utils.unescape(u.read())
-        except (urllib2.URLError, ssl.SSLError):
+        except (urllib.error.URLError, ssl.SSLError):
             response = "timeout"
 
         return response

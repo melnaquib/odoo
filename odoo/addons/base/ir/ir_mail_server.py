@@ -110,7 +110,7 @@ def extract_rfc2822_addresses(text):
     if not text:
         return []
     candidates = address_pattern.findall(ustr(text).encode('utf-8'))
-    return filter(try_coerce_ascii, candidates)
+    return list(filter(try_coerce_ascii, candidates))
 
 
 def encode_rfc2822_address_header(header_text):
@@ -270,7 +270,7 @@ class IrMailServer(models.Model):
         headers = headers or {}         # need valid dict later
         email_cc = email_cc or []
         email_bcc = email_bcc or []
-        body = body or u''
+        body = body or ''
 
         email_body_utf8 = ustr(body).encode('utf-8')
         email_text_part = MIMEText(email_body_utf8, _subtype=subtype, _charset='utf-8')
@@ -298,7 +298,7 @@ class IrMailServer(models.Model):
             msg['Bcc'] = encode_rfc2822_address_header(COMMASPACE.join(email_bcc))
         msg['Date'] = formatdate()
         # Custom headers may override normal headers or provide additional ones
-        for key, value in headers.iteritems():
+        for key, value in headers.items():
             msg[ustr(key).encode('utf-8')] = encode_header(value)
 
         if subtype == 'html' and not body_alternative and html2text:
@@ -398,7 +398,7 @@ class IrMailServer(models.Model):
         email_cc = message['Cc']
         email_bcc = message['Bcc']
 
-        smtp_to_list = filter(None, tools.flatten(map(extract_rfc2822_addresses, [email_to, email_cc, email_bcc])))
+        smtp_to_list = [_f for _f in tools.flatten(list(map(extract_rfc2822_addresses, [email_to, email_cc, email_bcc]))) if _f]
         assert smtp_to_list, self.NO_VALID_RECIPIENT
 
         x_forge_to = message['X-Forge-To']

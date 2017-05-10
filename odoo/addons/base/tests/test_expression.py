@@ -85,10 +85,10 @@ class TestExpression(TransactionCase):
             'b ab': [cids['B'], cids['AB']],
         }
         pids = {}
-        for name, cat_ids in partners_config.iteritems():
+        for name, cat_ids in partners_config.items():
             pids[name] = partners.create({'name': name, 'category_id': [(6, 0, cat_ids)]}).id
 
-        base_domain = [('id', 'in', pids.values())]
+        base_domain = [('id', 'in', list(pids.values()))]
 
         def test(op, value, expected):
             found_ids = partners.search(base_domain + [('category_id', op, value)]).ids
@@ -214,9 +214,9 @@ class TestExpression(TransactionCase):
 
         # create new company with partners, and partners with no company
         company2 = self.env['res.company'].create({'name': 'Acme 2'})
-        for i in xrange(4):
+        for i in range(4):
             Partner.create({'name': 'P of Acme %s' % i, 'company_id': company2.id})
-        for i in xrange(4):
+        for i in range(4):
             Partner.create({'name': 'P of All %s' % i, 'company_id': False})
 
         # check if many2one works with negative empty list
@@ -519,7 +519,7 @@ class TestExpression(TransactionCase):
         if not self.registry.has_unaccent:
             return
         Company = self.env['res.company']
-        helene = Company.create({'name': u'Hélène'})
+        helene = Company.create({'name': 'Hélène'})
         self.assertEqual(helene, Company.search([('name','ilike','Helene')]))
         self.assertEqual(helene, Company.search([('name','ilike','hélène')]))
         self.assertNotIn(helene, Company.search([('name','not ilike','Helene')]))

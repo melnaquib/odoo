@@ -14,5 +14,5 @@ class AccountJournal(models.Model):
         action_name = 'action_account_bank_statement_import'
         [action] = self.env.ref('account_bank_statement_import.%s' % action_name).read()
         # Note: this drops action['context'], which is a dict stored as a string, which is not easy to update
-        action.update({'context': (u"{'journal_id': " + str(self.id) + u"}")})
+        action.update({'context': ("{'journal_id': " + str(self.id) + "}")})
         return action

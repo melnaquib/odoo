@@ -1,8 +1,8 @@
 """Module to talk to EtherpadLite API."""
 
 import json
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 
 
 class EtherpadLiteClient:
@@ -32,15 +32,15 @@ class EtherpadLiteClient:
 
         params = arguments or {}
         params.update({'apikey': self.apiKey})
-        data = urllib.urlencode(params, True)
+        data = urllib.parse.urlencode(params, True)
 
         try:
-            opener = urllib2.build_opener()
-            request = urllib2.Request(url=url, data=data)
+            opener = urllib.request.build_opener()
+            request = urllib.request.Request(url=url, data=data)
             response = opener.open(request, timeout=self.TIMEOUT)
             result = response.read()
             response.close()
-        except urllib2.HTTPError:
+        except urllib.error.HTTPError:
             raise
 
         result = json.loads(result)

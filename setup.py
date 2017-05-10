@@ -8,7 +8,7 @@ from setuptools import find_packages, setup
 from os.path import join, dirname
 
 
-execfile(join(dirname(__file__), 'odoo', 'release.py'))  # Load release variables
+exec(compile(open(join(dirname(__file__), 'odoo', 'release.py')).read(), join(dirname(__file__), 'odoo', 'release.py'), 'exec'))  # Load release variables
 lib_name = 'odoo'
 
 
@@ -24,9 +24,9 @@ def py2exe_datafiles():
     import babel
     data_files['babel/localedata'] = glob(join(dirname(babel.__file__), 'localedata', '*'))
     others = ['global.dat', 'numbers.py', 'support.py', 'plural.py']
-    data_files['babel'] = map(lambda f: join(dirname(babel.__file__), f), others)
+    data_files['babel'] = [join(dirname(babel.__file__), f) for f in others]
     others = ['frontend.py', 'mofile.py']
-    data_files['babel/messages'] = map(lambda f: join(dirname(babel.__file__), 'messages', f), others)
+    data_files['babel/messages'] = [join(dirname(babel.__file__), 'messages', f) for f in others]
 
     import pytz
     tzdir = dirname(pytz.__file__)
@@ -51,7 +51,7 @@ def py2exe_datafiles():
                                 for f in filenames
                                 if not f.endswith(('.py', '.pyc', '.pyo'))]
 
-    return data_files.items()
+    return list(data_files.items())
 
 
 def py2exe_options():
@@ -128,7 +128,7 @@ setup(
     url=url,
     author=author,
     author_email=author_email,
-    classifiers=filter(None, classifiers.split('\n')),
+    classifiers=[_f for _f in classifiers.split('\n') if _f],
     license=license,
     scripts=['setup/odoo'],
     packages=find_packages(),

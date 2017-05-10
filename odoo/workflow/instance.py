@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
-import workitem
+from . import workitem
 from odoo.workflow.helpers import Session
 from odoo.workflow.helpers import Record
 from odoo.workflow.workitem import WorkflowItem
@@ -22,7 +22,7 @@ class WorkflowInstance(object):
     def create(cls, session, record, workflow_id):
         assert isinstance(session, Session)
         assert isinstance(record, Record)
-        assert isinstance(workflow_id, (int, long))
+        assert isinstance(workflow_id, int)
 
         cr = session.cr
         cr.execute('insert into wkf_instance (res_type,res_id,uid,wkf_id,state) values (%s,%s,%s,%s,%s) RETURNING id', (record.model, record.id, session.uid, workflow_id, 'active'))
@@ -46,7 +46,7 @@ class WorkflowInstance(object):
         self.session.cr.execute('delete from wkf_instance where res_id=%s and res_type=%s', (self.record.id, self.record.model))
 
     def validate(self, signal, force_running=False):
-        assert isinstance(signal, basestring)
+        assert isinstance(signal, str)
         assert isinstance(force_running, bool)
 
         cr = self.session.cr
@@ -81,7 +81,7 @@ class WorkflowInstance(object):
         cr.execute('select state,flow_stop from wkf_workitem w left join wkf_activity a on (a.id=w.act_id) where w.inst_id=%s', (instance_id,))
         ok=True
         for r in cr.fetchall():
-            if (r[0]<>'complete') or not r[1]:
+            if (r[0]!='complete') or not r[1]:
                 ok=False
                 break
         if ok:

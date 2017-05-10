@@ -6,7 +6,7 @@ import logging
 import math
 import unicodedata
 import re
-import urlparse
+import urllib.parse
 import hashlib
 import werkzeug
 from werkzeug.exceptions import NotFound
@@ -37,17 +37,17 @@ DEFAULT_CDN_FILTERS = [
 
 
 def url_for(path_or_uri, lang=None):
-    if isinstance(path_or_uri, unicode):
+    if isinstance(path_or_uri, str):
         path_or_uri = path_or_uri.encode('utf-8')
     current_path = request.httprequest.path
-    if isinstance(current_path, unicode):
+    if isinstance(current_path, str):
         current_path = current_path.encode('utf-8')
     location = path_or_uri.strip()
     force_lang = lang is not None
-    url = urlparse.urlparse(location)
+    url = urllib.parse.urlparse(location)
 
     if request and not url.netloc and not url.scheme and (url.path or force_lang):
-        location = urlparse.urljoin(current_path, location)
+        location = urllib.parse.urljoin(current_path, location)
 
         lang = lang or request.context.get('lang')
         langs = [lg[0] for lg in request.website.get_languages()]
@@ -362,7 +362,7 @@ class Website(models.Model):
 
         def get_url_localized(router, lang):
             arguments = dict(request.endpoint_arguments)
-            for key, val in arguments.items():
+            for key, val in list(arguments.items()):
                 if isinstance(val, models.BaseModel):
                     arguments[key] = val.with_context(lang=lang)
             return router.build(request.endpoint, arguments)
@@ -416,7 +416,7 @@ class Website(models.Model):
     @api.model
     def get_template(self, template):
         View = self.env['ir.ui.view']
-        if isinstance(template, (int, long)):
+        if isinstance(template, int):
             view_id = template
         else:
             if '.' not in template:
@@ -481,7 +481,7 @@ class Website(models.Model):
                 'num': pmax
             },
             "pages": [
-                {'url': get_url(page), 'num': page} for page in xrange(pmin, pmax+1)
+                {'url': get_url(page), 'num': page} for page in range(pmin, pmax+1)
             ]
         }
 
@@ -494,7 +494,7 @@ class Website(models.Model):
         endpoint = rule.endpoint
         methods = endpoint.routing.get('methods') or ['GET']
 
-        converters = rule._converters.values()
+        converters = list(rule._converters.values())
         if not ('GET' in methods
             and endpoint.routing['type'] == 'http'
             and endpoint.routing['auth'] in ('none', 'public')
@@ -538,7 +538,7 @@ class Website(models.Model):
             if query_string and not converters and (query_string not in rule.build([{}], append_unknown=False)[1]):
                 continue
             values = [{}]
-            convitems = converters.items()
+            convitems = list(converters.items())
             # converters with a domain are processed after the other ones
             gd = lambda x: hasattr(x[1], 'domain') and (x[1].domain != '[]')
             convitems.sort(lambda x, y: cmp(gd(x), gd(y)))
@@ -556,7 +556,7 @@ class Website(models.Model):
             for value in values:
                 domain_part, url = rule.build(value, append_unknown=False)
                 page = {'loc': url}
-                for key, val in value.items():
+                for key, val in list(value.items()):
                     if key.startswith('__'):
                         page[key[2:]] = val
                 if url in ('/sitemap.xml',):
@@ -594,7 +594,7 @@ class Website(models.Model):
             cdn_filters = (request.website.cdn_filters or '').splitlines()
             for flt in cdn_filters:
                 if flt and re.match(flt, uri):
-                    return urlparse.urljoin(cdn_url, uri)
+                    return urllib.parse.urljoin(cdn_url, uri)
         return uri
 
 
@@ -656,7 +656,7 @@ class Menu(models.Model):
             self.browse(to_delete).unlink()
         for menu in data['data']:
             mid = menu['id']
-            if isinstance(mid, basestring):
+            if isinstance(mid, str):
                 new_menu = self.create({'name': menu['name']})
                 replace_id(mid, new_menu.id)
         for menu in data['data']:

@@ -46,7 +46,7 @@ class SaleOrderLine(models.Model):
                 qty = d['unit_amount']
             lines[line] += qty
 
-        for line, qty in lines.items():
+        for line, qty in list(lines.items()):
             line.qty_delivered = qty
         return True
 

@@ -7,7 +7,7 @@ from collections import OrderedDict
 import hashlib
 import hmac
 import logging
-import urlparse
+import urllib.parse
 
 from odoo import api, fields, models, tools, _
 from odoo.addons.payment.models.payment_acquirer import ValidationError
@@ -46,7 +46,7 @@ class AcquirerAdyen(models.Model):
             return val.replace('\\', '\\\\').replace(':', '\\:')
 
         def signParams(parms):
-            signing_string = ':'.join(map(escapeVal, parms.keys() + parms.values()))
+            signing_string = ':'.join(map(escapeVal, list(parms.keys()) + list(parms.values())))
             hm = hmac.new(hmac_key, signing_string, hashlib.sha256)
             return base64.b64encode(hm.digest())
 
@@ -74,7 +74,7 @@ class AcquirerAdyen(models.Model):
 
         hmac_key = binascii.a2b_hex(self.adyen_skin_hmac_key.encode('ascii'))
         raw_values = {k: values.get(k.encode('ascii'), '') for k in keys if k in values}
-        raw_values_ordered = OrderedDict(sorted(raw_values.items(), key=lambda t: t[0]))
+        raw_values_ordered = OrderedDict(sorted(list(raw_values.items()), key=lambda t: t[0]))
 
         return signParams(raw_values_ordered)
 
@@ -126,7 +126,7 @@ class AcquirerAdyen(models.Model):
                 'merchantAccount': self.adyen_merchant_account,
                 'shopperLocale': values.get('partner_lang', ''),
                 'sessionValidity': tmp_date.isoformat('T')[:19] + "Z",
-                'resURL': '%s' % urlparse.urljoin(base_url, AdyenController._return_url),
+                'resURL': '%s' % urllib.parse.urljoin(base_url, AdyenController._return_url),
                 'merchantReturnData': json.dumps({'return_url': '%s' % values.pop('return_url')}) if values.get('return_url', '') else False,
                 'shopperEmail': values.get('partner_email', ''),
             })
@@ -144,7 +144,7 @@ class AcquirerAdyen(models.Model):
                 'merchantAccount': self.adyen_merchant_account,
                 'shopperLocale': values.get('partner_lang'),
                 'sessionValidity': tmp_date,
-                'resURL': '%s' % urlparse.urljoin(base_url, AdyenController._return_url),
+                'resURL': '%s' % urllib.parse.urljoin(base_url, AdyenController._return_url),
                 'merchantReturnData': json.dumps({'return_url': '%s' % values.pop('return_url')}) if values.get('return_url') else False,
                 'merchantSig': self._adyen_generate_merchant_sig('in', values),
             })

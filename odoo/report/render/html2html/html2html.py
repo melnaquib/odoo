@@ -3,7 +3,7 @@
 
 import base64
 import copy
-import cStringIO
+import io
 import re
 
 from reportlab.lib.utils import ImageReader
@@ -38,7 +38,7 @@ class html2html(object):
                             src =  utils._process_text(self, new_child.get('name'))
                             if src :
                                 new_child.set('src','data:image/gif;base64,%s'%src)
-                                output = cStringIO.StringIO(base64.decodestring(src))
+                                output = io.StringIO(base64.decodestring(src))
                                 img = ImageReader(output)
                                 (width,height) = img.getSize()
                                 if not new_child.get('width'):

@@ -1,7 +1,7 @@
 #odoo.loggers.handlers. -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-import ConfigParser
+import configparser
 import optparse
 import os
 import sys
@@ -10,7 +10,7 @@ import odoo.conf
 import odoo.loglevels as loglevels
 import logging
 import odoo.release as release
-import appdirs
+from . import appdirs
 
 class MyOption (optparse.Option, object):
     """ optparse Option with two additional attributes.
@@ -52,7 +52,7 @@ def _deduplicate_loggers(loggers):
     # there are no duplicates within the output sequence
     return (
         '{}:{}'.format(logger, level)
-        for logger, level in dict(it.split(':') for it in loggers).iteritems()
+        for logger, level in dict(it.split(':') for it in loggers).items()
     )
 
 
@@ -393,10 +393,10 @@ class configmanager(object):
             if getattr(opt, arg):
                 self.options[arg] = getattr(opt, arg)
             # ... or keep, but cast, the config file value.
-            elif isinstance(self.options[arg], basestring) and self.casts[arg].type in optparse.Option.TYPE_CHECKER:
+            elif isinstance(self.options[arg], str) and self.casts[arg].type in optparse.Option.TYPE_CHECKER:
                 self.options[arg] = optparse.Option.TYPE_CHECKER[self.casts[arg].type](self.casts[arg], arg, self.options[arg])
 
-        if isinstance(self.options['log_handler'], basestring):
+        if isinstance(self.options['log_handler'], str):
             self.options['log_handler'] = self.options['log_handler'].split(',')
         self.options['log_handler'].extend(opt.log_handler)
 
@@ -428,7 +428,7 @@ class configmanager(object):
             if getattr(opt, arg) is not None:
                 self.options[arg] = getattr(opt, arg)
             # ... or keep, but cast, the config file value.
-            elif isinstance(self.options[arg], basestring) and self.casts[arg].type in optparse.Option.TYPE_CHECKER:
+            elif isinstance(self.options[arg], str) and self.casts[arg].type in optparse.Option.TYPE_CHECKER:
                 self.options[arg] = optparse.Option.TYPE_CHECKER[self.casts[arg].type](self.casts[arg], arg, self.options[arg])
 
         self.options['root_path'] = os.path.abspath(os.path.expanduser(os.path.expandvars(os.path.join(os.path.dirname(__file__), '..'))))
@@ -450,10 +450,10 @@ class configmanager(object):
         self.options['demo'] = (dict(self.options['init'])
                                 if not self.options['without_demo'] else {})
         self.options['update'] = opt.update and dict.fromkeys(opt.update.split(','), 1) or {}
-        self.options['translate_modules'] = opt.translate_modules and map(lambda m: m.strip(), opt.translate_modules.split(',')) or ['all']
+        self.options['translate_modules'] = opt.translate_modules and [m.strip() for m in opt.translate_modules.split(',')] or ['all']
         self.options['translate_modules'].sort()
 
-        dev_split = opt.dev_mode and  map(str.strip, opt.dev_mode.split(',')) or []
+        dev_split = opt.dev_mode and  list(map(str.strip, opt.dev_mode.split(','))) or []
         self.options['dev_mode'] = 'all' in dev_split and dev_split + ['pdb', 'reload', 'qweb', 'werkzeug', 'xml'] or dev_split
 
         if opt.pg_path:
@@ -497,7 +497,7 @@ class configmanager(object):
         setattr(parser.values, option.dest, ",".join(ad_paths))
 
     def load(self):
-        p = ConfigParser.ConfigParser()
+        p = configparser.ConfigParser()
         try:
             p.read([self.rcfile])
             for (name,value) in p.items('options'):
@@ -510,7 +510,7 @@ class configmanager(object):
             for sec in p.sections():
                 if sec == 'options':
                     continue
-                if not self.misc.has_key(sec):
+                if sec not in self.misc:
                     self.misc[sec]= {}
                 for (name, value) in p.items(sec):
                     if value=='True' or value=='true':
@@ -520,12 +520,12 @@ class configmanager(object):
                     self.misc[sec][name] = value
         except IOError:
             pass
-        except ConfigParser.NoSectionError:
+        except configparser.NoSectionError:
             pass
 
     def save(self):
-        p = ConfigParser.ConfigParser()
-        loglevelnames = dict(zip(self._LOGLEVELS.values(), self._LOGLEVELS.keys()))
+        p = configparser.ConfigParser()
+        loglevelnames = dict(list(zip(list(self._LOGLEVELS.values()), list(self._LOGLEVELS.keys()))))
         p.add_section('options')
         for opt in sorted(self.options.keys()):
             if opt in ('version', 'language', 'translate_out', 'translate_in', 'overwrite_existing_translations', 'init', 'update'):
@@ -552,7 +552,7 @@ class configmanager(object):
             try:
                 p.write(file(self.rcfile, 'w'))
                 if not rc_exists:
-                    os.chmod(self.rcfile, 0600)
+                    os.chmod(self.rcfile, 0o600)
             except IOError:
                 sys.stderr.write("ERROR: couldn't write the config file\n")
 
@@ -571,7 +571,7 @@ class configmanager(object):
 
     def __setitem__(self, key, value):
         self.options[key] = value
-        if key in self.options and isinstance(self.options[key], basestring) and \
+        if key in self.options and isinstance(self.options[key], str) and \
                 key in self.casts and self.casts[key].type in optparse.Option.TYPE_CHECKER:
             self.options[key] = optparse.Option.TYPE_CHECKER[self.casts[key].type](self.casts[key], key, self.options[key])
 
@@ -586,9 +586,9 @@ class configmanager(object):
             try:
                 # bootstrap parent dir +rwx
                 if not os.path.exists(add_dir):
-                    os.makedirs(add_dir, 0700)
+                    os.makedirs(add_dir, 0o700)
                 # try to make +rx placeholder dir, will need manual +w to activate it
-                os.makedirs(d, 0500)
+                os.makedirs(d, 0o500)
             except OSError:
                 logging.getLogger(__name__).debug('Failed to create addons data dir %s', d)
         return d
@@ -597,7 +597,7 @@ class configmanager(object):
     def session_dir(self):
         d = os.path.join(self['data_dir'], 'sessions')
         if not os.path.exists(d):
-            os.makedirs(d, 0700)
+            os.makedirs(d, 0o700)
         else:
             assert os.access(d, os.W_OK), \
                 "%s: directory is not writable" % d

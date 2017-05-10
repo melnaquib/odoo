@@ -16,7 +16,7 @@ class TestSanitizer(unittest.TestCase):
             ("yop", "<p>yop</p>"),  # simple
             ("lala<p>yop</p>xxx", "<p>lala</p><p>yop</p>xxx"),  # trailing text
             ("Merci à l'intérêt pour notre produit.nous vous contacterons bientôt. Merci",
-                u"<p>Merci à l'intérêt pour notre produit.nous vous contacterons bientôt. Merci</p>"),  # unicode
+                "<p>Merci à l'intérêt pour notre produit.nous vous contacterons bientôt. Merci</p>"),  # unicode
         ]
         for content, expected in cases:
             html = html_sanitize(content)
@@ -82,7 +82,7 @@ class TestSanitizer(unittest.TestCase):
             self.assertTrue('ha.ckers.org' not in html or 'http://ha.ckers.org/xss.css' in html, 'html_sanitize did not remove a malicious code in %s (%s)' % (content, html))
 
         content = "<!--[if gte IE 4]><SCRIPT>alert('XSS');</SCRIPT><![endif]-->"  # down-level hidden block
-        self.assertEquals(html_sanitize(content, silent=False), '')
+        self.assertEqual(html_sanitize(content, silent=False), '')
 
     def test_html(self):
         sanitized_html = html_sanitize(test_mail_examples.MISC_HTML_SOURCE)
@@ -141,7 +141,7 @@ class TestSanitizer(unittest.TestCase):
 
         # style should not be sanitized if removed
         new_html = html_sanitize(test_data[0][0], sanitize_attributes=False, strip_style=True, strip_classes=False)
-        self.assertEqual(new_html, u'<span>Coin coin </span>')
+        self.assertEqual(new_html, '<span>Coin coin </span>')
 
     def test_style_class(self):
         html = html_sanitize(test_mail_examples.REMOVE_CLASS, sanitize_attributes=True, sanitize_style=True, strip_classes=True)
@@ -275,7 +275,7 @@ class TestSanitizer(unittest.TestCase):
         self.assertEqual(html, False)
 
         # Message with xml and doctype tags don't crash
-        html = html_sanitize(u'<?xml version="1.0" encoding="iso-8859-1"?>\n<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"\n         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">\n <head>\n  <title>404 - Not Found</title>\n </head>\n <body>\n  <h1>404 - Not Found</h1>\n </body>\n</html>\n')
+        html = html_sanitize('<?xml version="1.0" encoding="iso-8859-1"?>\n<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"\n         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">\n <head>\n  <title>404 - Not Found</title>\n </head>\n <body>\n  <h1>404 - Not Found</h1>\n </body>\n</html>\n')
         self.assertNotIn('encoding', html)
         self.assertNotIn('<title>404 - Not Found</title>', html)
         self.assertIn('<h1>404 - Not Found</h1>', html)

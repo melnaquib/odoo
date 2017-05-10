@@ -79,4 +79,4 @@ class BaseModuleUpgrade(models.TransientModel):
 
     @api.multi
     def config(self):
-        return self.env['res.config'].next()
+        return next(self.env['res.config'])

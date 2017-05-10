@@ -124,7 +124,7 @@ class ir_cron(models.Model):
                     _logger.warning("Method '%s.%s' does not exist.", model_name, method_name)
             else:
                 _logger.warning("Model %r does not exist.", model_name)
-        except Exception, e:
+        except Exception as e:
             _logger.exception("Call of self.env[%r].%s(*%r) failed in Job #%s",
                               model_name, method_name, args, job_id)
             self._handle_callback_exception(model_name, method_name, args, job_id, e)
@@ -197,7 +197,7 @@ class ir_cron(models.Model):
                     jobs = cr.dictfetchall()
                 else:
                     _logger.warning('Skipping database %s as its base version is not %s.', db_name, BASE_VERSION)
-        except psycopg2.ProgrammingError, e:
+        except psycopg2.ProgrammingError as e:
             if e.pgcode == '42P01':
                 # Class 42 — Syntax Error or Access Rule Violation; 42P01: undefined_table
                 # The table ir_cron does not exist; this is probably not an OpenERP database.
@@ -237,7 +237,7 @@ class ir_cron(models.Model):
                 finally:
                     job_cr.close()
 
-            except psycopg2.OperationalError, e:
+            except psycopg2.OperationalError as e:
                 if e.pgcode == '55P03':
                     # Class 55: Object not in prerequisite state; 55P03: lock_not_available
                     _logger.debug('Another process/thread is already busy executing job `%s`, skipping it.', job['name'])

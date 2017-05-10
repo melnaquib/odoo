@@ -20,7 +20,7 @@ def remove_accents(input_str):
     meaning of input_str and work only for some cases"""
     input_str = ustr(input_str)
     nkfd_form = unicodedata.normalize('NFKD', input_str)
-    return u''.join([c for c in nkfd_form if not unicodedata.combining(c)])
+    return ''.join([c for c in nkfd_form if not unicodedata.combining(c)])
 
 
 class Alias(models.Model):

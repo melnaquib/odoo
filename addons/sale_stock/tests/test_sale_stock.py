@@ -16,7 +16,7 @@ class TestSaleStock(TestSale):
             'partner_id': self.partner.id,
             'partner_invoice_id': self.partner.id,
             'partner_shipping_id': self.partner.id,
-            'order_line': [(0, 0, {'name': p.name, 'product_id': p.id, 'product_uom_qty': 2, 'product_uom': p.uom_id.id, 'price_unit': p.list_price}) for (_, p) in self.products.iteritems()],
+            'order_line': [(0, 0, {'name': p.name, 'product_id': p.id, 'product_uom_qty': 2, 'product_uom': p.uom_id.id, 'price_unit': p.list_price}) for (_, p) in self.products.items()],
             'pricelist_id': self.env.ref('product.list0').id,
             'picking_policy': 'direct',
         })
@@ -73,7 +73,7 @@ class TestSaleStock(TestSale):
             'partner_id': self.partner.id,
             'partner_invoice_id': self.partner.id,
             'partner_shipping_id': self.partner.id,
-            'order_line': [(0, 0, {'name': p.name, 'product_id': p.id, 'product_uom_qty': 2, 'product_uom': p.uom_id.id, 'price_unit': p.list_price}) for (_, p) in self.products.iteritems()],
+            'order_line': [(0, 0, {'name': p.name, 'product_id': p.id, 'product_uom_qty': 2, 'product_uom': p.uom_id.id, 'price_unit': p.list_price}) for (_, p) in self.products.items()],
             'pricelist_id': self.env.ref('product.list0').id,
             'picking_policy': 'direct',
         })
@@ -253,9 +253,9 @@ class TestSaleStock(TestSale):
         self.so.action_confirm()
 
         # deliver them
-        self.assertEquals(len(self.so.picking_ids), 1)
+        self.assertEqual(len(self.so.picking_ids), 1)
         self.so.picking_ids[0].action_done()
-        self.assertEquals(self.so.picking_ids[0].state, "done")
+        self.assertEqual(self.so.picking_ids[0].state, "done")
 
         # update the two original sale order lines
         self.so.write({
@@ -266,4 +266,4 @@ class TestSaleStock(TestSale):
         })
 
         # a single picking should be created for the new delivery
-        self.assertEquals(len(self.so.picking_ids), 2)
+        self.assertEqual(len(self.so.picking_ids), 2)

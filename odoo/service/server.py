@@ -172,7 +172,7 @@ class CommonServer(object):
         """
         try:
             sock.shutdown(socket.SHUT_RDWR)
-        except socket.error, e:
+        except socket.error as e:
             if e.errno == errno.EBADF:
                 # Werkzeug > 0.9.6 closes the socket itself (see commit
                 # https://github.com/mitsuhiko/werkzeug/commit/4d8ca089)
@@ -215,7 +215,7 @@ class ThreadedServer(CommonServer):
             time.sleep(SLEEP_INTERVAL + number)     # Steve Reich timing style
             registries = odoo.modules.registry.Registry.registries
             _logger.debug('cron%d polling for jobs', number)
-            for db_name, registry in registries.iteritems():
+            for db_name, registry in registries.items():
                 while registry.ready:
                     try:
                         acquired = odoo.addons.base.ir.ir_cron.ir_cron._acquire_job(db_name)
@@ -433,7 +433,7 @@ class PreforkServer(CommonServer):
     def pipe_ping(self, pipe):
         try:
             os.write(pipe[1], '.')
-        except IOError, e:
+        except IOError as e:
             if e.errno not in [errno.EAGAIN, errno.EINTR]:
                 raise
 
@@ -479,7 +479,7 @@ class PreforkServer(CommonServer):
     def worker_kill(self, pid, sig):
         try:
             os.kill(pid, sig)
-        except OSError, e:
+        except OSError as e:
             if e.errno == errno.ESRCH:
                 self.worker_pop(pid)
 
@@ -517,14 +517,14 @@ class PreforkServer(CommonServer):
                     _logger.critical(msg, wpid)
                     raise Exception(msg % wpid)
                 self.worker_pop(wpid)
-            except OSError, e:
+            except OSError as e:
                 if e.errno == errno.ECHILD:
                     break
                 raise
 
     def process_timeout(self):
         now = time.time()
-        for (pid, worker) in self.workers.items():
+        for (pid, worker) in list(self.workers.items()):
             if worker.watchdog_timeout is not None and \
                     (now - worker.watchdog_time) >= worker.watchdog_timeout:
                 _logger.error("%s (%s) timeout after %ss",
@@ -545,8 +545,8 @@ class PreforkServer(CommonServer):
     def sleep(self):
         try:
             # map of fd -> worker
-            fds = dict([(w.watchdog_pipe[0], w) for k, w in self.workers.items()])
-            fd_in = fds.keys() + [self.pipe[0]]
+            fds = dict([(w.watchdog_pipe[0], w) for k, w in list(self.workers.items())])
+            fd_in = list(fds.keys()) + [self.pipe[0]]
             # check for ping or internal wakeups
             ready = select.select(fd_in, [], [], self.beat)
             # update worker watchdogs
@@ -557,10 +557,10 @@ class PreforkServer(CommonServer):
                     # empty pipe
                     while os.read(fd, 1):
                         pass
-                except OSError, e:
+                except OSError as e:
                     if e.errno not in [errno.EAGAIN]:
                         raise
-        except select.error, e:
+        except select.error as e:
             if e[0] not in [errno.EINTR]:
                 raise
 
@@ -595,7 +595,7 @@ class PreforkServer(CommonServer):
         if graceful:
             _logger.info("Stopping gracefully")
             limit = time.time() + self.timeout
-            for pid in self.workers.keys():
+            for pid in list(self.workers.keys()):
                 self.worker_kill(pid, signal.SIGINT)
             while self.workers and time.time() < limit:
                 try:
@@ -607,7 +607,7 @@ class PreforkServer(CommonServer):
                 time.sleep(0.1)
         else:
             _logger.info("Stopping forcefully")
-        for pid in self.workers.keys():
+        for pid in list(self.workers.keys()):
             self.worker_kill(pid, signal.SIGTERM)
         if self.socket:
             self.socket.close()
@@ -637,7 +637,7 @@ class PreforkServer(CommonServer):
                 _logger.debug("Multiprocess clean stop")
                 self.stop()
                 break
-            except Exception, e:
+            except Exception as e:
                 _logger.exception(e)
                 self.stop(False)
                 return -1
@@ -670,7 +670,7 @@ class Worker(object):
     def sleep(self):
         try:
             select.select([self.multi.socket], [], [], self.multi.beat)
-        except select.error, e:
+        except select.error as e:
             if e[0] not in [errno.EINTR]:
                 raise
 
@@ -759,7 +759,7 @@ class WorkerHTTP(Worker):
         # receiving the full reply
         try:
             self.server.process_request(client, addr)
-        except IOError, e:
+        except IOError as e:
             if e.errno != errno.EPIPE:
                 raise
         self.request_count += 1
@@ -768,7 +768,7 @@ class WorkerHTTP(Worker):
         try:
             client, addr = self.multi.socket.accept()
             self.process_request(client, addr)
-        except socket.error, e:
+        except socket.error as e:
             if e[0] not in (errno.EAGAIN, errno.ECONNABORTED):
                 raise
 
@@ -885,7 +885,7 @@ def load_test_file_yml(registry, test_file):
 def load_test_file_py(registry, test_file):
     # Locate python module based on its filename and run the tests
     test_path, _ = os.path.splitext(os.path.abspath(test_file))
-    for mod_name, mod_mod in sys.modules.items():
+    for mod_name, mod_mod in list(sys.modules.items()):
         if mod_mod:
             mod_path, _ = os.path.splitext(getattr(mod_mod, '__file__', ''))
             if test_path == mod_path:

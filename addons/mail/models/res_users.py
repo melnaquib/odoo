@@ -90,7 +90,7 @@ class Users(models.Model):
                 current_pids.append(partner_id[1])
             elif isinstance(partner_id, (list, tuple)) and partner_id[0] == 6 and len(partner_id) == 3:
                 current_pids.append(partner_id[2])
-            elif isinstance(partner_id, (int, long)):
+            elif isinstance(partner_id, int):
                 current_pids.append(partner_id)
         if user_pid not in current_pids:
             partner_ids.append(user_pid)

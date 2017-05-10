@@ -135,7 +135,7 @@ class ormcache_multi(ormcache):
     def determine_key(self):
         """ Determine the function that computes a cache key from arguments. """
         assert self.skiparg is None, "ormcache_multi() no longer supports skiparg"
-        assert isinstance(self.multi, basestring), "ormcache_multi() parameter multi must be an argument name"
+        assert isinstance(self.multi, str), "ormcache_multi() parameter multi must be an argument name"
 
         super(ormcache_multi, self).determine_key()
 
@@ -202,8 +202,8 @@ def log_ormcache_stats(sig=None, frame=None):
     me = threading.currentThread()
     me_dbname = getattr(me, 'dbname', 'n/a')
     entries = defaultdict(int)
-    for dbname, reg in Registry.registries.iteritems():
-        for key in reg.cache.iterkeys():
+    for dbname, reg in Registry.registries.items():
+        for key in reg.cache.keys():
             entries[(dbname,) + key[:2]] += 1
     for key, count in sorted(entries.items()):
         dbname, model_name, method = key
@@ -217,8 +217,8 @@ def log_ormcache_stats(sig=None, frame=None):
 
 def get_cache_key_counter(bound_method, *args, **kwargs):
     """ Return the cache, key and stat counter for the given call. """
-    model = bound_method.im_self
-    ormcache = bound_method.clear_cache.im_self
+    model = bound_method.__self__
+    ormcache = bound_method.clear_cache.__self__
     cache, key0, counter = ormcache.lru(model)
     key = key0 + ormcache.key(model, *args, **kwargs)
     return cache, key, counter

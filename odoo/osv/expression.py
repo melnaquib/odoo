@@ -376,7 +376,7 @@ def normalize_leaf(element):
 
 def is_operator(element):
     """ Test whether an object is a valid domain operator. """
-    return isinstance(element, basestring) and element in DOMAIN_OPERATORS
+    return isinstance(element, str) and element in DOMAIN_OPERATORS
 
 
 def is_leaf(element, internal=False):
@@ -397,7 +397,7 @@ def is_leaf(element, internal=False):
     return (isinstance(element, tuple) or isinstance(element, list)) \
         and len(element) == 3 \
         and element[1] in INTERNAL_OPS \
-        and ((isinstance(element[0], basestring) and element[0])
+        and ((isinstance(element[0], str) and element[0])
              or tuple(element) in (TRUE_LEAF, FALSE_LEAF))
 
 
@@ -696,11 +696,11 @@ class expression(object):
                         return the list of related ids
             """
             names = []
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 names = [value]
-            elif value and isinstance(value, (tuple, list)) and all(isinstance(item, basestring) for item in value):
+            elif value and isinstance(value, (tuple, list)) and all(isinstance(item, str) for item in value):
                 names = value
-            elif isinstance(value, (int, long)):
+            elif isinstance(value, int):
                 return [value]
             if names:
                 return list({
@@ -924,7 +924,7 @@ class expression(object):
                     domain = domain(model)
                 is_integer_m2o = comodel._fields[field.inverse_name].type == 'integer'
                 if right is not False:
-                    if isinstance(right, basestring):
+                    if isinstance(right, str):
                         op = {'!=': '=', 'not like': 'like', 'not ilike': 'ilike'}.get(operator, operator)
                         ids2 = [x[0] for x in comodel.name_search(right, domain or [], op, limit=None)]
                         if ids2:
@@ -992,7 +992,7 @@ class expression(object):
                 else:
                     call_null_m2m = True
                     if right is not False:
-                        if isinstance(right, basestring):
+                        if isinstance(right, str):
                             op = {'!=': '=', 'not like': 'like', 'not ilike': 'ilike'}.get(operator, operator)
                             domain = field.domain
                             if callable(domain):
@@ -1017,7 +1017,7 @@ class expression(object):
                             subop = 'not inselect' if operator in NEGATIVE_TERM_OPERATORS else 'inselect'
                             subquery = 'SELECT "%s" FROM "%s" WHERE "%s" IN %%s' % (rel_id1, rel_table, rel_id2)
                             # avoid flattening of argument in to_sql()
-                            subquery = cr.mogrify(subquery, [tuple(filter(None, res_ids))])
+                            subquery = cr.mogrify(subquery, [tuple([_f for _f in res_ids if _f])])
                             push(create_substitution_leaf(leaf, ('id', subop, (subquery, [])), internal=True))
 
                     if call_null_m2m:
@@ -1050,8 +1050,8 @@ class expression(object):
                             res_ids.append(False)  # TODO this should not be appended if False was in 'right'
                         return left, 'in', res_ids
                     # resolve string-based m2o criterion into IDs
-                    if isinstance(right, basestring) or \
-                            right and isinstance(right, (tuple, list)) and all(isinstance(item, basestring) for item in right):
+                    if isinstance(right, str) or \
+                            right and isinstance(right, (tuple, list)) and all(isinstance(item, str) for item in right):
                         push(create_substitution_leaf(leaf, _get_expression(comodel, left, right, operator), model))
                     else:
                         # right == [] or right == False and all other cases are handled by __leaf_to_sql()
@@ -1199,7 +1199,7 @@ class expression(object):
                     else:
                         field = model._fields[left]
                         instr = ','.join([field.column_format] * len(params))
-                        params = map(partial(field.convert_to_column, record=model), params)
+                        params = list(map(partial(field.convert_to_column, record=model), params))
                     query = '(%s."%s" %s (%s))' % (table_alias, left, operator, instr)
                 else:
                     # The case for (left, 'in', []) or (left, 'not in', []).
@@ -1264,7 +1264,7 @@ class expression(object):
             if need_wildcard:
                 if isinstance(right, str):
                     str_utf8 = right
-                elif isinstance(right, unicode):
+                elif isinstance(right, str):
                     str_utf8 = right.encode('utf-8')
                 else:
                     str_utf8 = str(right)
@@ -1276,7 +1276,7 @@ class expression(object):
             if add_null:
                 query = '(%s OR %s."%s" IS NULL)' % (query, table_alias, left)
 
-        if isinstance(params, basestring):
+        if isinstance(params, str):
             params = [params]
         return query, params
 

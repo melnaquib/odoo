@@ -36,7 +36,7 @@ class Followers(models.Model):
         :param force: if True, delete existing followers before creating new one
                       using the subtypes given in the parameters
         """
-        force_mode = force or (all(data for data in partner_data.values()) and all(data for data in channel_data.values()))
+        force_mode = force or (all(data for data in list(partner_data.values())) and all(data for data in list(channel_data.values())))
         generic = []
         specific = {}
         existing = {}  # {res_id: follower_ids}
@@ -46,7 +46,7 @@ class Followers(models.Model):
         followers = self.sudo().search([
             '&',
             '&', ('res_model', '=', res_model), ('res_id', 'in', res_ids),
-            '|', ('partner_id', 'in', partner_data.keys()), ('channel_id', 'in', channel_data.keys())])
+            '|', ('partner_id', 'in', list(partner_data.keys())), ('channel_id', 'in', list(channel_data.keys()))])
 
         if force_mode:
             followers.unlink()
@@ -64,20 +64,20 @@ class Followers(models.Model):
         external_default_subtypes = default_subtypes.filtered(lambda subtype: not subtype.internal)
 
         if force_mode:
-            employee_pids = self.env['res.users'].sudo().search([('partner_id', 'in', partner_data.keys()), ('share', '=', False)]).mapped('partner_id').ids
-            for pid, data in partner_data.iteritems():
+            employee_pids = self.env['res.users'].sudo().search([('partner_id', 'in', list(partner_data.keys())), ('share', '=', False)]).mapped('partner_id').ids
+            for pid, data in partner_data.items():
                 if not data:
                     if pid not in employee_pids:
                         partner_data[pid] = external_default_subtypes.ids
                     else:
                         partner_data[pid] = default_subtypes.ids
-            for cid, data in channel_data.iteritems():
+            for cid, data in channel_data.items():
                 if not data:
                     channel_data[cid] = default_subtypes.ids
 
         # create new followers, batch ok
-        gen_new_pids = [pid for pid in partner_data.keys() if pid not in p_exist]
-        gen_new_cids = [cid for cid in channel_data.keys() if cid not in c_exist]
+        gen_new_pids = [pid for pid in list(partner_data.keys()) if pid not in p_exist]
+        gen_new_cids = [cid for cid in list(channel_data.keys()) if cid not in c_exist]
         for pid in gen_new_pids:
             generic.append([0, 0, {'res_model': res_model, 'partner_id': pid, 'subtype_ids': [(6, 0, partner_data.get(pid) or default_subtypes.ids)]}])
         for cid in gen_new_cids:

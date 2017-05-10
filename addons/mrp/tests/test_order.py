@@ -415,7 +415,7 @@ class TestMrpOrder(TestMrpCommon):
 
         # check the consumed quants of the produced quant
         first_move = mo_custom_laptop.move_finished_ids.filtered(lambda mo: mo.state == 'done')
-        self.assertEquals(sum(first_move.quant_ids.mapped('consumed_quant_ids').mapped('qty')), 2)
+        self.assertEqual(sum(first_move.quant_ids.mapped('consumed_quant_ids').mapped('qty')), 2)
 
         second_move = mo_custom_laptop.move_finished_ids.filtered(lambda mo: mo.state == 'confirmed')
 
@@ -426,7 +426,7 @@ class TestMrpOrder(TestMrpCommon):
         mo_custom_laptop.post_inventory()
 
         # check the consumed quants of the newly produced quant
-        self.assertEquals(sum(second_move.quant_ids.mapped('consumed_quant_ids').mapped('qty')), 2)
+        self.assertEqual(sum(second_move.quant_ids.mapped('consumed_quant_ids').mapped('qty')), 2)
 
     def test_rounding(self):
         """ In previous versions we had rounding and efficiency fields.  We check if we can still do the same, but with only the rounding on the UoM"""

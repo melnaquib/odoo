@@ -178,7 +178,7 @@ class IrSequence(models.Model):
                 'weekday': '%w', 'h24': '%H', 'h12': '%I', 'min': '%M', 'sec': '%S'
             }
             res = {}
-            for key, format in sequences.iteritems():
+            for key, format in sequences.items():
                 res[key] = effective_date.strftime(format)
                 res['range_' + key] = range_date.strftime(format)
                 res['current_' + key] = now.strftime(format)

@@ -28,7 +28,7 @@ class WebsiteForm(http.Controller):
         try:
             data = self.extract_data(model_record, request.params)
         # If we encounter an issue while extracting data
-        except ValidationError, e:
+        except ValidationError as e:
             # I couldn't find a cleaner way to pass data to an exception
             return json.dumps({'error_fields' : e.args[0]})
 
@@ -73,7 +73,7 @@ class WebsiteForm(http.Controller):
 
     def datetime(self, field_label, field_input):
         lang = request.env['ir.qweb.field'].user_lang()
-        strftime_format = (u"%s %s" % (lang.date_format, lang.time_format))
+        strftime_format = ("%s %s" % (lang.date_format, lang.time_format))
         user_tz = pytz.timezone(request.context.get('tz') or request.env.user.tz or 'UTC')
         dt = user_tz.localize(datetime.strptime(field_input, strftime_format)).astimezone(pytz.utc)
         return dt.strftime(DEFAULT_SERVER_DATETIME_FORMAT)
@@ -117,7 +117,7 @@ class WebsiteForm(http.Controller):
         error_fields = []
 
 
-        for field_name, field_value in values.items():
+        for field_name, field_value in list(values.items()):
             # If the value of the field if a file
             if hasattr(field_value, 'filename'):
                 # Undo file upload field name indexing
@@ -163,7 +163,7 @@ class WebsiteForm(http.Controller):
         if hasattr(dest_model, "website_form_input_filter"):
             data['record'] = dest_model.website_form_input_filter(request, data['record'])
 
-        missing_required_fields = [label for label, field in authorized_fields.iteritems() if field['required'] and not label in data['record']]
+        missing_required_fields = [label for label, field in authorized_fields.items() if field['required'] and not label in data['record']]
         if any(error_fields):
             raise ValidationError(error_fields + missing_required_fields)
 

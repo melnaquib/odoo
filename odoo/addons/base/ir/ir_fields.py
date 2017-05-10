@@ -12,9 +12,9 @@ from odoo.tools import ustr
 
 REFERENCING_FIELDS = {None, 'id', '.id'}
 def only_ref_fields(record):
-    return {k: v for k, v in record.iteritems() if k in REFERENCING_FIELDS}
+    return {k: v for k, v in record.items() if k in REFERENCING_FIELDS}
 def exclude_ref_fields(record):
-    return {k: v for k, v in record.iteritems() if k not in REFERENCING_FIELDS}
+    return {k: v for k, v in record.items() if k not in REFERENCING_FIELDS}
 
 CREATE = lambda values: (0, False, values)
 UPDATE = lambda id, values: (1, id, values)
@@ -38,12 +38,12 @@ class IrFieldsConverter(models.AbstractModel):
     @api.model
     def _format_import_error(self, error_type, error_msg, error_params=(), error_args=None):
         # sanitize error params for later formatting by the import system
-        sanitize = lambda p: p.replace('%', '%%') if isinstance(p, basestring) else p
+        sanitize = lambda p: p.replace('%', '%%') if isinstance(p, str) else p
         if error_params:
-            if isinstance(error_params, basestring):
+            if isinstance(error_params, str):
                 error_params = sanitize(error_params)
             elif isinstance(error_params, dict):
-                error_params = {k: sanitize(v) for k, v in error_params.iteritems()}
+                error_params = {k: sanitize(v) for k, v in error_params.items()}
             elif isinstance(error_params, tuple):
                 error_params = tuple(map(sanitize, error_params))
         return error_type(error_msg % error_params, error_args)
@@ -64,12 +64,12 @@ class IrFieldsConverter(models.AbstractModel):
 
         converters = {
             name: self.to_field(model, field, fromtype)
-            for name, field in model._fields.iteritems()
+            for name, field in model._fields.items()
         }
 
         def fn(record, log):
             converted = {}
-            for field, value in record.iteritems():
+            for field, value in record.items():
                 if field in REFERENCING_FIELDS:
                     continue
                 if not value:
@@ -78,12 +78,12 @@ class IrFieldsConverter(models.AbstractModel):
                 try:
                     converted[field], ws = converters[field](value)
                     for w in ws:
-                        if isinstance(w, basestring):
+                        if isinstance(w, str):
                             # wrap warning string in an ImportWarning for
                             # uniform handling
                             w = ImportWarning(w)
                         log(field, w)
-                except ValueError, e:
+                except ValueError as e:
                     log(field, e)
             return converted
 
@@ -140,30 +140,30 @@ class IrFieldsConverter(models.AbstractModel):
     @api.model
     def _str_to_boolean(self, model, field, value):
         # all translatables used for booleans
-        true, yes, false, no = _(u"true"), _(u"yes"), _(u"false"), _(u"no")
+        true, yes, false, no = _("true"), _("yes"), _("false"), _("no")
         # potentially broken casefolding? What about locales?
         trues = set(word.lower() for word in itertools.chain(
-            [u'1', u"true", u"yes"], # don't use potentially translated values
-            self._get_translations(['code'], u"true"),
-            self._get_translations(['code'], u"yes"),
+            ['1', "true", "yes"], # don't use potentially translated values
+            self._get_translations(['code'], "true"),
+            self._get_translations(['code'], "yes"),
         ))
         if value.lower() in trues:
             return True, []
 
         # potentially broken casefolding? What about locales?
         falses = set(word.lower() for word in itertools.chain(
-            [u'', u"0", u"false", u"no"],
-            self._get_translations(['code'], u"false"),
-            self._get_translations(['code'], u"no"),
+            ['', "0", "false", "no"],
+            self._get_translations(['code'], "false"),
+            self._get_translations(['code'], "no"),
         ))
         if value.lower() in falses:
             return False, []
 
         return True, [self._format_import_error(
             ImportWarning,
-            _(u"Unknown value '%s' for boolean field '%%(field)s', assuming '%s'"),
+            _("Unknown value '%s' for boolean field '%%(field)s', assuming '%s'"),
             (value, yes),
-            {'moreinfo': _(u"Use '1' for yes and '0' for no")}
+            {'moreinfo': _("Use '1' for yes and '0' for no")}
         )]
 
     @api.model
@@ -173,7 +173,7 @@ class IrFieldsConverter(models.AbstractModel):
         except ValueError:
             raise self._format_import_error(
                 ValueError,
-                _(u"'%s' does not seem to be an integer for field '%%(field)s'"),
+                _("'%s' does not seem to be an integer for field '%%(field)s'"),
                 value
             )
 
@@ -184,7 +184,7 @@ class IrFieldsConverter(models.AbstractModel):
         except ValueError:
             raise self._format_import_error(
                 ValueError,
-                _(u"'%s' does not seem to be a number for field '%%(field)s'"),
+                _("'%s' does not seem to be a number for field '%%(field)s'"),
                 value
             )
 
@@ -204,9 +204,9 @@ class IrFieldsConverter(models.AbstractModel):
         except ValueError:
             raise self._format_import_error(
                 ValueError,
-                _(u"'%s' does not seem to be a valid date for field '%%(field)s'"),
+                _("'%s' does not seem to be a valid date for field '%%(field)s'"),
                 value,
-                {'moreinfo': _(u"Use the format '%s'") % u"2012-12-31"}
+                {'moreinfo': _("Use the format '%s'") % "2012-12-31"}
             )
 
     @api.model
@@ -236,9 +236,9 @@ class IrFieldsConverter(models.AbstractModel):
         except ValueError:
             raise self._format_import_error(
                 ValueError,
-                _(u"'%s' does not seem to be a valid datetime for field '%%(field)s'"),
+                _("'%s' does not seem to be a valid datetime for field '%%(field)s'"),
                 value,
-                {'moreinfo': _(u"Use the format '%s'") % u"2012-12-31 23:59:59"}
+                {'moreinfo': _("Use the format '%s'") % "2012-12-31 23:59:59"}
             )
 
         input_tz = self._input_tz()# Apply input tz to the parsed naive datetime
@@ -269,14 +269,14 @@ class IrFieldsConverter(models.AbstractModel):
         for item, label in selection:
             label = ustr(label)
             labels = [label] + self._get_translations(('selection', 'model', 'code'), label)
-            if value == unicode(item) or value in labels:
+            if value == str(item) or value in labels:
                 return item, []
 
         raise self._format_import_error(
             ValueError,
-            _(u"Value '%s' not found in selection field '%%(field)s'"),
+            _("Value '%s' not found in selection field '%%(field)s'"),
             value,
-            {'moreinfo': [_label or unicode(item) for item, _label in selection if _label or item]}
+            {'moreinfo': [_label or str(item) for item, _label in selection if _label or item]}
         )
 
     @api.model
@@ -302,7 +302,7 @@ class IrFieldsConverter(models.AbstractModel):
         action = {'type': 'ir.actions.act_window', 'target': 'new',
                   'view_mode': 'tree,form', 'view_type': 'form',
                   'views': [(False, 'tree'), (False, 'form')],
-                  'help': _(u"See all possible values")}
+                  'help': _("See all possible values")}
         if subfield is None:
             action['res_model'] = field.comodel_name
         elif subfield in ('id', '.id'):
@@ -311,7 +311,7 @@ class IrFieldsConverter(models.AbstractModel):
 
         RelatedModel = self.env[field.comodel_name]
         if subfield == '.id':
-            field_type = _(u"database id")
+            field_type = _("database id")
             try: tentative_id = int(value)
             except ValueError: tentative_id = value
             try:
@@ -321,11 +321,11 @@ class IrFieldsConverter(models.AbstractModel):
                 # type error
                 raise self._format_import_error(
                     ValueError,
-                    _(u"Invalid database id '%s' for the field '%%(field)s'"),
+                    _("Invalid database id '%s' for the field '%%(field)s'"),
                     value,
                     {'moreinfo': action})
         elif subfield == 'id':
-            field_type = _(u"external id")
+            field_type = _("external id")
             if '.' in value:
                 xmlid = value
             else:
@@ -335,25 +335,25 @@ class IrFieldsConverter(models.AbstractModel):
             except ValueError:
                 pass # leave id is None
         elif subfield is None:
-            field_type = _(u"name")
+            field_type = _("name")
             ids = RelatedModel.name_search(name=value, operator='=')
             if ids:
                 if len(ids) > 1:
                     warnings.append(ImportWarning(
-                        _(u"Found multiple matches for field '%%(field)s' (%d matches)")
+                        _("Found multiple matches for field '%%(field)s' (%d matches)")
                         % (len(ids))))
                 id, _name = ids[0]
         else:
             raise self._format_import_error(
                 Exception,
-                _(u"Unknown sub-field '%s'"),
+                _("Unknown sub-field '%s'"),
                 subfield
             )
 
         if id is None:
             raise self._format_import_error(
                 ValueError,
-                _(u"No matching record found for %(field_type)s '%(value)s' in field '%%(field)s'"),
+                _("No matching record found for %(field_type)s '%(value)s' in field '%%(field)s'"),
                 {'field_type': field_type, 'value': value},
                 {'moreinfo': action})
         return id, field_type, warnings
@@ -369,13 +369,13 @@ class IrFieldsConverter(models.AbstractModel):
         :rtype: str, list
         """
         # Can import by name_get, external id or database id
-        fieldset = set(record.iterkeys())
+        fieldset = set(record.keys())
         if fieldset - REFERENCING_FIELDS:
             raise ValueError(
-                _(u"Can not create Many-To-One records indirectly, import the field separately"))
+                _("Can not create Many-To-One records indirectly, import the field separately"))
         if len(fieldset) > 1:
             raise ValueError(
-                _(u"Ambiguous specification for field '%(field)s', only provide one of name, external id or database id"))
+                _("Ambiguous specification for field '%(field)s', only provide one of name, external id or database id"))
 
         # only one field left possible, unpack
         [subfield] = fieldset

@@ -68,22 +68,22 @@ class TestCheckJournalEntry(TransactionCase):
 
     def test_journal_entry(self):
         # Submitted to Manager
-        self.assertEquals(self.expense.state, 'submit', 'Expense is not in Reported state')
+        self.assertEqual(self.expense.state, 'submit', 'Expense is not in Reported state')
         # Approve
         self.expense.approve_expense_sheets()
-        self.assertEquals(self.expense.state, 'approve', 'Expense is not in Approved state')
+        self.assertEqual(self.expense.state, 'approve', 'Expense is not in Approved state')
         # Create Expense Entries
         self.expense.action_sheet_move_create()
-        self.assertEquals(self.expense.state, 'post', 'Expense is not in Waiting Payment state')
+        self.assertEqual(self.expense.state, 'post', 'Expense is not in Waiting Payment state')
         self.assertTrue(self.expense.account_move_id.id, 'Expense Journal Entry is not created')
 
         # [(line.debit, line.credit, line.tax_line_id.id) for line in self.expense.expense_line_ids.account_move_id.line_ids]
         # should git this result [(0.0, 700.0, False), (63.64, 0.0, 179), (636.36, 0.0, False)]
         for line in self.expense.account_move_id.line_ids:
             if line.credit:
-                self.assertAlmostEquals(line.credit, 700.00)
+                self.assertAlmostEqual(line.credit, 700.00)
             else:
                 if not line.tax_line_id == self.tax:
-                    self.assertAlmostEquals(line.debit, 636.36)
+                    self.assertAlmostEqual(line.debit, 636.36)
                 else:
-                    self.assertAlmostEquals(line.debit, 63.64)
+                    self.assertAlmostEqual(line.debit, 63.64)

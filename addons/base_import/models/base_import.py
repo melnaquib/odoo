@@ -18,9 +18,9 @@ from odoo.tools.misc import ustr
 from odoo.tools import DEFAULT_SERVER_DATE_FORMAT, DEFAULT_SERVER_DATETIME_FORMAT
 
 try:
-    from cStringIO import StringIO
+    from io import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
 
 
 FIELDS_RECURSION_LIMIT = 2
@@ -37,7 +37,7 @@ except ImportError:
     xlrd = xlsx = None
 
 try:
-    import odf_ods_reader
+    from . import odf_ods_reader
 except ImportError:
     odf_ods_reader = None
 
@@ -49,7 +49,7 @@ FILE_TYPE_DICT = {
 }
 EXTENSIONS = {
     '.' + ext: handler
-    for mime, (ext, handler, req) in FILE_TYPE_DICT.iteritems()
+    for mime, (ext, handler, req) in FILE_TYPE_DICT.items()
 }
 
 
@@ -121,7 +121,7 @@ class Import(models.TransientModel):
         }]
         model_fields = Model.fields_get()
         blacklist = models.MAGIC_COLUMNS + [Model.CONCURRENCY_CHECK_FIELD]
-        for name, field in model_fields.iteritems():
+        for name, field in model_fields.items():
             if name in blacklist:
                 continue
             # an empty string means the field is deprecated, @deprecated must
@@ -134,7 +134,7 @@ class Import(models.TransientModel):
                     continue
                 # states = {state: [(attr, value), (attr2, value2)], state2:...}
                 if not any(attr == 'readonly' and value is False
-                           for attr, value in itertools.chain.from_iterable(states.itervalues())):
+                           for attr, value in itertools.chain.from_iterable(iter(states.values()))):
                     continue
             field_value = {
                 'id': name,
@@ -208,15 +208,15 @@ class Import(models.TransientModel):
     def _read_xls_book(self, book):
         sheet = book.sheet_by_index(0)
         # emulate Sheet.get_rows for pre-0.9.4
-        for row in itertools.imap(sheet.row, range(sheet.nrows)):
+        for row in map(sheet.row, list(range(sheet.nrows))):
             values = []
             for cell in row:
                 if cell.ctype is xlrd.XL_CELL_NUMBER:
                     is_float = cell.value % 1 != 0.0
                     values.append(
-                        unicode(cell.value)
+                        str(cell.value)
                         if is_float
-                        else unicode(int(cell.value))
+                        else str(int(cell.value))
                     )
                 elif cell.ctype is xlrd.XL_CELL_DATE:
                     is_datetime = cell.value % 1 != 0.0
@@ -228,7 +228,7 @@ class Import(models.TransientModel):
                         else dt.strftime(DEFAULT_SERVER_DATE_FORMAT)
                     )
                 elif cell.ctype is xlrd.XL_CELL_BOOLEAN:
-                    values.append(u'True' if cell.value else u'False')
+                    values.append('True' if cell.value else 'False')
                 elif cell.ctype is xlrd.XL_CELL_ERROR:
                     raise ValueError(
                         _("Error cell found while reading XLS/XLSX file: %s") %
@@ -503,7 +503,7 @@ class Import(models.TransientModel):
                 'advanced_mode': any([len(models.fix_import_export_id_paths(col)) > 1 for col in headers]),
                 'debug': self.user_has_groups('base.group_no_one'),
             }
-        except Exception, error:
+        except Exception as error:
             # Due to lazy generators, UnicodeDecodeError (for
             # instance) may only be raised when serializing the
             # preview to a list in the return.
@@ -543,13 +543,13 @@ class Import(models.TransientModel):
         else:
             mapper = operator.itemgetter(*indices)
         # Get only list of actually imported fields
-        import_fields = filter(None, fields)
+        import_fields = [_f for _f in fields if _f]
 
         rows_to_import = self._read_file(options)
         if options.get('headers'):
             rows_to_import = itertools.islice(rows_to_import, 1, None)
         data = [
-            list(row) for row in itertools.imap(mapper, rows_to_import)
+            list(row) for row in map(mapper, rows_to_import)
             # don't try inserting completely empty rows (e.g. from
             # filtering out o2m fields)
             if any(row)
@@ -566,7 +566,7 @@ class Import(models.TransientModel):
             value = value[1:-1]
             negative = True
         float_regex = re.compile(r'([-]?[0-9.,]+)')
-        split_value = filter(None, float_regex.split(value))
+        split_value = [_f for _f in float_regex.split(value) if _f]
         if len(split_value) > 2:
             # This is probably not a float
             return False
@@ -603,7 +603,7 @@ class Import(models.TransientModel):
     def _parse_import_data(self, data, import_fields, options):
         # Get fields of type date/datetime
         all_fields = self.env[self.res_model].fields_get()
-        for name, field in all_fields.iteritems():
+        for name, field in all_fields.items():
             if field['type'] in ('date', 'datetime') and name in import_fields:
                 # Parse date
                 index = import_fields.index(name)
@@ -616,9 +616,9 @@ class Import(models.TransientModel):
                         if line[index]:
                             try:
                                 line[index] = dt.strftime(dt.strptime(ustr(line[index]).encode('utf-8'), user_format), server_format)
-                            except ValueError, e:
+                            except ValueError as e:
                                 raise ValueError(_("Column %s contains incorrect values. Error in line %d: %s") % (name, num + 1, ustr(e.message)))
-                            except Exception, e:
+                            except Exception as e:
                                 raise ValueError(_("Error Parsing Date [%s:L%d]: %s") % (name, num + 1, ustr(e.message)))
 
             elif field['type'] in ('float', 'monetary') and name in import_fields:
@@ -656,10 +656,10 @@ class Import(models.TransientModel):
             data, import_fields = self._convert_import_data(fields, options)
             # Parse date and float field
             data = self._parse_import_data(data, import_fields, options)
-        except ValueError, error:
+        except ValueError as error:
             return [{
                 'type': 'error',
-                'message': unicode(error),
+                'message': str(error),
                 'record': False,
             }]
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import pprint
 import logging
-import urlparse
+import urllib.parse
 import werkzeug
 
 from odoo import http
@@ -29,7 +29,7 @@ class AuthorizeController(http.Controller):
         # This response is in the form of a URL that Authorize.Net will pass on to the
         # client's browser to redirect them to the desired location need javascript.
         return request.render('payment_authorize.payment_authorize_redirect', {
-            'return_url': '%s' % urlparse.urljoin(base_url, return_url)
+            'return_url': '%s' % urllib.parse.urljoin(base_url, return_url)
         })
 
     @http.route(['/payment/authorize/s2s/create_json'], type='json', auth='public')

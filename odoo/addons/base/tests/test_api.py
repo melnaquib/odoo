@@ -69,8 +69,8 @@ class TestAPI(common.TransactionCase):
         self.cr.execute("SELECT COUNT(*) FROM res_partner WHERE active")
         count1 = self.cr.fetchone()[0]
         count2 = self.env['res.partner'].search([], count=True)
-        self.assertIsInstance(count1, (int, long))
-        self.assertIsInstance(count2, (int, long))
+        self.assertIsInstance(count1, (int, int))
+        self.assertIsInstance(count2, (int, int))
         self.assertEqual(count1, count2)
 
     @mute_logger('odoo.models')
@@ -79,11 +79,11 @@ class TestAPI(common.TransactionCase):
         domain = [('name', 'ilike', 'j')]
         partners = self.env['res.partner'].search(domain)
         self.assertTrue(partners)
-        ids = map(int, partners)
+        ids = list(map(int, partners))
 
         # modify those partners, and check that partners has not changed
         partners.write({'active': False})
-        self.assertEqual(ids, map(int, partners))
+        self.assertEqual(ids, list(map(int, partners)))
 
         # redo the search, and check that the result is now empty
         partners2 = self.env['res.partner'].search(domain)
@@ -98,7 +98,7 @@ class TestAPI(common.TransactionCase):
         self.assertIsRecordset(user.groups_id, 'res.groups')
 
         partners = self.env['res.partner'].search([])
-        for name, field in partners._fields.iteritems():
+        for name, field in partners._fields.items():
             if field.type == 'many2one':
                 for p in partners:
                     self.assertIsRecord(p[name], field.comodel_name)
@@ -296,7 +296,7 @@ class TestAPI(common.TransactionCase):
         self.assertItemsEqual(partners.ids, country_id_cache)
 
         # partners' countries are ready for prefetching
-        country_ids = set(cid for cids in country_id_cache.itervalues() for cid in cids)
+        country_ids = set(cid for cids in country_id_cache.values() for cid in cids)
         self.assertTrue(len(country_ids) > 1)
         self.assertItemsEqual(country_ids, partners._prefetch['res.country'])
 

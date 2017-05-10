@@ -19,7 +19,7 @@ MODULE_UNINSTALL_FLAG = '_force_unlink'
 
 def encode(s):
     """ Return an UTF8-encoded version of ``s``. """
-    return s.encode('utf8') if isinstance(s, unicode) else s
+    return s.encode('utf8') if isinstance(s, str) else s
 
 
 # base environment for doing a safe_eval
@@ -158,7 +158,7 @@ class IrModel(models.Model):
     @api.multi
     def write(self, vals):
         if '__last_update' in self._context:
-            self = self.with_context({k: v for k, v in self._context.iteritems() if k != '__last_update'})
+            self = self.with_context({k: v for k, v in self._context.items() if k != '__last_update'})
         if 'model' in vals and any(rec.model != vals['model'] for rec in self):
             raise UserError(_('Field "Model" cannot be modified on models.'))
         if 'state' in vals and any(rec.state != vals['state'] for rec in self):
@@ -846,7 +846,7 @@ class IrModelAccess(models.Model):
         else:
             model_name = model
 
-        if isinstance(group_ids, (int, long)):
+        if isinstance(group_ids, int):
             group_ids = [group_ids]
 
         query = """ SELECT 1 FROM ir_model_access a
@@ -1007,7 +1007,7 @@ class IrModelData(models.Model):
     @api.depends('module', 'name')
     def _compute_complete_name(self):
         for res in self:
-            res.complete_name = ".".join(filter(None, [res.module, res.name]))
+            res.complete_name = ".".join([_f for _f in [res.module, res.name] if _f])
 
     @api.depends('model', 'res_id')
     def _compute_reference(self):
@@ -1040,7 +1040,7 @@ class IrModelData(models.Model):
             model_id_name[xid.model][xid.res_id] = None
 
         # fill in model_id_name with name_get() of corresponding records
-        for model, id_name in model_id_name.iteritems():
+        for model, id_name in model_id_name.items():
             try:
                 ng = self.env[model].browse(id_name).name_get()
                 id_name.update(ng)
@@ -1137,7 +1137,7 @@ class IrModelData(models.Model):
                 record = self.get_object(module, xml_id)
                 if record:
                     self.loads[(module, xml_id)] = (model, record.id)
-                    for parent_model, parent_field in self.env[model]._inherits.iteritems():
+                    for parent_model, parent_field in self.env[model]._inherits.items():
                         parent = record[parent_field]
                         parent_xid = '%s_%s' % (xml_id, parent_model.replace('.', '_'))
                         self.loads[(module, parent_xid)] = (parent_model, parent.id)
@@ -1192,7 +1192,7 @@ class IrModelData(models.Model):
         elif record:
             record.write(values)
             if xml_id:
-                for parent_model, parent_field in record._inherits.iteritems():
+                for parent_model, parent_field in record._inherits.items():
                     self.sudo().create({
                         'name': xml_id + '_' + parent_model.replace('.', '_'),
                         'model': parent_model,
@@ -1211,7 +1211,7 @@ class IrModelData(models.Model):
         elif mode == 'init' or (mode == 'update' and xml_id):
             existing_parents = set()            # {parent_model, ...}
             if xml_id:
-                for parent_model, parent_field in record._inherits.iteritems():
+                for parent_model, parent_field in record._inherits.items():
                     xid = self.search([
                         ('module', '=', module),
                         ('name', '=', xml_id + '_' + parent_model.replace('.', '_')),
@@ -1231,7 +1231,7 @@ class IrModelData(models.Model):
                 inherit_models = [record]
                 while inherit_models:
                     current_model = inherit_models.pop()
-                    for parent_model_name, parent_field in current_model._inherits.iteritems():
+                    for parent_model_name, parent_field in current_model._inherits.items():
                         inherit_models.append(self.env[parent_model_name])
                         if parent_model_name in existing_parents:
                             continue
@@ -1257,7 +1257,7 @@ class IrModelData(models.Model):
 
         if xml_id and record:
             self.loads[(module, xml_id)] = (model, record.id)
-            for parent_model, parent_field in record._inherits.iteritems():
+            for parent_model, parent_field in record._inherits.items():
                 parent_xml_id = xml_id + '_' + parent_model.replace('.', '_')
                 self.loads[(module, parent_xml_id)] = (parent_model, record[parent_field].id)
 

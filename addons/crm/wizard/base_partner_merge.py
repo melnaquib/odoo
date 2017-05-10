@@ -4,7 +4,7 @@
 from ast import literal_eval
 from email.utils import parseaddr
 import functools
-import htmlentitydefs
+import html.entities
 import itertools
 import logging
 import operator
@@ -24,7 +24,7 @@ _logger = logging.getLogger('base.partner.merge')
 
 
 # http://www.php2python.com/wiki/function.html-entity-decode/
-def html_entity_decode_char(m, defs=htmlentitydefs.entitydefs):
+def html_entity_decode_char(m, defs=html.entities.entitydefs):
     try:
         return defs[m.group(1)]
     except KeyError:
@@ -37,7 +37,7 @@ def html_entity_decode(string):
 
 
 def sanitize_email(email):
-    assert isinstance(email, basestring) and email
+    assert isinstance(email, str) and email
 
     result = re.subn(r';|/|:', ',', html_entity_decode(email or ''))[0].split(',')
 
@@ -269,7 +269,7 @@ class MergePartnerAutomatic(models.TransientModel):
                 return item
         # get all fields that are not computed or x2many
         values = dict()
-        for column, field in model_fields.iteritems():
+        for column, field in model_fields.items():
             if field.type not in ('many2many', 'one2many') and field.compute is None:
                 for item in itertools.chain(src_partners, [dst_partner]):
                     if item[column]:
@@ -407,7 +407,7 @@ class MergePartnerAutomatic(models.TransientModel):
         """
         return any(
             self.env[model].search_count([(field, 'in', aggr_ids)])
-            for model, field in models.iteritems()
+            for model, field in models.items()
         )
 
     @api.model

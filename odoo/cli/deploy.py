@@ -38,7 +38,7 @@ class Deploy(Command):
         return res.text
 
     def authenticate(self, server, login, password, db=''):
-        print("Authenticating on server '%s' ..." % server)
+        print(("Authenticating on server '%s' ..." % server))
 
         # Fixate session with a given db if any
         self.session.get(server + '/web/login', params=dict(db=db))
@@ -95,5 +95,5 @@ class Deploy(Command):
                 args.url = 'https://%s' % args.url
             result = self.deploy_module(args.path, args.url, args.login, args.password, args.db, force=args.force)
             print(result)
-        except Exception, e:
+        except Exception as e:
             sys.exit("ERROR: %s" % e)

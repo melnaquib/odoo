@@ -6,7 +6,7 @@
 # cr.execute('delete from wkf_triggers where model=%s and res_id=%s', (res_type,res_id))
 #
 import logging
-import instance
+from . import instance
 
 from odoo.workflow.helpers import Session
 from odoo.workflow.helpers import Record
@@ -60,7 +60,7 @@ class WorkflowItem(object):
         assert isinstance(session, Session)
         assert isinstance(record, Record)
         assert isinstance(activity, dict)
-        assert isinstance(instance_id, (long, int))
+        assert isinstance(instance_id, int)
         assert isinstance(stack, list)
 
         cr = session.cr
@@ -170,7 +170,7 @@ class WorkflowItem(object):
                     if not id_new:
                         cr.execute('delete from wkf_workitem where id=%s', (self.workitem['id'],))
                         return False
-                    assert type(id_new)==type(1) or type(id_new)==type(1L), 'Wrong return value: '+str(id_new)+' '+str(type(id_new))
+                    assert type(id_new)==type(1) or type(id_new)==type(1), 'Wrong return value: '+str(id_new)+' '+str(type(id_new))
                     cr.execute('select id from wkf_instance where res_id=%s and wkf_id=%s', (id_new, activity['subflow_id']))
                     id_new = cr.fetchone()[0]
                 else:

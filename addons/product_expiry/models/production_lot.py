@@ -24,10 +24,10 @@ class StockProductionLot(models.Model):
             'removal_date': 'removal_time',
             'alert_date': 'alert_time'
         }
-        res = dict.fromkeys(mapped_fields.keys(), False)
+        res = dict.fromkeys(list(mapped_fields.keys()), False)
         product = self.env['product.product'].browse(product_id) or self.product_id
         if product:
-            for field in mapped_fields.keys():
+            for field in list(mapped_fields.keys()):
                 duration = getattr(product, mapped_fields[field])
                 if duration:
                     date = datetime.datetime.now() + datetime.timedelta(days=duration)
@@ -38,7 +38,7 @@ class StockProductionLot(models.Model):
     @api.model
     def create(self, vals):
         dates = self._get_dates(vals.get('product_id'))
-        for d in dates.keys():
+        for d in list(dates.keys()):
             if not vals.get(d):
                 vals[d] = dates[d]
         return super(StockProductionLot, self).create(vals)
@@ -46,5 +46,5 @@ class StockProductionLot(models.Model):
     @api.onchange('product_id')
     def _onchange_product(self):
         dates_dict = self._get_dates()
-        for field, value in dates_dict.items():
+        for field, value in list(dates_dict.items()):
             setattr(self, field, value)

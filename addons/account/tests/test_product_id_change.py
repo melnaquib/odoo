@@ -86,6 +86,6 @@ class TestProductIdChange(AccountingTestCase):
             'account_id': self.account_revenue.id,
         })
         out_line._onchange_product_id()
-        self.assertEquals(100, out_line.price_unit, "The included tax must be subtracted to the price")
+        self.assertEqual(100, out_line.price_unit, "The included tax must be subtracted to the price")
         in_line._onchange_product_id()
-        self.assertEquals(200, in_line.price_unit, "The included tax must be subtracted to the price")
+        self.assertEqual(200, in_line.price_unit, "The included tax must be subtracted to the price")

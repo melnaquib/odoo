@@ -314,7 +314,7 @@ class TestOnChange(common.TransactionCase):
             result['value']['important_emails'],
             [(5,),
              (1, email.id, {
-                 'name': u'[Foo Bar] %s' % USER.name,
+                 'name': '[Foo Bar] %s' % USER.name,
                  'body': email.body,
                  'author': USER.name_get()[0],
                  'important': True,

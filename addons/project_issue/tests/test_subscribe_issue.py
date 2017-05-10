@@ -14,6 +14,6 @@ class TestSubscribeIssue(TestIssueUsers):
 
         # After getting the mail, Check details of new issue of that customer.
         issue = self.ProjectIssue.search([('email_from', '=', 'Robert Adersen <Robert_Adersen@yahoo.com>')], limit=1)
-        self.assertEquals(len(issue), 1, "Issue is not created after getting request")
+        self.assertEqual(len(issue), 1, "Issue is not created after getting request")
         self.assertFalse(issue.partner_id, "Customer should be a new")
-        self.assertEquals(issue.name, "Error in the account module", "Subject does not match")
+        self.assertEqual(issue.name, "Error in the account module", "Subject does not match")

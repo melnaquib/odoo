@@ -5,7 +5,7 @@ import logging
 import random
 import re
 import string
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 from odoo import api, models, _
 from odoo.exceptions import UserError
@@ -53,7 +53,7 @@ class PadCommon(models.AbstractModel):
             myPad = EtherpadLiteClient(pad["key"], pad["server"] + '/api')
             try:
                 myPad.createPad(path)
-            except urllib2.URLError:
+            except urllib.error.URLError:
                 raise UserError(_("Pad creation failed, either there is a problem with your pad server URL or with your connection."))
 
             # get attr on the field model
@@ -79,7 +79,7 @@ class PadCommon(models.AbstractModel):
         content = ''
         if url:
             try:
-                page = urllib2.urlopen('%s/export/html' % url).read()
+                page = urllib.request.urlopen('%s/export/html' % url).read()
                 mo = re.search('<body>(.*)</body>', page, re.DOTALL)
                 if mo:
                     content = mo.group(1)
@@ -102,7 +102,7 @@ class PadCommon(models.AbstractModel):
 
         # In case the pad is created programmatically, the content is not filled in yet since it is
         # normally initialized by the JS layer
-        for k, field in self._fields.iteritems():
+        for k, field in self._fields.items():
             if hasattr(field, 'pad_content_field') and k not in vals:
                 ctx = {
                     'model': self._name,
@@ -115,7 +115,7 @@ class PadCommon(models.AbstractModel):
 
     # Set the pad content in vals
     def _set_pad_value(self, vals):
-        for k, v in vals.items():
+        for k, v in list(vals.items()):
             field = self._fields[k]
             if hasattr(field, 'pad_content_field'):
                 vals[field.pad_content_field] = self.pad_get_content(v)
@@ -125,7 +125,7 @@ class PadCommon(models.AbstractModel):
         self.ensure_one()
         if not default:
             default = {}
-        for k, field in self._fields.iteritems():
+        for k, field in self._fields.items():
             if hasattr(field, 'pad_content_field'):
                 pad = self.pad_generate_url()
                 default[k] = pad.get('url')

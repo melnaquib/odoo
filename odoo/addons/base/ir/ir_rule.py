@@ -108,7 +108,7 @@ class IrRule(models.Model):
 
         # combine global domains and group domains
         if group_domains:
-            group_domain = expression.OR(map(expression.OR, group_domains.values()))
+            group_domain = expression.OR(list(map(expression.OR, list(group_domains.values()))))
         else:
             group_domain = []
         domain = expression.AND(global_domains + [group_domain])

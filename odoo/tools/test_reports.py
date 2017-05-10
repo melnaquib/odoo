@@ -96,7 +96,7 @@ def try_report_action(cr, uid, action_id, active_model=None, active_ids=None,
                 Eg. 'OK' or 'fa-print'
         :param our_module: the name of the calling module (string), like 'account'
     """
-    if not our_module and isinstance(action_id, basestring):
+    if not our_module and isinstance(action_id, str):
         if '.' in action_id:
             our_module = action_id.split('.', 1)[0]
 
@@ -117,7 +117,7 @@ def try_report_action(cr, uid, action_id, active_model=None, active_ids=None,
     if not wiz_buttons:
         wiz_buttons = []
 
-    if isinstance(action_id, basestring):
+    if isinstance(action_id, str):
         if '.' in action_id:
             _, act_xmlid = action_id.split('.', 1)
         else:
@@ -128,7 +128,7 @@ def try_report_action(cr, uid, action_id, active_model=None, active_ids=None,
         action = env.ref(action_id)
         act_model, act_id = action._name, action.id
     else:
-        assert isinstance(action_id, (long, int))
+        assert isinstance(action_id, int)
         act_model = 'ir.action.act_window'     # assume that
         act_id = action_id
         act_xmlid = '<%s>' % act_id
@@ -142,7 +142,7 @@ def try_report_action(cr, uid, action_id, active_model=None, active_ids=None,
         if datas.get('id',False):
             context.update( {'active_id': datas.get('id',False), 'active_ids': datas.get('ids',[]), 'active_model': datas.get('model',False)})
         context1 = action.get('context', {})
-        if isinstance(context1, basestring):
+        if isinstance(context1, str):
             context1 = safe_eval(context1, dict(context))
         context.update(context1)
         env = env(context=context)
@@ -178,7 +178,7 @@ def try_report_action(cr, uid, action_id, active_model=None, active_ids=None,
                 view_data.update(wiz_data)
             _logger.debug("View data is: %r", view_data)
 
-            for fk, field in view_res.get('fields',{}).items():
+            for fk, field in list(view_res.get('fields',{}).items()):
                 # Default fields returns list of int, while at create()
                 # we need to send a [(6,0,[int,..])]
                 if field['type'] in ('one2many', 'many2many') \
@@ -218,7 +218,7 @@ def try_report_action(cr, uid, action_id, active_model=None, active_ids=None,
                         'type': button.getAttribute('type'),
                         'weight': button_weight,
                     })
-            except Exception, e:
+            except Exception as e:
                 _logger.warning("Cannot resolve the view arch and locate the buttons!", exc_info=True)
                 raise AssertionError(e.args[0])
 

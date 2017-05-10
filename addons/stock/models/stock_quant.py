@@ -633,7 +633,7 @@ class QuantPackage(models.Model):
 
     @api.multi
     def name_get(self):
-        return self._compute_complete_name().items()
+        return list(self._compute_complete_name().items())
 
     def _compute_complete_name(self):
         """ Forms complete name of location from parent location to child location. """

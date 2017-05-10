@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
-from helpers import Session
-from helpers import Record
+from .helpers import Session
+from .helpers import Record
 
 from odoo.workflow.instance import WorkflowInstance
 # import instance

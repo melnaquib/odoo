@@ -3,7 +3,7 @@
 
 import os
 import re
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 from lxml import etree
 
@@ -101,8 +101,8 @@ class report_rml(report_int):
         # find the position of the 3rd tag
         # (skip the <?xml ...?> and the "root" tag)
         iter = re.finditer('<[^>]*>', xml)
-        i = iter.next()
-        i = iter.next()
+        i = next(iter)
+        i = next(iter)
         pos_xml = i.end()
 
         doc = print_xml.document(cr, uid, {}, {})
@@ -113,7 +113,7 @@ class report_rml(report_int):
 
         # find the position of the tag after the <?xml ...?> tag
         iter = re.finditer('<[^>]*>', corporate_header)
-        i = iter.next()
+        i = next(iter)
         pos_header = i.end()
 
         return xml[:pos_xml] + corporate_header[pos_header:] + xml[pos_xml:]
@@ -139,7 +139,7 @@ class report_rml(report_int):
                 if 'href' in import_child.attrib:
                     imp_file = import_child.get('href')
                     _, imp_file = tools.file_open(imp_file, subdir=xsl_path, pathinfo=True)
-                    import_child.set('href', urllib.quote(str(imp_file)))
+                    import_child.set('href', urllib.parse.quote(str(imp_file)))
                     imp_file.close()
         finally:
             stylesheet_file.close()

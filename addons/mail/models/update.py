@@ -4,7 +4,7 @@
 import datetime
 import logging
 import werkzeug.urls
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 from ast import literal_eval
 
@@ -75,7 +75,7 @@ class PublisherWarrantyContract(AbstractModel):
 
         url = config.get("publisher_warranty_url")
 
-        uo = urllib2.urlopen(url, arguments_raw, timeout=30)
+        uo = urllib.request.urlopen(url, arguments_raw, timeout=30)
         try:
             submit_result = uo.read()
             return literal_eval(submit_result)

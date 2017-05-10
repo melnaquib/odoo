@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from urlparse import urljoin
+from urllib.parse import urljoin
 from werkzeug import url_encode
 
 from odoo import api, fields, models

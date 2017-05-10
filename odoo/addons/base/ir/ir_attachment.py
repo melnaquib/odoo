@@ -167,7 +167,7 @@ class IrAttachment(models.Model):
 
         # remove garbage files, and clean up checklist
         removed = 0
-        for fname, filepath in checklist.iteritems():
+        for fname, filepath in checklist.items():
             if fname not in whitelist:
                 try:
                     os.unlink(self._full_path(fname))
@@ -320,7 +320,7 @@ class IrAttachment(models.Model):
             model_ids[values['res_model']].add(values['res_id'])
 
         # check access rights on the records
-        for res_model, res_ids in model_ids.iteritems():
+        for res_model, res_ids in model_ids.items():
             # ignore attachments that are not attached to a resource anymore
             # when checking access rights (resource was deleted but attachment
             # was not)
@@ -376,12 +376,12 @@ class IrAttachment(models.Model):
 
         # To avoid multiple queries for each attachment found, checks are
         # performed in batch as much as possible.
-        for res_model, targets in model_attachments.iteritems():
+        for res_model, targets in model_attachments.items():
             if res_model not in self.env:
                 continue
             if not self.env[res_model].check_access_rights('read', False):
                 # remove all corresponding attachment ids
-                ids.difference_update(itertools.chain(*targets.itervalues()))
+                ids.difference_update(itertools.chain(*iter(targets.values())))
                 continue
             # filter ids according to what access rules permit
             target_ids = list(targets)

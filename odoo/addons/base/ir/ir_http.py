@@ -10,7 +10,7 @@ import mimetypes
 import os
 import re
 import sys
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 import werkzeug
 import werkzeug.exceptions
@@ -55,7 +55,7 @@ class ModelsConverter(werkzeug.routing.BaseConverter):
 
     def to_python(self, value):
         env = api.Environment(request.cr, UID_PLACEHOLDER, request.context)
-        return env[self.model].browse(map(int, value.split(',')))
+        return env[self.model].browse(list(map(int, value.split(','))))
 
     def to_url(self, value):
         return ",".join(value.ids)
@@ -176,7 +176,7 @@ class IrHttp(models.AbstractModel):
         try:
             rule, arguments = cls._find_handler(return_rule=True)
             func = rule.endpoint
-        except werkzeug.exceptions.NotFound, e:
+        except werkzeug.exceptions.NotFound as e:
             return cls._handle_exception(e)
 
         # check authentication level
@@ -195,7 +195,7 @@ class IrHttp(models.AbstractModel):
             result = request.dispatch()
             if isinstance(result, Exception):
                 raise result
-        except Exception, e:
+        except Exception as e:
             return cls._handle_exception(e)
 
         return result
@@ -203,7 +203,7 @@ class IrHttp(models.AbstractModel):
     @classmethod
     def _postprocess_args(cls, arguments, rule):
         """ post process arg to set uid on browse records """
-        for name, arg in arguments.items():
+        for name, arg in list(arguments.items()):
             if isinstance(arg, models.BaseModel) and arg._uid is UID_PLACEHOLDER:
                 arguments[name] = arg.sudo(request.uid)
                 if not arg.exists():
@@ -356,6 +356,6 @@ def convert_exception_to(to_type, with_message=False):
         else:
             message = str(with_message)
 
-        raise to_type, message, tb
+        raise to_type(message).with_traceback(tb)
     except to_type as e:
         return e

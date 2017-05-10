@@ -118,7 +118,7 @@ class report_graph_instance(object):
     def __init__(self, cr, uid, ids, data):
         try:
             import pydot
-        except Exception,e:
+        except Exception as e:
             _logger.warning(
                 'Import Error for pydot, you will not be able to render workflows.\n'
                 'Consider Installing PyDot or dependencies: http://dkbza.org/pydot.html.')

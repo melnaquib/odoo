@@ -2,7 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 import logging
-import urlparse
+import urllib.parse
 import time
 
 import lxml.html
@@ -38,16 +38,16 @@ class Crawler(odoo.tests.HttpCase):
         _logger.info("%s %s", msg, url)
         r = self.url_open(url)
         code = r.getcode()
-        self.assertIn(code, xrange(200, 300), "%s Fetching %s returned error response (%d)" % (msg, url, code))
+        self.assertIn(code, range(200, 300), "%s Fetching %s returned error response (%d)" % (msg, url, code))
 
         if r.info().gettype() == 'text/html':
             doc = lxml.html.fromstring(r.read())
             for link in doc.xpath('//a[@href]'):
                 href = link.get('href')
 
-                parts = urlparse.urlsplit(href)
+                parts = urllib.parse.urlsplit(href)
                 # href with any fragment removed
-                href = urlparse.urlunsplit((
+                href = urllib.parse.urlunsplit((
                     parts.scheme,
                     parts.netloc,
                     parts.path,

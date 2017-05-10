@@ -370,7 +370,7 @@ class HrPayslip(models.Model):
                     attendances['number_of_hours'] += hours
 
             # Clean-up the results
-            leaves = [value for key, value in leaves.items()]
+            leaves = [value for key, value in list(leaves.items())]
             for data in [attendances] + leaves:
                 data['number_of_days'] = uom_hour._compute_quantity(data['number_of_hours'], uom_day)\
                     if uom_day and uom_hour\
@@ -543,7 +543,7 @@ class HrPayslip(models.Model):
                     #blacklist this rule and its children
                     blacklist += [id for id, seq in rule._recursive_search_of_rules()]
 
-        return [value for code, value in result_dict.items()]
+        return [value for code, value in list(result_dict.items())]
 
     # YTI TODO To rename. This method is not really an onchange, as it is not in any view
     # employee_id and contract_id could be browse records
@@ -554,9 +554,9 @@ class HrPayslip(models.Model):
             'value': {
                 'line_ids': [],
                 #delete old input lines
-                'input_line_ids': map(lambda x: (2, x,), self.input_line_ids.ids),
+                'input_line_ids': [(2, x,) for x in self.input_line_ids.ids],
                 #delete old worked days lines
-                'worked_days_line_ids': map(lambda x: (2, x,), self.worked_days_line_ids.ids),
+                'worked_days_line_ids': [(2, x,) for x in self.worked_days_line_ids.ids],
                 #'details_by_salary_head':[], TODO put me back
                 'name': '',
                 'contract_id': False,
@@ -695,7 +695,7 @@ class HrSalaryRule(models.Model):
     quantity = fields.Char(default='1.0',
         help="It is used in computation for percentage and fixed amount. "
              "For e.g. A rule for Meal Voucher having fixed amount of "
-             u"1€ per worked day can have its quantity defined in expression "
+             "1€ per worked day can have its quantity defined in expression "
              "like worked_days.WORK100.number_of_days.")
     category_id = fields.Many2one('hr.salary.rule.category', string='Category', required=True)
     active = fields.Boolean(default=True,

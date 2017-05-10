@@ -10,7 +10,7 @@ import signal
 import subprocess
 import tempfile
 import time
-import xmlrpclib
+import xmlrpc.client
 from contextlib import contextmanager
 from glob import glob
 from os.path import abspath, dirname, join
@@ -22,7 +22,7 @@ from tempfile import NamedTemporaryFile
 #----------------------------------------------------------
 # Utils
 #----------------------------------------------------------
-execfile(join(dirname(__file__), '..', 'odoo', 'release.py'))
+exec(compile(open(join(dirname(__file__), '..', 'odoo', 'release.py')).read(), join(dirname(__file__), '..', 'odoo', 'release.py'), 'exec'))
 version = version.split('-')[0]
 docker_version = version.replace('+', '')
 timestamp = time.strftime("%Y%m%d", time.gmtime())
@@ -42,7 +42,7 @@ def mkdir(d):
         os.makedirs(d)
 
 def system(l, chdir=None):
-    print l
+    print(l)
     if chdir:
         cwd = os.getcwd()
         os.chdir(chdir)
@@ -57,19 +57,19 @@ def system(l, chdir=None):
 
 def _rpc_count_modules(addr='http://127.0.0.1', port=8069, dbname='mycompany'):
     time.sleep(5)
-    modules = xmlrpclib.ServerProxy('%s:%s/xmlrpc/object' % (addr, port)).execute(
+    modules = xmlrpc.client.ServerProxy('%s:%s/xmlrpc/object' % (addr, port)).execute(
         dbname, 1, 'admin', 'ir.module.module', 'search', [('state', '=', 'installed')]
     )
     if modules and len(modules) > 1:
         time.sleep(1)
-        toinstallmodules = xmlrpclib.ServerProxy('%s:%s/xmlrpc/object' % (addr, port)).execute(
+        toinstallmodules = xmlrpc.client.ServerProxy('%s:%s/xmlrpc/object' % (addr, port)).execute(
             dbname, 1, 'admin', 'ir.module.module', 'search', [('state', '=', 'to install')]
         )
         if toinstallmodules:
             print("Package test: FAILED. Not able to install dependencies of base.")
             raise Exception("Installation of package failed")
         else:
-            print("Package test: successfuly installed %s modules" % len(modules))
+            print(("Package test: successfuly installed %s modules" % len(modules)))
     else:
         print("Package test: FAILED. Not able to install base.")
         raise Exception("Installation of package failed")
@@ -130,11 +130,11 @@ class OdooDocker(object):
     def end(self):
         try:
             _rpc_count_modules(port=str(self.port))
-        except Exception, e:
-            print('Exception during docker execution: %s:' % str(e))
+        except Exception as e:
+            print(('Exception during docker execution: %s:' % str(e)))
             print('Error during docker execution: printing the bash output:')
             with open(self.log_file.name) as f:
-                print '\n'.join(f.readlines())
+                print('\n'.join(f.readlines()))
             raise
         finally:
             self.docker.close()
@@ -149,7 +149,7 @@ def docker(docker_image, build_dir, pub_dir):
         _docker.start(docker_image, build_dir, pub_dir)
         try:
             yield _docker
-        except Exception, e:
+        except Exception as e:
             raise
     finally:
         _docker.end()
@@ -162,7 +162,7 @@ class KVM(object):
         self.login = login
 
     def timeout(self,signum,frame):
-        print "vm timeout kill",self.pid
+        print("vm timeout kill",self.pid)
         os.kill(self.pid,15)
 
     def start(self):
@@ -171,7 +171,7 @@ class KVM(object):
         l.append('file=%s,snapshot=on'%self.image)
         #l.extend(['-vnc','127.0.0.1:1'])
         l.append('-nographic')
-        print " ".join(l)
+        print(" ".join(l))
         self.pid=os.spawnvp(os.P_NOWAIT, l[0], l)
         time.sleep(10)
         signal.alarm(2400)
@@ -207,7 +207,7 @@ class KVMWinBuildExe(KVM):
         self.rsync('%s/ %s@127.0.0.1:build/server/' % (self.o.build_dir, self.login))
         self.ssh("cd build/server/setup/win32;time make allinone;")
         self.rsync('%s@127.0.0.1:build/server/setup/win32/release/ %s/' % (self.login, self.o.build_dir), '')
-        print "KVMWinBuildExe.run(): done"
+        print("KVMWinBuildExe.run(): done")
 
 class KVMWinTestExe(KVM):
     def run(self):
@@ -341,7 +341,8 @@ def test_exe(o):
 #---------------------------------------------------------
 def gen_deb_package(o, published_files):
     # Executes command to produce file_name in path, and moves it to o.pub/deb
-    def _gen_file(o, (command, file_name), path):
+    def _gen_file(o, xxx_todo_changeme, path):
+        (command, file_name) = xxx_todo_changeme
         cur_tmp_file_path = os.path.join(path, file_name)
         with open(cur_tmp_file_path, 'w') as out:
             subprocess.call(command, stdout=out, cwd=path)
@@ -436,8 +437,8 @@ def main():
                 if not o.no_testing:
                     test_tgz(o)
                 published_files = publish(o, 'tarball', ['tar.gz', 'zip'])
-            except Exception, e:
-                print("Won't publish the tgz release.\n Exception: %s" % str(e))
+            except Exception as e:
+                print(("Won't publish the tgz release.\n Exception: %s" % str(e)))
         if not o.no_debian:
             build_deb(o)
             try:
@@ -445,8 +446,8 @@ def main():
                     test_deb(o)
                 published_files = publish(o, 'debian', ['deb', 'dsc', 'changes', 'tar.gz'])
                 gen_deb_package(o, published_files)
-            except Exception, e:
-                print("Won't publish the deb release.\n Exception: %s" % str(e))
+            except Exception as e:
+                print(("Won't publish the deb release.\n Exception: %s" % str(e)))
         if not o.no_rpm:
             build_rpm(o)
             try:
@@ -454,8 +455,8 @@ def main():
                     test_rpm(o)
                 published_files = publish(o, 'redhat', ['noarch.rpm'])
                 gen_rpm_repo(o, published_files[0])
-            except Exception, e:
-                print("Won't publish the rpm release.\n Exception: %s" % str(e))
+            except Exception as e:
+                print(("Won't publish the rpm release.\n Exception: %s" % str(e)))
         if not o.no_windows:
             _prepare_build_dir(o, win32=True)
             build_exe(o)
@@ -463,13 +464,13 @@ def main():
                 if not o.no_testing:
                     test_exe(o)
                 published_files = publish(o, 'windows', ['exe'])
-            except Exception, e:
-                print("Won't publish the exe release.\n Exception: %s" % str(e))
+            except Exception as e:
+                print(("Won't publish the exe release.\n Exception: %s" % str(e)))
     except:
         pass
     finally:
         shutil.rmtree(o.build_dir)
-        print('Build dir %s removed' % o.build_dir)
+        print(('Build dir %s removed' % o.build_dir))
 
         if not o.no_testing:
             system("docker rm -f `docker ps -a | awk '{print $1 }'` 2>>/dev/null")

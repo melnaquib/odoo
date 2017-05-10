@@ -76,7 +76,7 @@ class _Cleaner(clean.Cleaner):
             new_node.text = text
             new_node.tail = tail
             if attrs:
-                for key, val in attrs.iteritems():
+                for key, val in attrs.items():
                     new_node.set(key, val)
             return new_node
 
@@ -145,7 +145,7 @@ class _Cleaner(clean.Cleaner):
                 if style[0].lower() in self._style_whitelist:
                     valid_styles[style[0].lower()] = style[1]
             if valid_styles:
-                el.attrib['style'] = '; '.join('%s: %s' % (key, val) for (key, val) in valid_styles.iteritems())
+                el.attrib['style'] = '; '.join('%s: %s' % (key, val) for (key, val) in valid_styles.items())
             else:
                 del el.attrib['style']
 
@@ -224,8 +224,8 @@ def html_sanitize(src, silent=True, sanitize_tags=True, sanitize_attributes=Fals
         cleaned = cleaned.replace('&lt;%', '<%')
         cleaned = cleaned.replace('%&gt;', '%>')
         # html considerations so real html content match database value
-        cleaned.replace(u'\xa0', '&nbsp;')
-    except etree.ParserError, e:
+        cleaned.replace('\xa0', '&nbsp;')
+    except etree.ParserError as e:
         if 'empty' in str(e):
             return ""
         if not silent:
@@ -379,12 +379,12 @@ def append_content_to_html(html, content, plaintext=True, preserve=False, contai
     """
     html = ustr(html)
     if plaintext and preserve:
-        content = u'\n<pre>%s</pre>\n' % ustr(content)
+        content = '\n<pre>%s</pre>\n' % ustr(content)
     elif plaintext:
         content = '\n%s\n' % plaintext2html(content, container_tag)
     else:
         content = re.sub(r'(?i)(</?(?:html|body|head|!\s*DOCTYPE)[^>]*>)', '', content)
-        content = u'\n%s\n' % ustr(content)
+        content = '\n%s\n' % ustr(content)
     # Force all tags to lowercase
     html = re.sub(r'(</?)\W*(\w+)([ >])',
         lambda m: '%s%s%s' % (m.group(1), m.group(2).lower(), m.group(3)), html)
@@ -518,8 +518,8 @@ def decode_smtp_header(smtp_header):
         # The joining space will not be needed as of Python 3.3
         # See https://hg.python.org/cpython/rev/8c03fe231877
         return ' '.join([ustr(x[0], x[1]) for x in text])
-    return u''
+    return ''
 
 # was mail_thread.decode_header()
 def decode_message_header(message, header, separator=' '):
-    return separator.join(map(decode_smtp_header, filter(None, message.get_all(header, []))))
+    return separator.join(map(decode_smtp_header, [_f for _f in message.get_all(header, []) if _f]))

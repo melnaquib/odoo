@@ -4,7 +4,7 @@
 from datetime import datetime
 import json
 import logging
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import werkzeug.urls
 
 from odoo import api, fields, models, registry, _
@@ -46,9 +46,9 @@ class GoogleService(models.TransientModel):
             'grant_type': "authorization_code"
         })
         try:
-            req = urllib2.Request(GOOGLE_TOKEN_ENDPOINT, data, headers)
-            content = urllib2.urlopen(req, timeout=TIMEOUT).read()
-        except urllib2.HTTPError:
+            req = urllib.request.Request(GOOGLE_TOKEN_ENDPOINT, data, headers)
+            content = urllib.request.urlopen(req, timeout=TIMEOUT).read()
+        except urllib.error.HTTPError:
             error_msg = _("Something went wrong during your token generation. Maybe your Authorization Code is invalid or already expired")
             raise self.env['res.config.settings'].get_config_warning(error_msg)
 
@@ -113,7 +113,7 @@ class GoogleService(models.TransientModel):
         try:
             dummy, response, dummy = self._do_request(GOOGLE_TOKEN_ENDPOINT, params=data, headers=headers, type='POST', preuri='')
             return response
-        except urllib2.HTTPError:
+        except urllib.error.HTTPError:
             error_msg = _("Something went wrong during your token generation. Maybe your Authorization Code is invalid")
             raise self.env['res.config.settings'].get_config_warning(error_msg)
 
@@ -135,7 +135,7 @@ class GoogleService(models.TransientModel):
         try:
             dummy, response, dummy = self._do_request(GOOGLE_TOKEN_ENDPOINT, params=data, headers=headers, type='POST', preuri='')
             return response
-        except urllib2.HTTPError, error:
+        except urllib.error.HTTPError as error:
             if error.code == 400:  # invalid grant
                 with registry(request.session.db).cursor() as cur:
                     self.env(cur)['res.users'].browse(self.env.uid).write({'google_%s_rtoken' % service: False})
@@ -162,14 +162,14 @@ class GoogleService(models.TransientModel):
         try:
             if type.upper() == 'GET' or type.upper() == 'DELETE':
                 data = werkzeug.url_encode(params)
-                req = urllib2.Request(preuri + uri + "?" + data)
+                req = urllib.request.Request(preuri + uri + "?" + data)
             elif type.upper() == 'POST' or type.upper() == 'PATCH' or type.upper() == 'PUT':
-                req = urllib2.Request(preuri + uri, params, headers)
+                req = urllib.request.Request(preuri + uri, params, headers)
             else:
                 raise Exception(_('Method not supported [%s] not in [GET, POST, PUT, PATCH or DELETE]!') % (type))
             req.get_method = lambda: type.upper()
 
-            resp = urllib2.urlopen(req, timeout=TIMEOUT)
+            resp = urllib.request.urlopen(req, timeout=TIMEOUT)
             status = resp.getcode()
 
             if int(status) in (204, 404):  # Page not found, no response
@@ -182,7 +182,7 @@ class GoogleService(models.TransientModel):
                 ask_time = datetime.strptime(resp.headers.get('date'), "%a, %d %b %Y %H:%M:%S %Z")
             except:
                 pass
-        except urllib2.HTTPError, error:
+        except urllib.error.HTTPError as error:
             if error.code in (204, 404):
                 status = error.code
                 response = ""

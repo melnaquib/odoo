@@ -68,21 +68,21 @@ class TableCompute(object):
                     self.table[(pos / PPR) + y2][(pos % PPR) + x2] = False
             self.table[pos / PPR][pos % PPR] = {
                 'product': p, 'x': x, 'y': y,
-                'class': " ".join(map(lambda x: x.html_class or '', p.website_style_ids))
+                'class': " ".join([x.html_class or '' for x in p.website_style_ids])
             }
             if index <= ppg:
                 maxy = max(maxy, y + (pos / PPR))
             index += 1
 
         # Format table according to HTML needs
-        rows = self.table.items()
+        rows = list(self.table.items())
         rows.sort()
-        rows = map(lambda x: x[1], rows)
+        rows = [x[1] for x in rows]
         for col in range(len(rows)):
-            cols = rows[col].items()
+            cols = list(rows[col].items())
             cols.sort()
             x += len(cols)
-            rows[col] = [c for c in map(lambda x: x[1], cols) if c]
+            rows[col] = [c for c in [x[1] for x in cols] if c]
 
         return rows
 
@@ -96,7 +96,7 @@ class WebsiteSaleForm(WebsiteForm):
         model_record = request.env.ref('sale.model_sale_order')
         try:
             data = self.extract_data(model_record, kwargs)
-        except ValidationError, e:
+        except ValidationError as e:
             return json.dumps({'error_fields': e.args[0]})
 
         order = request.website.sale_get_order()
@@ -193,7 +193,7 @@ class WebsiteSale(http.Controller):
             ppg = PPG
 
         attrib_list = request.httprequest.args.getlist('attrib')
-        attrib_values = [map(int, v.split("-")) for v in attrib_list if v]
+        attrib_values = [list(map(int, v.split("-"))) for v in attrib_list if v]
         attributes_ids = set([v[0] for v in attrib_values])
         attrib_set = set([v[1] for v in attrib_values])
 
@@ -274,7 +274,7 @@ class WebsiteSale(http.Controller):
             category = ProductCategory.browse(int(category)).exists()
 
         attrib_list = request.httprequest.args.getlist('attrib')
-        attrib_values = [map(int, v.split("-")) for v in attrib_list if v]
+        attrib_values = [list(map(int, v.split("-"))) for v in attrib_list if v]
         attrib_set = set([v[1] for v in attrib_values])
 
         keep = QueryURL('/shop', category=category and category.id, search=search, attrib=attrib_list)
@@ -369,7 +369,7 @@ class WebsiteSale(http.Controller):
         return request.redirect("/shop/cart")
 
     def _filter_attributes(self, **kw):
-        return {k: v for k, v in kw.items() if "attribute" in k}
+        return {k: v for k, v in list(kw.items()) if "attribute" in k}
 
     @http.route(['/shop/cart/update_json'], type='json', auth="public", methods=['POST'], website=True, csrf=False)
     def cart_update_json(self, product_id, line_id=None, add_qty=None, set_qty=None, display=True):
@@ -454,7 +454,7 @@ class WebsiteSale(http.Controller):
         error_message = []
 
         # Required fields from form
-        required_fields = filter(None, (all_form_values.get('field_required') or '').split(','))
+        required_fields = [_f for _f in (all_form_values.get('field_required') or '').split(',') if _f]
         # Required fields from mandatory field function
         required_fields += mode[1] == 'shipping' and self._get_mandatory_shipping_fields() or self._get_mandatory_billing_fields()
         # Check if state required
@@ -481,7 +481,7 @@ class WebsiteSale(http.Controller):
             if not check_func(vat_country, vat_number):
                 error["vat"] = 'error'
 
-        if [err for err in error.values() if err == 'missing']:
+        if [err for err in list(error.values()) if err == 'missing']:
             error_message.append(_('Some required fields are empty.'))
 
         return error, error_message
@@ -507,7 +507,7 @@ class WebsiteSale(http.Controller):
     def values_postprocess(self, order, mode, values, errors, error_msg):
         new_values = {}
         authorized_fields = request.env['ir.model'].sudo().search([('model', '=', 'res.partner')])._get_form_writable_fields()
-        for k, v in values.items():
+        for k, v in list(values.items()):
             # don't drop empty value, it could be a field to reset
             if k in authorized_fields and v is not None:
                 new_values[k] = v
@@ -667,7 +667,7 @@ class WebsiteSale(http.Controller):
         # if form posted
         if 'post_values' in post:
             values = {}
-            for field_name, field_value in post.items():
+            for field_name, field_value in list(post.items()):
                 if field_name in request.env['sale.order']._fields and field_name.startswith('x_'):
                     values[field_name] = field_value
             if values:
@@ -758,7 +758,7 @@ class WebsiteSale(http.Controller):
                     # Auto-confirm SO if necessary
                     tx._confirm_so()
                     return dict(success=True, url='/shop/payment/validate')
-            except Exception, e:
+            except Exception as e:
                 _logger.warning(_("Payment transaction (%s) failed : <%s>") % (tx.id, str(e)))
                 return dict(success=False, error=_("Payment transaction failed (Contact Administrator)"))
         return dict(success=False, error='Tx missmatch')

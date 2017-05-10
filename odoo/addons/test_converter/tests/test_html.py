@@ -73,7 +73,7 @@ class TestFloatExport(TestBasicExport):
         converter = self.get_converter('float')
 
         value = converter(-42.0)
-        self.assertEqual(value, u"\u201142.0")
+        self.assertEqual(value, "\u201142.0")
 
         value = converter(42.0100)
         self.assertEqual(value, "42.01")
@@ -100,7 +100,7 @@ class TestCurrencyExport(TestExport):
     def setUp(self):
         super(TestCurrencyExport, self).setUp()
         self.Currency = self.env['res.currency']
-        self.base = self.create(self.Currency, name="Source", symbol=u'source')
+        self.base = self.create(self.Currency, name="Source", symbol='source')
 
     def create(self, model, **values):
         return model.create(values)
@@ -114,28 +114,28 @@ class TestCurrencyExport(TestExport):
         return converter.record_to_html(obj, 'value', options)
 
     def test_currency_post(self):
-        currency = self.create(self.Currency, name="Test", symbol=u"test")
+        currency = self.create(self.Currency, name="Test", symbol="test")
         obj = self.create(self.Model, value=-0.12)
 
         converted = self.convert(obj, dest=currency)
 
         self.assertEqual(
-            converted, u'<span class="oe_currency_value">\u20110.12</span>'
-                       u'\N{NO-BREAK SPACE}{symbol}'.format(
+            converted, '<span class="oe_currency_value">\u20110.12</span>'
+                       '\N{NO-BREAK SPACE}{symbol}'.format(
                 obj=obj,
                 symbol=currency.symbol.encode('utf-8')
             ),)
 
     def test_currency_pre(self):
         currency = self.create(
-            self.Currency, name="Test", symbol=u"test", position='before')
+            self.Currency, name="Test", symbol="test", position='before')
         obj = self.create(self.Model, value=0.12)
 
         converted = self.convert(obj, dest=currency)
 
         self.assertEqual(
             converted,
-                      u'{symbol}\N{NO-BREAK SPACE}'
+                      '{symbol}\N{NO-BREAK SPACE}'
                       '<span class="oe_currency_value">0.12</span>'.format(
                 obj=obj,
                 symbol=currency.symbol.encode('utf-8')
@@ -144,7 +144,7 @@ class TestCurrencyExport(TestExport):
     def test_currency_precision(self):
         """ Precision should be the currency's, not the float field's
         """
-        currency = self.create(self.Currency, name="Test", symbol=u"test",)
+        currency = self.create(self.Currency, name="Test", symbol="test",)
         obj = self.create(self.Model, value=0.1234567)
 
         converted = self.convert(obj, dest=currency)
@@ -152,7 +152,7 @@ class TestCurrencyExport(TestExport):
         self.assertEqual(
             converted,
                       '<span class="oe_currency_value">0.12</span>'
-                      u'\N{NO-BREAK SPACE}{symbol}'.format(
+                      '\N{NO-BREAK SPACE}{symbol}'.format(
                 obj=obj,
                 symbol=currency.symbol.encode('utf-8')
             ),)
@@ -238,11 +238,11 @@ class TestSelectionExport(TestBasicExport):
     def test_selection(self):
         converter = self.get_converter('selection')
         value = converter(4)
-        self.assertEqual(value, e(u"réponse <D>"))
+        self.assertEqual(value, e("réponse <D>"))
 
         converter = self.get_converter('selection_str')
         value = converter('C')
-        self.assertEqual(value, u"Qu'est-ce qu'il fout ce maudit pancake, tabernacle ?")
+        self.assertEqual(value, "Qu'est-ce qu'il fout ce maudit pancake, tabernacle ?")
 
 
 class TestHTMLExport(TestBasicExport):
@@ -315,19 +315,19 @@ class TestDurationExport(TestBasicExport):
         converter = self.get_converter('float', 'duration')
 
         result = converter(4, {'unit': 'hour'}, {'lang': 'fr_FR'})
-        self.assertEqual(result, u'4 heures')
+        self.assertEqual(result, '4 heures')
 
         result = converter(50, {'unit': 'second'}, {'lang': 'fr_FR'})
-        self.assertEqual(result, u'50 secondes')
+        self.assertEqual(result, '50 secondes')
 
     def test_multiple(self):
         converter = self.get_converter('float', 'duration')
 
         result = converter(1.5, {'unit': 'hour'}, {'lang': 'fr_FR'})
-        self.assertEqual(result, u"1 heure 30 minutes")
+        self.assertEqual(result, "1 heure 30 minutes")
 
         result = converter(72, {'unit': 'second'}, {'lang': 'fr_FR'})
-        self.assertEqual(result, u"1 minute 12 secondes")
+        self.assertEqual(result, "1 minute 12 secondes")
 
 
 class TestRelativeDatetime(TestBasicExport):
@@ -344,4 +344,4 @@ class TestRelativeDatetime(TestBasicExport):
         t = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
 
         result = converter(t, context={'lang': 'fr_FR'})
-        self.assertEqual(result, u"il y a 1 heure")
+        self.assertEqual(result, "il y a 1 heure")

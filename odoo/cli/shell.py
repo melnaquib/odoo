@@ -44,7 +44,7 @@ class Console(code.InteractiveConsole):
             import readline
             import rlcompleter
         except ImportError:
-            print 'readline or rlcompleter not available, autocomplete disabled.'
+            print('readline or rlcompleter not available, autocomplete disabled.')
         else:
             readline.set_completer(rlcompleter.Completer(locals).complete)
             readline.parse_and_bind("tab: complete")
@@ -62,12 +62,12 @@ class Shell(Command):
 
     def console(self, local_vars):
         if not os.isatty(sys.stdin.fileno()):
-            exec sys.stdin in local_vars
+            exec(sys.stdin, local_vars)
         else:
             if 'env' not in local_vars:
-                print 'No environment set, use `%s shell -d dbname` to get one.' % sys.argv[0]
+                print('No environment set, use `%s shell -d dbname` to get one.' % sys.argv[0])
             for i in sorted(local_vars):
-                print '%s: %s' % (i, local_vars[i])
+                print('%s: %s' % (i, local_vars[i]))
 
             preferred_interface = config.options.get('shell_interface')
             if preferred_interface:

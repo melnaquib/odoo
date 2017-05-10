@@ -3,7 +3,7 @@
 
 import copy
 import xml.dom.minidom
-from cStringIO import StringIO
+from io import StringIO
 
 import reportlab.lib
 from reportlab.platypus import SimpleDocTemplate, Paragraph
@@ -63,4 +63,4 @@ if __name__=='__main__':
         </author-list>
     </test>'''
     if s.render():
-        print s.get()
+        print(s.get())

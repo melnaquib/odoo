@@ -589,12 +589,12 @@ class Channel(models.Model):
             GROUP BY mail_channel_id
             """, (tuple(self.ids),))
         channels_preview = dict((r['message_id'], r) for r in self._cr.dictfetchall())
-        last_messages = self.env['mail.message'].browse(channels_preview.keys()).message_format()
+        last_messages = self.env['mail.message'].browse(list(channels_preview.keys())).message_format()
         for message in last_messages:
             channel = channels_preview[message['id']]
             del(channel['message_id'])
             channel['last_message'] = message
-        return channels_preview.values()
+        return list(channels_preview.values())
 
     #------------------------------------------------------
     # Commands

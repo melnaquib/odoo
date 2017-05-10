@@ -116,10 +116,10 @@ class website_account(http.Controller):
                 error["vat"] = 'error'
 
         # error message for empty required fields
-        if [err for err in error.values() if err == 'missing']:
+        if [err for err in list(error.values()) if err == 'missing']:
             error_message.append(_('Some required fields are empty.'))
 
-        unknown = [k for k in data.iterkeys() if k not in self.MANDATORY_BILLING_FIELDS + self.OPTIONAL_BILLING_FIELDS]
+        unknown = [k for k in data.keys() if k not in self.MANDATORY_BILLING_FIELDS + self.OPTIONAL_BILLING_FIELDS]
         if unknown:
             error['common'] = 'Unknown field'
             error_message.append("Unknown field '%s'" % ','.join(unknown))
