@@ -207,6 +207,7 @@ class XMLTranslator(object):
 
     def done(self, text):
         self.flush()
+        text = text.decode('utf-8') if type(text)== bytes else text
         self._done.append(text)
 
     def get_done(self):
@@ -285,7 +286,7 @@ class XMLTranslator(object):
         """
         if content:
             elem = etree.tostring(etree.Element(tag, attrib), method='xml')
-            assert elem.endswith("/>")
+            assert elem.endswith(b"/>")
             return "%s>%s</%s>" % (elem[:-2], content, tag)
         else:
             return etree.tostring(etree.Element(tag, attrib), method=self.method)

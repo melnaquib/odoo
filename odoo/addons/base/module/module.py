@@ -173,7 +173,7 @@ class Module(models.Model):
             path = modules.get_module_resource(
                 module.name, 'static/description/index.html')
             if path:
-                with tools.file_open(path, 'rb') as desc_file:
+                with tools.file_open(path, 'r') as desc_file:
                     doc = desc_file.read()
                     html = lxml.html.document_fromstring(doc)
                     for element, attribute, link, pos in html.iterlinks():
@@ -247,7 +247,7 @@ class Module(models.Model):
             else:
                 path = modules.module.get_module_icon(module.name)
             if path:
-                with tools.file_open(path, 'rb') as image_file:
+                with tools.file_open(path, 'r') as image_file:
                     module.icon_image = image_file.read().encode('base64')
 
     name = fields.Char('Technical Name', readonly=True,

@@ -333,7 +333,7 @@ class Partner(models.Model, FormatAddress):
             colorize = True
 
         if img_path:
-            with open(img_path, 'rb') as f:
+            with open(img_path, 'r') as f:
                 image = f.read()
         if image and colorize:
             image = tools.image_colorize(image)

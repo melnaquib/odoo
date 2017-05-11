@@ -148,7 +148,7 @@ class FSWatcher(object):
                 path = getattr(event, 'dest_path', event.src_path)
                 if path.endswith('.py'):
                     try:
-                        source = open(path, 'rb').read() + '\n'
+                        source = open(path, 'r').read() + '\n'
                         compile(source, path, 'exec')
                     except SyntaxError:
                         _logger.error(

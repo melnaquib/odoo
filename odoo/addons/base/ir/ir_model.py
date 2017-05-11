@@ -1279,6 +1279,7 @@ class IrModelData(models.Model):
         # of OpenChatter
         self = self.with_context(install_mode=True)
         current_module = module
+        xml_id = xml_id if type(xml_id) != bytes else xml_id.decode()
 
         if xml_id and ('.' in xml_id):
             assert len(xml_id.split('.')) == 2, _(

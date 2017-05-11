@@ -109,7 +109,7 @@ class Company(models.Model):
         return self.env['res.font'].search([('family', '=', 'Helvetica'), ('mode', '=', 'all')], limit=1)
 
     def _get_logo(self):
-        return open(os.path.join(tools.config['root_path'], 'addons', 'base', 'res', 'res_company_logo.png'), 'rb') .read().encode('base64')
+        return open(os.path.join(tools.config['root_path'], 'addons', 'base', 'res', 'res_company_logo.png'), 'r') .read().encode('base64')
 
     @api.model
     def _get_euro(self):

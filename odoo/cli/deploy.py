@@ -34,7 +34,7 @@ class Deploy(Command):
         if csrf_token:
             post_data['csrf_token'] = csrf_token
 
-        with open(module_file, 'rb') as f:
+        with open(module_file, 'r') as f:
             res = self.session.post(url, files={'mod_file': f}, data=post_data)
         res.raise_for_status()
 

@@ -1644,7 +1644,7 @@ def send_file(filepath_or_fp, mimetype=None, as_attachment=False, filename=None,
     if isinstance(filepath_or_fp, str):
         if not filename:
             filename = os.path.basename(filepath_or_fp)
-        file = open(filepath_or_fp, 'rb')
+        file = open(filepath_or_fp, 'r')
         if not mtime:
             mtime = os.path.getmtime(filepath_or_fp)
     else:

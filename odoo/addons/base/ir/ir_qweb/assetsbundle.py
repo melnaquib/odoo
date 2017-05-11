@@ -504,7 +504,7 @@ class WebAsset(object):
         try:
             self.stat()
             if self._filename:
-                with open(self._filename, 'rb') as fp:
+                with open(self._filename, 'r') as fp:
                     return fp.read().decode('utf-8')
             else:
                 return self._ir_attach['datas'].decode('base64')

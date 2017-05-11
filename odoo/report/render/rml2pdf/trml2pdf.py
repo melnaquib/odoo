@@ -59,12 +59,12 @@ def _open_image(filename, path=None):
     """Attempt to open a binary file and return the descriptor
     """
     if os.path.isfile(filename):
-        return open(filename, 'rb')
+        return open(filename, 'r')
     for p in (path or []):
         if p and os.path.isabs(p):
             fullpath = os.path.join(p, filename)
             if os.path.isfile(fullpath):
-                return open(fullpath, 'rb')
+                return open(fullpath, 'r')
         try:
             if p:
                 fullpath = os.path.join(p, filename)

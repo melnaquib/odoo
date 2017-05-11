@@ -211,7 +211,7 @@ class TestBinaryExport(TestBasicExport):
     def test_image(self):
         converter = self.env['ir.qweb.field.image']
 
-        with open(os.path.join(directory, 'test_vectors', 'image'), 'rb') as f:
+        with open(os.path.join(directory, 'test_vectors', 'image'), 'r') as f:
             content = f.read()
 
         encoded_content = content.encode('base64')
@@ -222,13 +222,13 @@ class TestBinaryExport(TestBasicExport):
                 encoded_content
             ))
 
-        with open(os.path.join(directory, 'test_vectors', 'pdf'), 'rb') as f:
+        with open(os.path.join(directory, 'test_vectors', 'pdf'), 'r') as f:
             content = f.read()
 
         with self.assertRaises(ValueError):
             converter.value_to_html(content.encode('base64'), {})
 
-        with open(os.path.join(directory, 'test_vectors', 'pptx'), 'rb') as f:
+        with open(os.path.join(directory, 'test_vectors', 'pptx'), 'r') as f:
             content = f.read()
 
         with self.assertRaises(ValueError):

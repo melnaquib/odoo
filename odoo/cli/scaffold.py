@@ -110,7 +110,7 @@ class template(object):
         for root, _, files in os.walk(self.path):
             for f in files:
                 path = os.path.join(root, f)
-                yield path, open(path, 'rb').read()
+                yield path, open(path, 'r').read()
 
     def render_to(self, modname, directory, params=None):
         """ Render this module template to ``dest`` with the provided

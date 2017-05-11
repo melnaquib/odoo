@@ -231,7 +231,7 @@ actual arch.
             data = dict(arch_db=view.arch)
             if 'install_mode_data' in self._context:
                 imd = self._context['install_mode_data']
-                if '.' not in imd['xml_id']:
+                if b'.' not in imd['xml_id']:
                     imd['xml_id'] = '%s.%s' % (imd['module'], imd['xml_id'])
                 if self._name == imd['model'] and (not view.xml_id or view.xml_id == imd['xml_id']):
                     # we store the relative path to the resource instead of the absolute path, if found
@@ -302,9 +302,14 @@ actual arch.
         # Any exception raised below will cause a transaction rollback.
         for view in self:
             view_arch = etree.fromstring(encode(view.arch))
+            print("check xmls 1")
             view._valid_inheritance(view_arch)
             view_def = view.read_combined(['arch'])
-            view_arch_utf8 = view_def['arch']
+            print("check xmls 2")
+
+            view_arch_utf8 = view_def['arch'].decode('utf-8')
+            print("check xmls 3 >> view_arch_utf8" + str(view_arch_utf8))
+
             if view.type != 'qweb':
                 view_doc = etree.fromstring(view_arch_utf8)
                 # verify that all fields used are valid, etc.
@@ -949,7 +954,7 @@ actual arch.
                                 not self._context.get(action, True) and is_base_model):
                             node.set(action, 'false')
 
-        arch = etree.tostring(node, encoding="utf-8").replace('\t', '')
+        arch = etree.tostring(node, encoding="utf-8").decode('utf-8').replace('\t', '')
         for k in list(fields.keys()):
             if k not in fields_def:
                 del fields[k]

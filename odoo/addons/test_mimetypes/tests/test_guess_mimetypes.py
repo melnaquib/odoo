@@ -10,7 +10,7 @@ def contents(extension):
         os.path.dirname(__file__),
         'testfiles',
         'case.{}'.format(extension)
-    ), 'rb') as f:
+    ), 'r') as f:
         return f.read()
 
 

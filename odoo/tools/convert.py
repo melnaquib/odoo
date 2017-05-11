@@ -151,7 +151,7 @@ def _eval_xml(self, node, env):
 
         data = node.text
         if node.get('file'):
-            with file_open(node.get('file'), 'rb') as f:
+            with file_open(node.get('file'), 'r') as f:
                 data = f.read()
 
         if t == 'file':
@@ -254,7 +254,6 @@ class xml_import(object):
     def _test_xml_id(self, xml_id):
         xml_id = xml_id if type(xml_id) != bytes else xml_id.decode()
         id_ = xml_id
-        print("yyyyyyy >>> " + str(xml_id) + str(type(xml_id)))
         if '.' in xml_id:
             module, id_ = xml_id.split('.', 1)
             assert '.' not in id_, """The ID reference "%s" must contain
@@ -698,13 +697,13 @@ form: module.record_id""" % (xml_id,)
         res = {}
         for field in rec.findall('./field'):
             # TODO: most of this code is duplicated above (in _eval_xml)...
-            f_name = field.get("name").encode('utf-8')
-            f_ref = field.get("ref", '').encode('utf-8')
-            f_search = field.get("search", '').encode('utf-8')
-            f_model = field.get("model", '').encode('utf-8')
+            f_name = field.get("name")
+            f_ref = field.get("ref", '')
+            f_search = field.get("search", '')
+            f_model = field.get("model", '')
             if not f_model and f_name in model._fields:
                 f_model = model._fields[f_name].comodel_name
-            f_use = field.get("use", '').encode('utf-8') or 'id'
+            f_use = field.get("use", '') or 'id'
             f_val = False
 
             if f_search:

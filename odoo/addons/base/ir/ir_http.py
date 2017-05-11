@@ -300,7 +300,7 @@ class IrHttp(models.AbstractModel):
                     module_resource_path = os.path.normpath(
                         module_resource_path)
                     if module_resource_path.startswith(module_path):
-                        with open(module_resource_path, 'rb') as f:
+                        with open(module_resource_path, 'r') as f:
                             content = base64.b64encode(f.read())
                         last_update = str(
                             os.path.getmtime(module_resource_path))
