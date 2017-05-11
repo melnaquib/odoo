@@ -4158,7 +4158,7 @@ class BaseModel(object, metaclass=MetaModel):
                 ', '.join('"%s"' % u[0] for u in updates),
                 ', '.join(u[1] for u in updates),
         )
-        cr.execute(query, tuple(u[2] for u in updates if len(u) > 2))
+        cr.execute(query, tuple([u[2] for u in updates if len(u) > 2]))
 
         # from now on, self is the new record
         id_new, = cr.fetchone()

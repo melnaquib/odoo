@@ -6,7 +6,7 @@ import logging
 import time
 from collections import defaultdict
 
-from odoo import api, fields, models, SUPERUSER_ID, tools,  _
+from odoo import api, fields, models, SUPERUSER_ID, tools, _
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.modules.registry import Registry
 from odoo.osv import expression
@@ -1397,7 +1397,7 @@ class IrModelData(models.Model):
         ``ids`` along with their corresponding database backed (including
         dropping tables, columns, FKs, etc, as long as there is no other
         ir.model.data entry holding a reference to them (which indicates that
-        they are still owned by another module). 
+        they are still owned by another module).
         Attempts to perform the deletion in an appropriate order to maximize
         the chance of gracefully deleting all records.
         This step is performed as part of the full uninstallation of a module.

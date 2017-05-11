@@ -50,7 +50,7 @@ class IrConfigParameter(models.Model):
             params = self.sudo().search([('key', '=', key)])
             if force or not params:
                 value, groups = func()
-                params.set_param(key, value, groups=groups)
+                params.set_param(str(key), str(value), groups=groups)
 
     @api.model
     def get_param(self, key, default=False):

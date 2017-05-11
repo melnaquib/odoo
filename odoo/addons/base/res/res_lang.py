@@ -80,6 +80,7 @@ class Lang(models.Model):
                 if not all(isinstance(x, int) for x in json.loads(lang.grouping)):
                     raise ValidationError(warning)
             except Exception:
+                print("&&&&&&&&& exxxx")
                 raise ValidationError(warning)
 
     @api.model_cr

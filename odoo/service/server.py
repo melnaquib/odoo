@@ -232,7 +232,7 @@ class ThreadedServer(CommonServer):
             time.sleep(SLEEP_INTERVAL + number)     # Steve Reich timing style
             registries = odoo.modules.registry.Registry.registries
             _logger.debug('cron%d polling for jobs', number)
-            for db_name, registry in registries.items():
+            for db_name, registry in registries.iteritems():
                 while registry.ready:
                     try:
                         acquired = odoo.addons.base.ir.ir_cron.ir_cron._acquire_job(

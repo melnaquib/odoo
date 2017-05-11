@@ -94,11 +94,11 @@ def _fix_multiple_roots(node):
 def _eval_xml(self, node, env):
     if node.tag in ('field', 'value'):
         t = node.get('type', 'char')
-        f_model = node.get('model', '').encode('utf-8')
+        f_model = node.get('model', '')
         if node.get('search'):
-            f_search = node.get("search", '').encode('utf-8')
-            f_use = node.get("use", 'id').encode('utf-8')
-            f_name = node.get("name", '').encode('utf-8')
+            f_search = node.get("search", '')
+            f_use = node.get("use", 'id')
+            f_name = node.get("name", '')
             idref2 = {}
             if f_search:
                 idref2 = _get_idref(self, env, f_model, self.idref)
@@ -145,9 +145,9 @@ def _eval_xml(self, node, env):
         if t == 'xml':
             _fix_multiple_roots(node)
             return '<?xml version="1.0"?>\n'\
-                + _process("".join([etree.tostring(n, encoding='utf-8') for n in node]))
+                + _process("".join([etree.tostring(n, encoding='utf-8').decode('utf-8') for n in node]))
         if t == 'html':
-            return _process("".join([etree.tostring(n, encoding='utf-8') for n in node]))
+            return _process("".join([etree.tostring(n, encoding='utf-8').decode('utf-8') for n in node]))
 
         data = node.text
         if node.get('file'):
@@ -252,10 +252,12 @@ class xml_import(object):
         return self.uid
 
     def _test_xml_id(self, xml_id):
-        id = xml_id
+        xml_id = xml_id if type(xml_id) != bytes else xml_id.decode()
+        id_ = xml_id
+        print("yyyyyyy >>> " + str(xml_id) + str(type(xml_id)))
         if '.' in xml_id:
-            module, id = xml_id.split('.', 1)
-            assert '.' not in id, """The ID reference "%s" must contain
+            module, id_ = xml_id.split('.', 1)
+            assert '.' not in id_, """The ID reference "%s" must contain
 maximum one dot. They are used to refer to other modules ID, in the
 form: module.record_id""" % (xml_id,)
             if module != self.module:
@@ -909,8 +911,8 @@ def convert_csv_import(cr, module, fname, csvcontent, idref=None, mode='init',
     # remove folder path from model
     head, model = os.path.split(model)
 
-    input = io.StringIO(csvcontent)  # FIXME
-    reader = csv.reader(input, quotechar='"', delimiter=',')
+    input_ = io.StringIO(csvcontent)  # FIXME
+    reader = csv.reader(input_, quotechar='"', delimiter=',')
     fields = next(reader)
 
     if not (mode == 'init' or 'id' in fields):
@@ -946,7 +948,7 @@ def convert_xml_import(cr, module, xmlfile, idref=None, mode='init', noupdate=Fa
     relaxng = etree.RelaxNG(
         etree.parse(os.path.join(config['root_path'], 'import_xml.rng')))
     try:
-        relaxng.assertTrue(doc)
+        relaxng.assert_(doc)
     except Exception:
         _logger.info(
             'The XML file does not fit the required schema !', exc_info=True)
@@ -955,7 +957,7 @@ def convert_xml_import(cr, module, xmlfile, idref=None, mode='init', noupdate=Fa
 
     if idref is None:
         idref = {}
-    if isinstance(xmlfile, file):
+    if isinstance(xmlfile, io.IOBase):
         xml_filename = xmlfile.name
     else:
         xml_filename = xmlfile

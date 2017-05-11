@@ -222,6 +222,13 @@ class Cursor(object):
         if self.sql_log:
             now = time.time()
             _logger.debug("query: %s", query)
+        if params and isinstance(params, (tuple, list, set)):
+            new_params = []
+            for i in range(len(params)):
+                converted_param = params[i].decode("utf-8") if type(
+                    params[i]) == bytes else params[i]
+                new_params.append(converted_param)
+            params = tuple(new_params)
 
         try:
             params = params or None

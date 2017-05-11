@@ -660,10 +660,6 @@ class expression(object):
 
         # normalize and prepare the expression for parsing
         self.expression = distribute_not(normalize_domain(domain))
-        print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
-        print(self.expression)
-        print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
-
         # parse the domain expression
         self.parse()
 

@@ -286,10 +286,11 @@ def flatten(list_):
     r = []
     for e in list_:
         if type(e) == bytes:
-            e = str(e)
+            e = str(e.decode("utf-8"))
 
         if isiterable(e):
-            map(r.append, flatten(e))
+            for i in flatten(e):
+                r.append(i)
         else:
             r.append(e)
     return r
