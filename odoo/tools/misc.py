@@ -257,7 +257,8 @@ def _fileopen(path, mode, basedir, pathinfo, basename=None):
 #----------------------------------------------------------
 # iterables
 #----------------------------------------------------------
-def flatten(list):
+def flatten(list_):
+
     """Flatten a list of elements into a uniqu list
     Author: Christophe Simonis (christophe@tinyerp.com)
 
@@ -278,12 +279,17 @@ def flatten(list):
     """
 
     def isiterable(x):
+        if type(x) == str:
+            return False
         return hasattr(x, "__iter__")
 
     r = []
-    for e in list:
+    for e in list_:
+        if type(e) == bytes:
+            e = str(e)
+
         if isiterable(e):
-            list(map(r.append, flatten(e)))
+            map(r.append, flatten(e))
         else:
             r.append(e)
     return r
@@ -902,7 +908,7 @@ class unquote(str):
 
 
 class UnquoteEvalContext(defaultdict):
-    """Defaultdict-based evaluation context that returns 
+    """Defaultdict-based evaluation context that returns
        an ``unquote`` string for any missing name used during
        the evaluation.
        Mostly useful for evaluating OpenERP domains/contexts that

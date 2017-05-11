@@ -660,6 +660,9 @@ class expression(object):
 
         # normalize and prepare the expression for parsing
         self.expression = distribute_not(normalize_domain(domain))
+        print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
+        print(self.expression)
+        print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
 
         # parse the domain expression
         self.parse()
@@ -1399,5 +1402,4 @@ class expression(object):
         joins = ' AND '.join(self.joins)
         if joins:
             query = '(%s) AND %s' % (joins, query)
-
         return query, tools.flatten(params)

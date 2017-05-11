@@ -31,6 +31,9 @@ from functools import reduce
 _logger = logging.getLogger(__name__)
 
 
+def cmp(a, b): return (a > b) - (a < b)
+
+
 class Graph(dict):
     """ Modules dependency graph.
 
@@ -169,6 +172,9 @@ class Node(object):
         return self.info
 
     def add_child(self, name, info):
+        def key_function(x, y=None):
+            return cmp(x.name, y.name if y else '')
+
         node = Node(name, self.graph, info)
         node.depth = self.depth + 1
         if node not in self.children:
@@ -176,7 +182,7 @@ class Node(object):
         for attr in ('init', 'update', 'demo'):
             if hasattr(self, attr):
                 setattr(node, attr, True)
-        self.children.sort(lambda x, y: cmp(x.name, y.name))
+        self.children.sort(key=key_function)
         return node
 
     def __setattr__(self, name, value):

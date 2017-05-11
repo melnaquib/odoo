@@ -11,7 +11,7 @@ from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools.safe_eval import safe_eval
 
-import odoo.addons.decimal_precision as dp
+from odoo.addons import decimal_precision as dp
 
 _intervalTypes = {
     'hours': lambda interval: relativedelta(hours=interval),

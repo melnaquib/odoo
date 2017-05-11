@@ -1644,7 +1644,7 @@ class Binary(Field):
         return psycopg2.Binary(str(value)) if value else None
 
     def convert_to_cache(self, value, record, validate=True):
-        if isinstance(value, buffer):
+        if isinstance(value, bytearray):
             return str(value)
         if isinstance(value, int) and \
                 (record._context.get('bin_size') or

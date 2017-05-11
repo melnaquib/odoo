@@ -67,7 +67,7 @@ class LRU(object):
                 return
             a = self.first
             a.next.prev = None
-            self.first = a.__next__
+            self.first = a.next
             a.next = None
             del self.d[a.me[0]]
             del a
@@ -76,10 +76,10 @@ class LRU(object):
     def __delitem__(self, obj):
         nobj = self.d[obj]
         if nobj.prev:
-            nobj.prev.next = nobj.__next__
+            nobj.prev.next = nobj.next
         else:
-            self.first = nobj.__next__
-        if nobj.__next__:
+            self.first = nobj.next
+        if nobj.next:
             nobj.next.prev = nobj.prev
         else:
             self.last = nobj.prev
@@ -89,7 +89,7 @@ class LRU(object):
     def __iter__(self):
         cur = self.first
         while cur is not None:
-            cur2 = cur.__next__
+            cur2 = cur.next
             yield cur.me[1]
             cur = cur2
 
@@ -101,7 +101,7 @@ class LRU(object):
     def iteritems(self):
         cur = self.first
         while cur is not None:
-            cur2 = cur.__next__
+            cur2 = cur.next
             yield cur.me
             cur = cur2
 
@@ -111,7 +111,7 @@ class LRU(object):
 
     @synchronized()
     def itervalues(self):
-        for i, j in self.items():
+        for i, j in self.iteritems():
             yield j
 
     @synchronized()

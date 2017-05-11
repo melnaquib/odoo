@@ -45,7 +45,7 @@ class DiagramView(http.Controller):
         for blnk_node in graphs['blank_nodes']:
             isolate_nodes[blnk_node['id']] = blnk_node
         else:
-            y = [t['y'] for t in [x for x in list(nodes.values()) if x['y'] if x['x']==20 else None]]
+            y = list(map(lambda t: t['y'],filter(lambda x: x['y'] if x['x']==20 else None, nodes.values())))
             y_max = (y and max(y)) or 120
 
         connectors = {}

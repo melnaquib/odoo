@@ -166,10 +166,10 @@ class IrMailServer(models.Model):
 
     def __init__(self, *args, **kwargs):
         # Make sure we pipe the smtplib outputs to our own DEBUG logger
-        if not isinstance(smtplib.stderr, WriteToLogger):
+        if not isinstance(smtplib.sys.stderr, WriteToLogger):
             logpiper = WriteToLogger(_logger)
-            smtplib.stderr = logpiper
-            smtplib.stdout = logpiper
+            smtplib.sys.stderr = logpiper
+            smtplib.sys.stdout = logpiper
         super(IrMailServer, self).__init__(*args, **kwargs)
 
     @api.multi
