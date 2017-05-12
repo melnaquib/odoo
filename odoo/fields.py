@@ -12,7 +12,7 @@ import json
 import logging
 import pytz
 import xmlrpc.client
-
+import io
 import psycopg2
 
 from odoo.sql_db import LazyCursor
@@ -1641,7 +1641,12 @@ class Binary(Field):
         # unicode in some circumstances, hence the str() cast here.
         # This str() coercion will only work for pure ASCII unicode strings,
         # on purpose - non base64 data must be passed as a 8bit byte strings.
-        return psycopg2.Binary(str(value)) if value else None
+        if type(value) == bytes:
+            value = io.BytesIO(value)
+            return value.getbuffer() if value else None
+        elif type(value) == str:
+            value = io.BytesIO(str(value).encode())
+            return value.getbuffer() if value else None
 
     def convert_to_cache(self, value, record, validate=True):
         if isinstance(value, bytearray):

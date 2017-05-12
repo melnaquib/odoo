@@ -66,6 +66,11 @@ _SAFE_OPCODES = _EXPR_OPCODES.union(set(opmap[x] for x in [
     'POP_JUMP_IF_TRUE', 'SETUP_EXCEPT', 'END_FINALLY',
     'LOAD_FAST', 'STORE_FAST', 'DELETE_FAST', 'UNPACK_SEQUENCE',
     'LOAD_GLOBAL',  # Only allows access to restricted globals
+    # New in python 3.6
+    # FIXME: need to be reviewd
+    'SET_ADD', 'MAP_ADD', 'BUILD_LIST_UNPACK', 'BUILD_MAP_UNPACK',
+    'BUILD_TUPLE_UNPACK', 'BUILD_SET_UNPACK', 'FORMAT_VALUE',
+    'BUILD_CONST_KEY_MAP', 'BUILD_STRING', 'BUILD_TUPLE_UNPACK_WITH_CALL',
 ] if x in opmap))
 
 _logger = logging.getLogger(__name__)
@@ -73,24 +78,34 @@ _logger = logging.getLogger(__name__)
 
 def _get_opcodes(codeobj):
     """_get_opcodes(codeobj) -> [opcodes]
-
     Extract the actual opcodes as a list from a code object
-
-    >>> c = compile("[1 + 2, (1,2)]", "", "eval")
-    >>> _get_opcodes(c)
-    [100, 100, 23, 100, 100, 102, 103, 83]
+    reference : https://github.com/arthaud/python3-pwntools/blob/master/pwnlib/util/safeeval.py#L19
+    Example:
+        >>> c = compile("[1 + 2, (1,2)]", "", "eval")
+        >>> _get_opcodes(c)
+        [100, 100, 103, 83]
     """
+    import dis
+    import sys
     i = 0
-    byte_codes = codeobj.co_code
-    while i < len(byte_codes):
-        code = ord(byte_codes[i])
-        yield code
+    # opcodes = []
+    s = codeobj.co_code
 
-        if code >= HAVE_ARGUMENT:
-            i += 3
-        else:
-            i += 1
+    if sys.version_info[1] >= 6: # bytecode change in python >= 3.6
+        for i in range(0, len(s), 2):
+            # opcodes.append(s[i])
+            yield s[i]
+    else:
+        while i < len(s):
+            code = s[i]
+            # opcodes.append(code)
+            yield code
+            if code >= dis.HAVE_ARGUMENT:
+                i += 3
+            else:
+                i += 1
 
+    # return opcodes
 
 def assert_no_dunder_name(code_obj, expr):
     """ assert_no_dunder_name(code_obj, expr) -> None
@@ -139,6 +154,9 @@ def assert_valid_codeobj(allowed_codes, code_obj, expr):
     # almost twice as fast as a manual iteration + condition when loading
     # /web according to line_profiler
     if set(_get_opcodes(code_obj)) - allowed_codes:
+        print(">>>>>>> " +str(set(_get_opcodes(code_obj))))
+        print(">>>>>>> " +str(allowed_codes))
+        print(">>>>>>> " + str(set(_get_opcodes(code_obj)) - allowed_codes))
         raise ValueError("forbidden opcode(s) in %r" % expr)
 
     for const in code_obj.co_consts:

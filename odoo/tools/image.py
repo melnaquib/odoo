@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-try:
-    import io as StringIO
-except ImportError:
-    import io
 
+import io
+import codecs
+import base64
 from PIL import Image
 from PIL import ImageEnhance
 from random import randrange
@@ -54,7 +53,9 @@ def image_resize_image(base64_source, size=(1024, 1024), encoding='base64', file
         return False
     if size == (None, None):
         return base64_source
-    image_stream = io.StringIO(base64_source.decode(encoding))
+    # base64_str = codecs.decode(base64_source, encoding=encoding)
+    base64_str = codecs.decode(base64_source, encoding=encoding)
+    image_stream = io.BytesIO(base64_str)
     image = Image.open(image_stream)
     # store filetype here, as Image.new below will lose image.format
     filetype = (filetype or image.format).upper()
@@ -81,9 +82,9 @@ def image_resize_image(base64_source, size=(1024, 1024), encoding='base64', file
     if image.mode not in ["1", "L", "P", "RGB", "RGBA"]:
         image = image.convert("RGB")
 
-    background_stream = io.StringIO()
+    background_stream = io.BytesIO()
     image.save(background_stream, filetype)
-    return background_stream.getvalue().encode(encoding)
+    return codecs.encode(background_stream.getvalue(), encoding=encoding)
 
 
 def image_resize_and_sharpen(image, size, preserve_aspect_ratio=False, factor=2.0):
@@ -105,8 +106,8 @@ def image_resize_and_sharpen(image, size, preserve_aspect_ratio=False, factor=2.
     resized_image = sharpener.enhance(factor)
     # create a transparent image for background and paste the image on it
     image = Image.new('RGBA', size, (255, 255, 255, 0))
-    image.paste(resized_image, ((
-        size[0] - resized_image.size[0]) / 2, (size[1] - resized_image.size[1]) / 2))
+    image.paste(resized_image, (
+        int((size[0] - resized_image.size[0]) / 2), int((size[1] - resized_image.size[1]) / 2)))
     return image
 
 
@@ -303,9 +304,10 @@ def image_resize_images(vals, big_name='image', medium_name='image_medium', smal
 
 if __name__ == "__main__":
     import sys
+    import codecs
 
     assert len(sys.argv) == 3, 'Usage to Test: image.py SRC.png DEST.png'
 
-    img = file(sys.argv[1], 'r').read().encode('base64')
+    img = codecs.encode(open(sys.argv[1], 'rb').read(), encoding='base64')
     new = image_resize_image(img, (128, 100))
-    file(sys.argv[2], 'wb').write(new.decode('base64'))
+    open(sys.argv[2], 'wb').write(codecs.decode(new, encoding='base64'))

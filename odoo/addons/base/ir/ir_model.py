@@ -1277,6 +1277,7 @@ class IrModelData(models.Model):
     def _update(self, model, module, values, xml_id=False, store=True, noupdate=False, mode='init', res_id=False):
         # records created during module install should not display the messages
         # of OpenChatter
+        model = model.decode('utf-8') if type(model) == bytes else model
         self = self.with_context(install_mode=True)
         current_module = module
         xml_id = xml_id if type(xml_id) != bytes else xml_id.decode()

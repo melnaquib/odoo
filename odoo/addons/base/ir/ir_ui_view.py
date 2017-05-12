@@ -302,13 +302,10 @@ actual arch.
         # Any exception raised below will cause a transaction rollback.
         for view in self:
             view_arch = etree.fromstring(encode(view.arch))
-            print("check xmls 1")
             view._valid_inheritance(view_arch)
             view_def = view.read_combined(['arch'])
-            print("check xmls 2")
 
             view_arch_utf8 = view_def['arch'].decode('utf-8')
-            print("check xmls 3 >> view_arch_utf8" + str(view_arch_utf8))
 
             if view.type != 'qweb':
                 view_doc = etree.fromstring(view_arch_utf8)

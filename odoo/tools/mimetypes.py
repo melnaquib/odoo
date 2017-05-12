@@ -36,7 +36,7 @@ def _check_ooxml(data):
         # then there is a directory whose name denotes the type of the file:
         # word, pt (powerpoint) or xl (excel)
         for dirname, mime in _ooxml_dirs.items():
-            if any(entry.startswith(dirname) for entry in filenames):
+            if any(entry.startswith(dirname.encode('utf-8')) for entry in filenames):
                 return mime
 
         return False
@@ -92,7 +92,7 @@ def _check_olecf(data):
     ignore that.
     """
     offset = 0x200
-    if data.startswith('\xEC\xA5\xC1\x00', offset):
+    if data.startswith(b'\xEC\xA5\xC1\x00', offset):
         return 'application/msword'
     # the _xls_pattern stuff doesn't seem to work correctly (the test file
     # only has a bunch of \xf* at offset 0x200), that apparently works
@@ -140,7 +140,7 @@ def guess_mimetype(bin_data, default='application/octet-stream'):
     # see http://www.filesignatures.net/ for file signatures
     for entry in _mime_mappings:
         for signature in entry.signatures:
-            if bin_data.startswith(signature):
+            if bin_data.startswith(signature.encode('utf-8')):
                 for discriminant in entry.discriminants:
                     try:
                         guess = discriminant(bin_data)

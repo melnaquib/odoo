@@ -14,7 +14,7 @@ from dateutil.relativedelta import relativedelta
 
 import pytz
 from lxml import etree, builder
-
+import codecs
 import odoo
 import odoo.release
 from . import assertion_report
@@ -28,6 +28,8 @@ _logger = logging.getLogger(__name__)
 
 from .safe_eval import safe_eval as s_eval
 safe_eval = lambda expr, ctx={}: s_eval(expr, ctx, nocopy=True)
+fix_bytes = lambda x : x.decode('utf-8') if type(x)==bytes else x
+
 
 
 class ParseError(Exception):
@@ -151,7 +153,7 @@ def _eval_xml(self, node, env):
 
         data = node.text
         if node.get('file'):
-            with file_open(node.get('file'), 'r') as f:
+            with file_open(node.get('file'), 'rb') as f:
                 data = f.read()
 
         if t == 'file':
@@ -166,7 +168,7 @@ def _eval_xml(self, node, env):
             return data
 
         if t == 'base64':
-            return data.encode('base64')
+            return codecs.encode(data, encoding='base64')
 
         if t == 'int':
             d = data.strip()
@@ -223,8 +225,8 @@ class xml_import(object):
 
     def get_context(self, data_node, node, eval_dict):
         data_node_context = (len(data_node) and data_node.get(
-            'context', '').encode('utf8'))
-        node_context = node.get("context", '').encode('utf8')
+            'context', ''))
+        node_context = node.get("context", '')
         context = {}
         for ctx in (data_node_context, node_context):
             if ctx:
@@ -252,7 +254,7 @@ class xml_import(object):
         return self.uid
 
     def _test_xml_id(self, xml_id):
-        xml_id = xml_id if type(xml_id) != bytes else xml_id.decode()
+        xml_id = fix_bytes(xml_id)
         id_ = xml_id
         if '.' in xml_id:
             module, id_ = xml_id.split('.', 1)
@@ -267,7 +269,7 @@ form: module.record_id""" % (xml_id,)
 
     def _tag_delete(self, rec, data_node=None, mode=None):
         d_model = rec.get("model")
-        d_search = rec.get("search", '').encode('utf-8')
+        d_search = rec.get("search", '')
         d_id = rec.get("id")
         records = self.env[d_model]
 
@@ -301,14 +303,14 @@ form: module.record_id""" % (xml_id,)
     def _tag_report(self, rec, data_node=None, mode=None):
         res = {}
         for dest, f in (('name', 'string'), ('model', 'model'), ('report_name', 'name')):
-            res[dest] = rec.get(f, '').encode('utf8')
+            res[dest] = rec.get(f, '')
             assert res[dest], "Attribute %s of report is empty !" % (f,)
         for field, dest in (('rml', 'report_rml'), ('file', 'report_rml'), ('xml', 'report_xml'), ('xsl', 'report_xsl'),
                             ('attachment', 'attachment'), ('attachment_use',
                                                            'attachment_use'), ('usage', 'usage'),
                             ('report_type', 'report_type'), ('parser', 'parser')):
             if rec.get(field):
-                res[dest] = rec.get(field).encode('utf8')
+                res[dest] = rec.get(field)
         if rec.get('auto'):
             res['auto'] = safe_eval(rec.get('auto', 'False'))
         if rec.get('sxw'):
@@ -320,7 +322,7 @@ form: module.record_id""" % (xml_id,)
         res['multi'] = rec.get('multi') and safe_eval(
             rec.get('multi', 'False'))
 
-        xml_id = rec.get('id', '').encode('utf8')
+        xml_id = rec.get('id', '')
         self._test_xml_id(xml_id)
 
         if rec.get('groups'):
@@ -368,20 +370,20 @@ form: module.record_id""" % (xml_id,)
         return
 
     def _tag_act_window(self, rec, data_node=None, mode=None):
-        name = rec.get('name', '').encode('utf-8')
-        xml_id = rec.get('id', '').encode('utf8')
+        name = rec.get('name', '')
+        xml_id = rec.get('id', '')
         self._test_xml_id(xml_id)
-        type = rec.get('type', '').encode('utf-8') or 'ir.actions.act_window'
+        type = rec.get('type', '') or 'ir.actions.act_window'
         view_id = False
         if rec.get('view_id'):
-            view_id = self.id_get(rec.get('view_id', '').encode('utf-8'))
-        domain = rec.get('domain', '').encode('utf-8') or '[]'
-        res_model = rec.get('res_model', '').encode('utf-8')
-        src_model = rec.get('src_model', '').encode('utf-8')
-        view_type = rec.get('view_type', '').encode('utf-8') or 'form'
-        view_mode = rec.get('view_mode', '').encode('utf-8') or 'tree,form'
-        usage = rec.get('usage', '').encode('utf-8')
-        limit = rec.get('limit', '').encode('utf-8')
+            view_id = self.id_get(rec.get('view_id', ''))
+        domain = rec.get('domain', '') or '[]'
+        res_model = rec.get('res_model', '')
+        src_model = rec.get('src_model', '')
+        view_type = rec.get('view_type', '') or 'form'
+        view_mode = rec.get('view_mode', '') or 'tree,form'
+        usage = rec.get('usage', '')
+        limit = rec.get('limit', '')
         uid = self.uid
 
         # Act_window's 'domain' and 'context' contain mostly literals
@@ -468,8 +470,7 @@ form: module.record_id""" % (xml_id,)
             model = src_model
             if isinstance(model, (list, tuple)):
                 model, res_id = model
-            keyword = rec.get('key2', '').encode(
-                'utf-8') or 'client_action_relate'
+            keyword = rec.get('key2', '') or 'client_action_relate'
             value = 'ir.actions.act_window,' + str(id)
             replace = rec.get('replace', '') or True
             self.env['ir.values'].set_action(
@@ -486,7 +487,7 @@ form: module.record_id""" % (xml_id,)
             return
         res = {}
         for field in rec.findall('./field'):
-            f_name = field.get("name", '').encode('utf-8')
+            f_name = field.get("name", '')
             f_val = _eval_xml(self, field, self.env)
             res[f_name] = f_val
         ir_values = self.env['ir.values']
@@ -541,7 +542,7 @@ form: module.record_id""" % (xml_id,)
             res = None
 
         if rec.get('action'):
-            a_action = rec.get('action', '').encode('utf8')
+            a_action = rec.get('action', '')
 
             # determine the type of action
             action_type, action_id = self.model_id_get(a_action)
@@ -599,10 +600,10 @@ form: module.record_id""" % (xml_id,)
         rec_model = rec.get("model", '').encode('ascii')
         rec_id = rec.get("id", '').encode('ascii')
         self._test_xml_id(rec_id)
-        rec_src = rec.get("search", '').encode('utf8')
+        rec_src = rec.get("search", '')
         rec_src_count = rec.get("count")
 
-        rec_string = rec.get("string", '').encode('utf8') or 'unknown'
+        rec_string = rec.get("string", '') or 'unknown'
 
         records = None
         eval_dict = {'ref': self.id_get}
@@ -635,7 +636,7 @@ form: module.record_id""" % (xml_id,)
             globals_dict['ref'] = ref
             globals_dict['_ref'] = ref
             for test in rec.findall('./test'):
-                f_expr = test.get("expr", '').encode('utf-8')
+                f_expr = test.get("expr", '')
                 env = self.env(user=uid, context=context)
                 expected_value = _eval_xml(self, test, env) or True
                 expression_value = safe_eval(f_expr, globals_dict)
@@ -674,6 +675,7 @@ form: module.record_id""" % (xml_id,)
         # field.
         if self.isnoupdate(data_node) and self.mode != 'init':
             # check if the xml record has no id, skip
+            rec_id = fix_bytes('rec_id')
             if not rec_id:
                 return None
 
@@ -749,6 +751,7 @@ form: module.record_id""" % (xml_id,)
         # This helper transforms a <template> element into a <record> and
         # forwards it
         tpl_id = el.get('id', el.get('t-name', '')).encode('ascii')
+        tpl_id = fix_bytes(tpl_id)
         full_tpl_id = tpl_id
         if '.' not in full_tpl_id:
             full_tpl_id = '%s.%s' % (self.module, tpl_id)
@@ -821,6 +824,7 @@ form: module.record_id""" % (xml_id,)
         return res and res[1]
 
     def model_id_get(self, id_str, raise_if_not_found=True):
+        id_str = fix_bytes(id_str)
         if '.' not in id_str:
             id_str = '%s.%s' % (self.module, id_str)
         return self.env['ir.model.data'].xmlid_to_res_model_res_id(id_str, raise_if_not_found=raise_if_not_found)

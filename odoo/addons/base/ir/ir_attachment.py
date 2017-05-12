@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+import codecs
 import hashlib
 import itertools
 import logging
@@ -99,14 +100,14 @@ class IrAttachment(models.Model):
             if bin_size:
                 r = human_size(os.path.getsize(full_path))
             else:
-                r = open(full_path, 'r').read().encode('base64')
+                r = codecs.encode(open(full_path, 'rb').read(), encoding='base64')
         except (IOError, OSError):
             _logger.info("_read_file reading %s", full_path, exc_info=True)
         return r
 
     @api.model
     def _file_write(self, value, checksum):
-        bin_value = value.decode('base64')
+        bin_value = codecs.decode(value, encoding='base64')
         fname, full_path = self._get_path(bin_value, checksum)
         if not os.path.exists(full_path):
             try:
@@ -201,7 +202,7 @@ class IrAttachment(models.Model):
         for attach in self:
             # compute the fields that depend on datas
             value = attach.datas
-            bin_data = value and value.decode('base64') or ''
+            bin_data = value and codecs.decode(value, encoding='base64') or ''
             vals = {
                 'file_size': len(bin_data),
                 'checksum': self._compute_checksum(bin_data),
@@ -241,7 +242,7 @@ class IrAttachment(models.Model):
         if not mimetype and values.get('url'):
             mimetype = mimetypes.guess_type(values['url'])[0]
         if values.get('datas') and (not mimetype or mimetype == 'application/octet-stream'):
-            mimetype = guess_mimetype(values['datas'].decode('base64'))
+            mimetype = guess_mimetype(codecs.decode(values['datas'], encoding='base64'))
         return mimetype or 'application/octet-stream'
 
     def _check_contents(self, values):

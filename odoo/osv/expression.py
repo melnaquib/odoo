@@ -1041,7 +1041,7 @@ class expression(object):
                         subquery = 'SELECT "%s" FROM "%s" WHERE "%s" IN %%s' % (
                             rel_id1, rel_table, rel_id2)
                         # avoid flattening of argument in to_sql()
-                        subquery = cr.mogrify(subquery, [tuple(ids2)])
+                        subquery = cr.mogrify(subquery, [tuple(ids2)]).decode('utf-8')
                         push(create_substitution_leaf(
                             leaf, ('id', 'inselect', (subquery, [])), internal=True))
                 else:
@@ -1077,7 +1077,7 @@ class expression(object):
                                 rel_id1, rel_table, rel_id2)
                             # avoid flattening of argument in to_sql()
                             subquery = cr.mogrify(
-                                subquery, [tuple([_f for _f in res_ids if _f])])
+                                subquery, [tuple([_f for _f in res_ids if _f])]).decode('utf-8')
                             push(create_substitution_leaf(
                                 leaf, ('id', subop, (subquery, [])), internal=True))
 

@@ -140,7 +140,7 @@ class IrActionsReportXml(models.Model):
         data = self[name + '_content_data']
         if not data and self[name]:
             try:
-                with tools.file_open(self[name], mode='r') as fp:
+                with tools.file_open(self[name], mode='rb') as fp:
                     data = fp.read()
             except Exception:
                 data = False

@@ -232,6 +232,8 @@ class Cursor(object):
 
         try:
             params = params or None
+            if type(query) == bytes:
+                query = query.decode('utf-8')
             res = self._obj.execute(query, params)
         except Exception:
             if self._default_log_exceptions if log_exceptions is None else log_exceptions:

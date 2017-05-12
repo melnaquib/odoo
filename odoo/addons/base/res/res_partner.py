@@ -2,6 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 import base64
+import codecs
 import datetime
 import hashlib
 import pytz
@@ -316,7 +317,7 @@ class Partner(models.Model, FormatAddress):
 
         if partner_type in ['other'] and parent_id:
             parent_image = self.browse(parent_id).image
-            image = parent_image and parent_image.decode('base64') or None
+            image = parent_image and codecs.decode(parent_image, encoding='base64') or None
 
         if not image and partner_type == 'invoice':
             img_path = get_module_resource(
@@ -338,7 +339,7 @@ class Partner(models.Model, FormatAddress):
         if image and colorize:
             image = tools.image_colorize(image)
 
-        return tools.image_resize_image_big(image.encode('base64'))
+        return tools.image_resize_image_big(codecs.encode(image, encoding='base64'))
 
     @api.model
     def fields_view_get(self, view_id=None, view_type='form', toolbar=False, submenu=False):
